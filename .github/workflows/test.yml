@@ -1,4 +1,4 @@
-name: Go
+name: Test
 
 on:
   push:
@@ -14,10 +14,3 @@ jobs:
 
       - name: Test
         run: go test -v ./...
-
-      - name: Go Release Binaries
-        uses: wangyoucao577/go-release-action@v1.14
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          goos: linux
-          goarch: amd64
