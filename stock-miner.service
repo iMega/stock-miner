@@ -1,0 +1,15 @@
+# /usr/lib/systemd/system/stock-miner.service
+
+[Unit]
+Description=Stock miner
+Documentation=https://github.com/imega/stock-miner
+After=network-online.target firewalld.service containerd.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/home/stock-miner/app
+ExecReload=/bin/kill -s HUP stockminerpid
+TimeoutSec=0
+RestartSec=2
+Restart=always

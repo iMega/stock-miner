@@ -1,0 +1,37 @@
+[
+  {
+    "id": "stock-miner",
+    "execute-command": "/home/irvis/redeploy-stock-miner.sh",
+    "command-working-directory": "/home/irvis/stock-miner",
+    "trigger-rule": {
+      "and": [
+        {
+          "match": {
+            "type": "payload-hmac-sha1",
+            "secret": "INSERT-SECRET-FROM-YOUR-REPO-SETTINGS-HOOKS",
+            "parameter": {
+              "source": "header",
+              "name": "X-Hub-Signature"
+            }
+          }
+        },
+        {
+          "match": {
+            "type": "value",
+            "value": "released",
+            "parameter": {
+              "source": "payload",
+              "name": "action"
+            }
+          }
+        }
+      ]
+    },
+    "pass-arguments-to-command": [
+      {
+        "source": "payload",
+        "name": "release.assets.0.url"
+      }
+    ]
+  }
+]

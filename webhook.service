@@ -1,0 +1,16 @@
+# /usr/lib/systemd/system/webhook.service
+
+[Unit]
+Description=Webhook is a lightweight incoming webhook server
+Documentation=https://github.com/adnanh/webhook
+After=network-online.target firewalld.service containerd.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/sysconfig/webhook
+ExecStart=/usr/bin/webhook -hooks=/etc/webhook/hooks.json $OPTS
+ExecReload=/bin/kill -s HUP webhookpid
+TimeoutSec=0
+RestartSec=2
+Restart=always
