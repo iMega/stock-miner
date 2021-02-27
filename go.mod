@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/go-chi/chi v1.5.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/imega/daemon v0.0.0-20210227154950-a2b902a0871c
+	github.com/imega/daemon v0.0.0-20210227164626-fcae13cbb17f
 	github.com/magefile/mage v1.11.0 // indirect
 	github.com/sirupsen/logrus v1.8.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
