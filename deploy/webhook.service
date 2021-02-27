@@ -14,3 +14,6 @@ ExecReload=/bin/kill -s HUP webhookpid
 TimeoutSec=0
 RestartSec=2
 Restart=always
+
+[Install]
+WantedBy=multi-user.target

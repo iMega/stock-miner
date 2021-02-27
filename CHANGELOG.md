@@ -2,6 +2,4 @@
 
 ### Added
 
--   Glob pattern support
--   Unit Tests
--   Log version
+-   Support daemon kit

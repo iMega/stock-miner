@@ -8,8 +8,11 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/home/stock-miner/app
-ExecReload=/bin/kill -s HUP stockminerpid
+ExecStart=/home/irvis/stock-miner/stock-miner
+ExecReload=/bin/kill -s HUP $MAINPID
 TimeoutSec=0
 RestartSec=2
 Restart=always
+
+[Install]
+WantedBy=multi-user.target

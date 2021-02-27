@@ -18,7 +18,7 @@
         {
           "match": {
             "type": "value",
-            "value": "released",
+            "value": "published",
             "parameter": {
               "source": "payload",
               "name": "action"
@@ -30,7 +30,7 @@
     "pass-arguments-to-command": [
       {
         "source": "payload",
-        "name": "release.assets.0.url"
+        "name": "release.tag_name"
       }
     ]
   }
