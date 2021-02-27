@@ -3,12 +3,12 @@ set -o allexport; source .env; set +o allexport
 
 app_url=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
     -H "Accept: application/vnd.github.v3.raw"  \
-    https://api.github.com/repos/imega/stock-miner/releases/tags/$@ | \
+    https://api.github.com/repos/imega/stock-miner/releases/latest | \
     jq -r '.assets[] | select(.name|test("linux-amd64.tar.gz$")) | .url')
 
 md5_url=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
     -H "Accept: application/vnd.github.v3.raw"  \
-    https://api.github.com/repos/imega/stock-miner/releases/tags/$@ | \
+    https://api.github.com/repos/imega/stock-miner/releases/latest | \
     jq -r '.assets[] | select(.name|test("linux-amd64.tar.gz.md5$")) | .url')
 
 curl -H "Authorization: token $GITHUB_TOKEN" \
@@ -23,7 +23,7 @@ curl -H "Authorization: token $GITHUB_TOKEN" \
 
 echo $(cat stock-miner.tar.gz.md5) stock-miner.tar.gz | md5sum --quiet -c || (echo failed to check md5 sum && exit 1)
 
-tar --overwrite -xvf stock-miner.tar.gz
+tar --overwrite -Uxvf stock-miner.tar.gz
 
 rm stock-miner.tar.gz*
 

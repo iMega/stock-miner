@@ -18,20 +18,24 @@
         {
           "match": {
             "type": "value",
-            "value": "published",
+            "value": "completed",
             "parameter": {
               "source": "payload",
               "name": "action"
             }
           }
+        },
+        {
+          "match": {
+            "type": "value",
+            "value": "success",
+            "parameter": {
+              "source": "payload",
+              "name": "check_suite.conclusion"
+            }
+          }
         }
       ]
-    },
-    "pass-arguments-to-command": [
-      {
-        "source": "payload",
-        "name": "release.tag_name"
-      }
-    ]
+    }
   }
 ]
