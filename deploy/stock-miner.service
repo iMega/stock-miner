@@ -8,6 +8,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+EnvironmentFile=/home/irvis/stock-miner/.env
 ExecStart=/home/irvis/stock-miner/stock-miner
 ExecReload=/bin/kill -s HUP $MAINPID
 TimeoutSec=0
