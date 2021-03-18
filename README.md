@@ -1,3 +1,13 @@
+## SDK
+
+https://tinkoffcreditsystems.github.io/invest-openapi/
+
+https://github.com/TinkoffCreditSystems/invest-openapi-go-sdk
+
+https://tinkoffcreditsystems.github.io/invest-openapi/swagger-ui/
+
+curl -s https://query1.finance.yahoo.com/v10/finance/quoteSummary/AAPL?modules=price | json_pp | grep -C2 regularMarketPrice
+
 ## Install webhook on VPS
 
 ```shell
@@ -49,3 +59,27 @@ Go to https://github.com/settings/tokens. Need access to repo.
 copy redeploy-stock-miner.sh from Repo to ~/ on VPS
 
 insert github token (see prev. paragraph)
+
+# Cases
+
+## добавление бумаги в белый список
+
+-   указать ее идентификатор (с помощью sugget)
+-   запрос текущей стоимости и вывод ее с возможностью исправить
+-   добавить к белому списку бумаг с указанной ценой, являюшейся отправной
+    точкой для расчета проведения сделки. Если стоимость на торгах будет ниже указанной,
+    брокер приобретет эту акцию.
+
+## Покупка бумаги
+
+-   Если стоимость бумаги похожа на лестницу вниз, брокер смотрит опцию
+    "Количество ступеней по лестнице вниз", указанное число в опции разрешает
+    брокеру совершить равное количество раз (ступеней) покупки при уменьшении цены.
+
+## Опции
+
+-   Количество ступеней по лестнице вниз
+-   Количество ступеней по лестнице вверх
+-   Процент со сделки
+-   НДФЛ
+-   минимальная прибыль
