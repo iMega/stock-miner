@@ -1,9 +1,12 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"os"
+	"time"
 
+	sdk "github.com/TinkoffCreditSystems/invest-openapi-go-sdk"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -49,10 +52,10 @@ func CreateDatabase(name string) error {
 	}
 
 	query := `CREATE TABLE price (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        symbol VARCHAR(64) NULL,
+        symbol VARCHAR(64) NOT NULL,
+        create_at DATETIME NOT NULL,
         price DECIMAL(10,5) NULL,
-        create_at DATETIME NULL
+        CONSTRAINT price PRIMARY KEY (symbol, create_at)
     )`
 
 	if _, err = db.Exec(query); err != nil {
@@ -60,4 +63,35 @@ func CreateDatabase(name string) error {
 	}
 
 	return db.Close()
+}
+
+func (s *Storage) AddMarketPrice(ctx context.Context, o sdk.RestOrderBook) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	var (
+		price sql.NullFloat64
+		t     sql.NullTime
+	)
+
+	getLastPrice := "select price, max(create_at) from price where symbol = ?"
+	if err := tx.QueryRowContext(ctx, getLastPrice, o.FIGI).Scan(&price, &t); err != nil {
+		return err
+	}
+
+	if price.Valid && price.Float64 == o.LastPrice {
+		return nil
+	}
+
+	insertPrice := "insert into price (symbol, create_at, price) values (?, ?, ?)"
+	_, err = tx.ExecContext(ctx, insertPrice, o.FIGI, time.Now().String(), o.LastPrice)
+	if err != nil {
+		tx.Rollback()
+	} else {
+		tx.Commit()
+	}
+
+	return err
 }

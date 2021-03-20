@@ -1,0 +1,27 @@
+version: "3"
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        - GO_IMG=${GO_IMG}
+        - CWD=${CWD}
+    volumes:
+      - ./:${CWD}
+    working_dir: ${CWD}
+    environment:
+      - STOCK_MINER_HTTP_SERVER_HOST=0.0.0.0:80
+
+  acceptance:
+    image: ${GO_IMG}
+    environment:
+      - GOFLAGS=
+    volumes:
+      - ./:${CWD}
+    working_dir: ${CWD}
+    command: >
+      /bin/sh -c "
+        apk add --upd alpine-sdk gcc && \
+        go test -v ${CWD}/tests
+      "

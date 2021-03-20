@@ -10,6 +10,7 @@ import (
 	httpserver "github.com/imega/daemon/http-server"
 	"github.com/imega/daemon/logging"
 	"github.com/imega/stock-miner/broker"
+	health_http "github.com/imega/stock-miner/health/http"
 	"github.com/imega/stock-miner/storage"
 )
 
@@ -22,16 +23,6 @@ func main() {
 		Level:   "debug",
 	})
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", handler)
-	h := httpserver.New("stock-miner", log, mux)
-	cr := env.Once(h.WatcherConfigFunc)
-
-	d, err := daemon.New(log, cr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	if err := storage.CreateDatabase(dbFilename); err != nil {
 		log.Fatalf("failed to create database, ", err)
 	}
@@ -41,10 +32,40 @@ func main() {
 		log.Errorf("failed to open db-file, %s", err)
 	}
 
-	s := storage.New(storage.WithSqllite(db))
-	b := broker.New(broker.WithStorage(s))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", handler)
+	mux.HandleFunc(
+		"/healthcheck",
+		health_http.HandlerFunc(
+			health_http.WithHealthCheckFuncs(
+				func() bool {
+					if err := db.Ping(); err != nil {
+						return false
+					}
 
-	d.RegisterShutdownFunc(b.ShutdownFunc())
+					return true
+				},
+			),
+		),
+	)
+
+	h := httpserver.New("stock-miner", log, mux)
+	cr := env.Once(h.WatcherConfigFunc)
+
+	d, err := daemon.New(log, cr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s := storage.New(storage.WithSqllite(db))
+	b := broker.New(broker.WithStorage(s), broker.WithLogger(log))
+
+	d.RegisterShutdownFunc(
+		b.ShutdownFunc(),
+		func() {
+			db.Close()
+		},
+	)
 
 	log.Info("stock-miner is started")
 
