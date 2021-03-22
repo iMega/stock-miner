@@ -1,3 +1,7 @@
+# Stock miner
+
+[![codecov](https://codecov.io/gh/iMega/stock-miner/branch/master/graph/badge.svg?token=JFHLSRY9NS)](https://codecov.io/gh/iMega/stock-miner)
+
 ## SDK
 
 https://tinkoffcreditsystems.github.io/invest-openapi/

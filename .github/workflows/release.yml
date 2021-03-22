@@ -21,8 +21,8 @@ jobs:
           PRE_RELEASE: "false"
           CHANGELOG_FILE: "CHANGELOG.md"
 
-      - name: Test
-        run: go test -v ./...
+      - name: Release
+        run: make release
 
       - name: Go Release Binaries
         uses: wangyoucao577/go-release-action@v1.14

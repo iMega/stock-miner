@@ -2,3 +2,5 @@
 data.db
 builder
 cover.out
+node_modules
+build

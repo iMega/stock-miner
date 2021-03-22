@@ -11,6 +11,7 @@ import (
 	"github.com/imega/daemon/logging"
 	"github.com/imega/stock-miner/broker"
 	health_http "github.com/imega/stock-miner/health/http"
+	"github.com/imega/stock-miner/session_store"
 	"github.com/imega/stock-miner/storage"
 )
 
@@ -33,7 +34,18 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", handler)
+
+	clientID, _ := env.Read("GOOGLE_CLIENTID")
+	clientSecret, _ := env.Read("GOOGLE_CLIENT_SECRET")
+	callbackURL, _ := env.Read("GOOGLE_CALLBACK_URL")
+	session := session_store.New(
+		session_store.WithClintID(clientID),
+		session_store.WithClientSecret(clientSecret),
+		session_store.WithCallbackURL(callbackURL),
+	)
+	session.AppendHandlers(mux)
+
+	mux.Handle("/", session.DefenceHandler(http.FileServer(Assets)))
 	mux.HandleFunc(
 		"/healthcheck",
 		health_http.HandlerFunc(
@@ -74,8 +86,4 @@ func main() {
 	}
 
 	log.Info("stock-miner is stopped")
-}
-
-func handler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("ok."))
 }
