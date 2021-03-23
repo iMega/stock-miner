@@ -31,9 +31,8 @@ jobs:
           goos: linux
           goarch: amd64
           ldflags: -s -w
-
-      - name: Strip and run UPX on executables
-        uses: svenstaro/upx-action@2.0.1
-        with:
-          file: stock-miner
-          args: --brute
+      # - name: Strip and run UPX on executables
+      #   uses: svenstaro/upx-action@2.0.1
+      #   with:
+      #     file: stock-miner
+      #     args: --brute
