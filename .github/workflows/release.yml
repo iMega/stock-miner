@@ -30,6 +30,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: linux
           goarch: amd64
+          ldflags: -s -w
 
       - name: Strip and run UPX on executables
         uses: svenstaro/upx-action@2.0.1
