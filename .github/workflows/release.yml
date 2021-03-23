@@ -30,3 +30,9 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: linux
           goarch: amd64
+
+      - name: Strip and run UPX on executables
+        uses: svenstaro/upx-action@2.0.1
+        with:
+          file: stock-miner
+          args: --brute

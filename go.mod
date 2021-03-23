@@ -11,14 +11,14 @@ require (
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/imega/daemon v0.0.0-20210227164626-fcae13cbb17f
 	github.com/improbable-eng/go-httpwares v0.0.0-20200609095714-edc8019f93cc
-	github.com/julienschmidt/httprouter v1.3.0 // indirect
+	github.com/julienschmidt/httprouter v1.3.0
 	github.com/magefile/mage v1.11.0 // indirect
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/onsi/ginkgo v1.15.2
 	github.com/onsi/gomega v1.11.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749 // indirect
-	github.com/shurcooL/vfsgen v0.0.0-20200824052919-0d455de96546 // indirect
+	github.com/shurcooL/vfsgen v0.0.0-20200824052919-0d455de96546
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0 // indirect
 	golang.org/x/net v0.0.0-20210316092652-d523dce5a7f4 // indirect

@@ -9,7 +9,7 @@ RUN apk add --update curl alpine-sdk gcc
 
 WORKDIR $CWD
 COPY . .
-RUN go build -v -o /app .
+RUN go run -tags=dev assets/generate.go && go build -v -o /app .
 
 CMD ["/app"]
 

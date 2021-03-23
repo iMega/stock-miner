@@ -11,9 +11,9 @@ services:
       - ./:${CWD}
     working_dir: ${CWD}
     environment:
-      - STOCK_MINER_HTTP_SERVER_HOST=0.0.0.0:8080
+      - STOCK_MINER_HTTP_SERVER_HOST=0.0.0.0:80
     ports:
-      - 8080:8080
+      - 8080:80
 
   acceptance:
     image: ${GO_IMG}
