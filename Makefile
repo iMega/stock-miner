@@ -4,7 +4,7 @@ GO_IMG = golang:1.15.8-alpine3.13
 NODE_IMG = 15.12.0-alpine3.13
 BUILDER=builder
 
-test: lint unit acceptance
+test: build lint unit acceptance
 
 builder:
 	@docker build --build-arg GO_IMG=$(GO_IMG) \
