@@ -13,7 +13,10 @@ import (
 	"github.com/imega/stock-miner/session/google"
 )
 
-const sessionName = "stock-miner"
+const (
+	sessionName  = "stock-miner"
+	cookieMaxAge = 60
+)
 
 type SessionStore struct {
 	ClientID     string
@@ -21,7 +24,7 @@ type SessionStore struct {
 	CallbackURL  string
 	db           *sessions.CookieStore
 	userDB       broker.UserStorage
-	devMode      bool
+	isDevMode    bool
 }
 
 func New(opts ...Option) *SessionStore {
@@ -65,7 +68,7 @@ func WithUserStorage(s broker.UserStorage) Option {
 func WithDevMode(s string) Option {
 	return func(p *SessionStore) {
 		if s == "true" {
-			p.devMode = true
+			p.isDevMode = true
 		}
 	}
 }
@@ -78,14 +81,14 @@ func (s *SessionStore) AppendHandlers(mux *http.ServeMux) {
 		gologin.CookieConfig{
 			Name:     "stock-miner-tmp",
 			Path:     "/",
-			MaxAge:   60, // 60 seconds
+			MaxAge:   cookieMaxAge,
 			HTTPOnly: true,
-			Secure:   false, // HTTPS only
+			Secure:   !s.isDevMode, // HTTP only dev
 		},
 		s.issueSession(),
 	)
 
-	if s.devMode {
+	if s.isDevMode {
 		login = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			http.Redirect(w, req, "/google/callback", http.StatusFound)
 		})
