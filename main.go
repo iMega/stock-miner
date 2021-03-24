@@ -11,8 +11,9 @@ import (
 	"github.com/imega/daemon/logging"
 	"github.com/imega/stock-miner/broker"
 	health_http "github.com/imega/stock-miner/health/http"
-	"github.com/imega/stock-miner/session_store"
+	"github.com/imega/stock-miner/session"
 	"github.com/imega/stock-miner/storage"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const shutdownTimeout = 15 * time.Second
@@ -38,10 +39,10 @@ func main() {
 	clientID, _ := env.Read("GOOGLE_CLIENTID")
 	clientSecret, _ := env.Read("GOOGLE_CLIENT_SECRET")
 	callbackURL, _ := env.Read("GOOGLE_CALLBACK_URL")
-	session := session_store.New(
-		session_store.WithClintID(clientID),
-		session_store.WithClientSecret(clientSecret),
-		session_store.WithCallbackURL(callbackURL),
+	session := session.New(
+		session.WithClintID(clientID),
+		session.WithClientSecret(clientSecret),
+		session.WithCallbackURL(callbackURL),
 	)
 	session.AppendHandlers(mux)
 
