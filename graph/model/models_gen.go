@@ -2,16 +2,18 @@
 
 package model
 
-type NewTodo struct {
-	Text   string `json:"text"`
-	UserID string `json:"userId"`
+type StockItem struct {
+	Ticker           string  `json:"ticker"`
+	Figi             string  `json:"figi"`
+	AmountLimit      float64 `json:"amountLimit"`
+	TransactionLimit int     `json:"transactionLimit"`
 }
 
-type Todo struct {
-	ID   string `json:"id"`
-	Text string `json:"text"`
-	Done bool   `json:"done"`
-	User *User  `json:"user"`
+type StockItemInput struct {
+	Ticker           string  `json:"ticker"`
+	Figi             string  `json:"figi"`
+	AmountLimit      float64 `json:"amountLimit"`
+	TransactionLimit int     `json:"transactionLimit"`
 }
 
 type User struct {

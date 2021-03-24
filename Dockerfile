@@ -9,7 +9,8 @@ RUN apk add --update curl alpine-sdk gcc
 
 WORKDIR $CWD
 COPY . .
-RUN go run -tags=dev assets/generate.go && go build -v -o /app .
+RUN go run -tags=dev assets/generate.go && \
+    go build -v -ldflags "-X main.isDevMode=true" -o /app .
 
 CMD ["/app"]
 

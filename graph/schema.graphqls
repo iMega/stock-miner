@@ -1,19 +1,28 @@
 type Query {
-    todos: [Todo!]!
     user: User!
-}
-
-input NewTodo {
-    text: String!
-    userId: String!
+    stockItemApproved: [StockItem]
 }
 
 type Mutation {
-    createTodo(input: NewTodo!): Todo!
+    addStockItemApproved(item: StockItemInput!): StockItem!
 }
 
 type User {
     email: ID!
     name: String
     avatar: String
+}
+
+type StockItem {
+    ticker: String!
+    figi: String!
+    amountLimit: Float!
+    transactionLimit: Int!
+}
+
+input StockItemInput {
+    ticker: String!
+    figi: String!
+    amountLimit: Float!
+    transactionLimit: Int!
 }

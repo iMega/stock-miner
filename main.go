@@ -25,7 +25,7 @@ import (
 const shutdownTimeout = 15 * time.Second
 const dbFilename = "./data.db"
 
-var devMode = "false"
+var isDevMode = "false"
 
 func main() {
 	logger := logging.New(logging.Config{
@@ -53,7 +53,7 @@ func main() {
 		session.WithClintID(clientID),
 		session.WithClientSecret(clientSecret),
 		session.WithCallbackURL(callbackURL),
-		session.WithDevMode(devMode),
+		session.WithDevMode(isDevMode),
 		session.WithUserStorage(s),
 	)
 	session.AppendHandlers(mux)
@@ -92,7 +92,8 @@ func main() {
 		generated.NewExecutableSchema(
 			generated.Config{
 				Resolvers: &graph.Resolver{
-					UserStorage: s,
+					UserStorage:  s,
+					StockStorage: s,
 				}},
 		),
 	)

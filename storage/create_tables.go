@@ -38,6 +38,10 @@ func CreateDatabase(name string) error {
 			return err
 		}
 
+		if err := stockItemApprovedTable(ctx, tx); err != nil {
+			return err
+		}
+
 		return nil
 	})
 

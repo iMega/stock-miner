@@ -5,18 +5,29 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/imega/stock-miner/broker"
 	"github.com/imega/stock-miner/graph/generated"
 	"github.com/imega/stock-miner/graph/model"
 )
 
-func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
-	panic(fmt.Errorf("not implemented"))
-}
+func (r *mutationResolver) AddStockItemApproved(ctx context.Context, item model.StockItemInput) (*model.StockItem, error) {
+	in := broker.StockItem{
+		Ticker:           item.Ticker,
+		FIGI:             item.Figi,
+		AmountLimit:      item.AmountLimit,
+		TransactionLimit: item.TransactionLimit,
+	}
+	if err := r.StockStorage.AddStockItemApproved(ctx, in); err != nil {
+		return nil, err
+	}
 
-func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
-	panic(fmt.Errorf("not implemented"))
+	return &model.StockItem{
+		Ticker:           item.Ticker,
+		Figi:             item.Figi,
+		AmountLimit:      item.AmountLimit,
+		TransactionLimit: item.TransactionLimit,
+	}, nil
 }
 
 func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
@@ -30,6 +41,25 @@ func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
 		Name:   &user.Name,
 		Avatar: &user.Avatar,
 	}, nil
+}
+
+func (r *queryResolver) StockItemApproved(ctx context.Context) ([]*model.StockItem, error) {
+	var result []*model.StockItem
+	items, err := r.StockStorage.StockItemApproved(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range items {
+		result = append(result, &model.StockItem{
+			Ticker:           item.Ticker,
+			Figi:             item.FIGI,
+			AmountLimit:      item.AmountLimit,
+			TransactionLimit: item.TransactionLimit,
+		})
+	}
+
+	return result, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
