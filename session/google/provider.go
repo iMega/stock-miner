@@ -1,12 +1,15 @@
-package provider_google
+package google
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/dghubble/gologin/v2"
 	"github.com/dghubble/gologin/v2/google"
+	"github.com/imega/stock-miner/broker"
 	"golang.org/x/oauth2"
 	googleOAuth2 "golang.org/x/oauth2/google"
+	googleApi "google.golang.org/api/oauth2/v2"
 )
 
 func GoogleSignInHandlers(
@@ -34,4 +37,24 @@ func GoogleSignInHandlers(
 	)
 
 	return loginHandler, callbackHandler
+}
+
+func UserFromContext(ctx context.Context) (broker.User, error) {
+	googleUser, err := google.UserFromContext(ctx)
+	if err != nil {
+		return broker.User{}, err
+	}
+
+	return broker.User{
+		Email:  googleUser.Email,
+		ID:     googleUser.Id,
+		Name:   googleUser.Name,
+		Avatar: googleUser.Picture,
+	}, nil
+}
+
+func WithFakeUser(ctx context.Context) context.Context {
+	return google.WithUser(ctx, &googleApi.Userinfo{
+		Email: "irvis@imega.ru",
+	})
 }

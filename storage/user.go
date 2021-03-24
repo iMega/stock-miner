@@ -37,11 +37,10 @@ func (s *Storage) CreateUser(ctx context.Context, user broker.User) error {
 	if !ok {
 		return fmt.Errorf("failed to extract user from context")
 	}
-
 	wrapper := sqlTool.TxWrapper{s.db}
 
-	wrapper.Transaction(ctx, nil, func(ctx context.Context, tx *sql.Tx) error {
-		userQuery := `insert user (email, name, avatar, id, role, create_at) values(?,?,?,?,?,?)`
+	return wrapper.Transaction(ctx, nil, func(ctx context.Context, tx *sql.Tx) error {
+		userQuery := `insert into user (email, name, avatar, id, role, create_at) values(?,?,?,?,?,?)`
 		_, err := tx.ExecContext(ctx, userQuery, email, user.Name, user.Avatar, user.ID, user.Role, time.Now())
 		if err != nil {
 			return fmt.Errorf("failed to create user, %s", err)
@@ -54,8 +53,6 @@ func (s *Storage) CreateUser(ctx context.Context, user broker.User) error {
 
 		return nil
 	})
-
-	return nil
 }
 
 func (s *Storage) RemoveUser(ctx context.Context, user broker.User) error {

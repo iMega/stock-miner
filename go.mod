@@ -3,10 +3,15 @@ module github.com/imega/stock-miner
 go 1.15
 
 require (
+	github.com/Microsoft/hcsshim v0.8.15 // indirect
 	github.com/TinkoffCreditSystems/invest-openapi-go-sdk v0.6.1
+	github.com/containerd/containerd v1.5.0-beta.1
+	github.com/containerd/continuity v0.0.0-20210315143101-93e15499afd5 // indirect
+	github.com/containerd/fifo v0.0.0-20210316144830-115abcc95a1d // indirect
 	github.com/dghubble/gologin/v2 v2.3.0
 	github.com/dghubble/sessions v0.1.0
 	github.com/go-chi/chi v1.5.4 // indirect
+	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/imega/daemon v0.0.0-20210227164626-fcae13cbb17f
@@ -25,7 +30,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20210313182246-cd4f82c27b84
 	golang.org/x/sys v0.0.0-20210320140829-1e4c9ba3b0c4 // indirect
 	golang.org/x/text v0.3.5 // indirect
-	google.golang.org/api v0.42.0 // indirect
+	google.golang.org/api v0.42.0
 	google.golang.org/genproto v0.0.0-20210319143718-93e7006c17a6 // indirect
 	google.golang.org/grpc v1.36.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect

@@ -6,11 +6,11 @@ import (
 	"fmt"
 )
 
-type txWrapper struct{ *sql.DB }
+type TxWrapper struct{ *sql.DB }
 
 type TxFunc func(context.Context, *sql.Tx) error
 
-func (w *txWrapper) Transaction(
+func (w *TxWrapper) Transaction(
 	ctx context.Context,
 	opts *sql.TxOptions,
 	f TxFunc,

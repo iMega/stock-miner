@@ -1,15 +1,16 @@
-package session_store
+package session
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/containerd/containerd/log"
 	"github.com/dghubble/gologin/v2"
-	"github.com/dghubble/gologin/v2/google"
 	"github.com/dghubble/sessions"
-	provider_google "github.com/imega/stock-miner/session_store/google"
+	"github.com/imega/stock-miner/broker"
+	"github.com/imega/stock-miner/contexkey"
+	"github.com/imega/stock-miner/session/google"
 )
 
 const sessionName = "stock-miner"
@@ -19,6 +20,8 @@ type SessionStore struct {
 	ClientSecret string
 	CallbackURL  string
 	db           *sessions.CookieStore
+	userDB       broker.UserStorage
+	devMode      bool
 }
 
 func New(opts ...Option) *SessionStore {
@@ -53,8 +56,20 @@ func WithCallbackURL(s string) Option {
 	}
 }
 
+func WithUserStorage(s broker.UserStorage) Option {
+	return func(p *SessionStore) {
+		p.userDB = s
+	}
+}
+
+func WithDevMode(f bool) Option {
+	return func(p *SessionStore) {
+		p.devMode = f
+	}
+}
+
 func (s *SessionStore) AppendHandlers(mux *http.ServeMux) {
-	login, callback := provider_google.GoogleSignInHandlers(
+	login, callback := google.GoogleSignInHandlers(
 		s.ClientID,
 		s.ClientSecret,
 		s.CallbackURL,
@@ -68,6 +83,17 @@ func (s *SessionStore) AppendHandlers(mux *http.ServeMux) {
 		s.issueSession(),
 	)
 
+	if s.devMode {
+		login = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			http.Redirect(w, req, "/google/callback", http.StatusFound)
+		})
+
+		callback = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			r := req.WithContext(google.WithFakeUser(req.Context()))
+			s.issueSession().ServeHTTP(w, r)
+		})
+	}
+
 	mux.Handle("/google/login", login)
 	mux.Handle("/google/callback", callback)
 	mux.Handle("/logout", s.logoutHandler())
@@ -78,10 +104,8 @@ func (s *SessionStore) DefenceHandler(next http.Handler) http.Handler {
 		_, err := s.db.Get(r, sessionName)
 		if err != nil {
 			r.URL.Path = "/signin.htm"
-
 			next.ServeHTTP(w, r)
-			// w.Write([]byte(`<html><body><a href="/google/login">Login with Google</a></body></html>`))
-			// http.Redirect(w, r, "/google/login", http.StatusFound)
+
 			return
 		}
 
@@ -89,8 +113,6 @@ func (s *SessionStore) DefenceHandler(next http.Handler) http.Handler {
 			r.URL.Path = "/index.htm"
 		}
 
-		// w.Write([]byte(`<p>You are logged in %s!</p><form action="/logout" method="post"><input type="submit" value="Logout"></form>`))
-		// r.URL.Path = "/index.htm"
 		next.ServeHTTP(w, r)
 	})
 }
@@ -120,23 +142,40 @@ func (s *SessionStore) logoutHandler() http.HandlerFunc {
 func (s *SessionStore) issueSession() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
-		googleUser, err := google.UserFromContext(ctx)
+		user, err := google.UserFromContext(ctx)
 		if err != nil {
+			log.GetLogger(ctx).Errorf("failed to extract user from context, %s", err)
 			http.Error(w, ":(", http.StatusInternalServerError)
 			return
 		}
 
 		session := s.db.New(sessionName)
 
-		fmt.Printf("===%#v\n", googleUser)
+		session.Values["id"] = user.ID
+		session.Values["name"] = user.Name
+		session.Values["email"] = user.Email
 
-		session.Values["userid"] = googleUser.Id
-		session.Values["username"] = googleUser.Name
-		session.Values["useremail"] = googleUser.Email
-		session.Values["usertype"] = "google"
+		if err := session.Save(w); err != nil {
+			log.GetLogger(ctx).Errorf("failed to save session, %s", err)
+			http.Error(w, ":(", http.StatusInternalServerError)
 
-		session.Save(w)
+			return
+		}
 
-		http.Redirect(w, req, "/", http.StatusFound)
+		ctxNew := contexkey.WithEmail(ctx, user.Email)
+		if _, err = s.userDB.GetUser(ctxNew); err != nil {
+			user.Role = "user"
+			if user.Email == "irvis@imega.ru" {
+				user.Role = "root"
+			}
+			if err := s.userDB.CreateUser(ctxNew, user); err != nil {
+				log.GetLogger(ctx).Errorf("failed to create user, %s", err)
+				http.Error(w, ":(", http.StatusInternalServerError)
+
+				return
+			}
+		}
+
+		http.Redirect(w, req.WithContext(ctxNew), "/", http.StatusFound)
 	})
 }
