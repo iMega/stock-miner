@@ -62,9 +62,11 @@ func WithUserStorage(s broker.UserStorage) Option {
 	}
 }
 
-func WithDevMode(f bool) Option {
+func WithDevMode(s string) Option {
 	return func(p *SessionStore) {
-		p.devMode = f
+		if s == "true" {
+			p.devMode = true
+		}
 	}
 }
 
@@ -101,7 +103,7 @@ func (s *SessionStore) AppendHandlers(mux *http.ServeMux) {
 
 func (s *SessionStore) DefenceHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := s.db.Get(r, sessionName)
+		s, err := s.db.Get(r, sessionName)
 		if err != nil {
 			r.URL.Path = "/signin.htm"
 			next.ServeHTTP(w, r)
@@ -113,7 +115,9 @@ func (s *SessionStore) DefenceHandler(next http.Handler) http.Handler {
 			r.URL.Path = "/index.htm"
 		}
 
-		next.ServeHTTP(w, r)
+		email, _ := s.Values["email"].(string)
+		ctx := contexkey.WithEmail(r.Context(), email)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 

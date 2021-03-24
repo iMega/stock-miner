@@ -5,12 +5,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/containerd/containerd/log"
 	"github.com/imega/daemon"
 	"github.com/imega/daemon/configuring/env"
 	httpserver "github.com/imega/daemon/http-server"
 	"github.com/imega/daemon/logging"
 	"github.com/imega/stock-miner/broker"
+	"github.com/imega/stock-miner/graph"
+	"github.com/imega/stock-miner/graph/generated"
 	health_http "github.com/imega/stock-miner/health/http"
 	"github.com/imega/stock-miner/session"
 	"github.com/imega/stock-miner/storage"
@@ -21,7 +25,7 @@ import (
 const shutdownTimeout = 15 * time.Second
 const dbFilename = "./data.db"
 
-var devMode = false
+var devMode = "false"
 
 func main() {
 	logger := logging.New(logging.Config{
@@ -83,6 +87,18 @@ func main() {
 	if err != nil {
 		logger.Fatal(err)
 	}
+
+	srv := handler.NewDefaultServer(
+		generated.NewExecutableSchema(
+			generated.Config{
+				Resolvers: &graph.Resolver{
+					UserStorage: s,
+				}},
+		),
+	)
+
+	mux.Handle("/playground", playground.Handler("GraphQL playground", "/query"))
+	mux.Handle("/query", loggerToContext(logger, session.DefenceHandler(srv)))
 
 	b := broker.New(broker.WithStorage(s), broker.WithLogger(logger))
 
