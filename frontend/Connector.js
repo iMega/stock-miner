@@ -1,10 +1,17 @@
 import React from "react";
-import { ApolloProvider, ApolloClient, InMemoryCache } from "@apollo/client";
+import fetch from "cross-fetch";
+import {
+    ApolloProvider,
+    ApolloClient,
+    InMemoryCache,
+    HttpLink,
+} from "@apollo/client";
 
 const cache = new InMemoryCache();
 
 const client = new ApolloClient({
-    uri: "http://127.0.0.1/query",
+    ssrMode: false,
+    link: new HttpLink({ uri: "http://127.0.0.1/query", fetch }),
     cache,
     credentials: "same-origin",
 });
