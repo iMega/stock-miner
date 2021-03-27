@@ -5,18 +5,65 @@ import (
 	"fmt"
 	"net/http"
 
-	sdk "github.com/TinkoffCreditSystems/invest-openapi-go-sdk"
+	"github.com/imega/stock-miner/domain"
 	"github.com/imega/stock-miner/httpwareclient"
 )
 
-type Provider struct {
+// URL: https://query1.finance.yahoo.com/v10/finance/quoteSummary/
+
+type pricer struct {
 	URL string
 }
 
-func New() *Provider {
-	return &Provider{
-		URL: "https://query1.finance.yahoo.com/v10/finance/quoteSummary/",
+func New(URL string) domain.Pricer {
+	p := &pricer{URL: URL}
+
+	return p
+}
+
+func (p *pricer) GetPrice(
+	ctx context.Context,
+	in domain.PriceReceiptMessage,
+) (domain.PriceReceiptMessage, error) {
+	data := &response{}
+	result := domain.PriceReceiptMessage{
+		StockItem: in.StockItem,
+		Email:     in.Email,
 	}
+
+	req := &httpwareclient.SendIn{
+		Method:   http.MethodGet,
+		URL:      p.URL + in.Ticker + "?modules=price",
+		BodyRecv: data,
+		Coder:    httpwareclient.GetCoder(httpwareclient.JSON),
+	}
+
+	if err := httpwareclient.Send(ctx, req); err != nil {
+		return result, err
+	}
+
+	if data.QuoteSummary.Err != nil {
+		return result, fmt.Errorf(
+			"failed getting price, %s",
+			data.QuoteSummary.Err.Code,
+		)
+	}
+
+	if len(data.QuoteSummary.Result) == 0 {
+		return result, fmt.Errorf("failed getting price, %s", "empty")
+	}
+
+	response := data.QuoteSummary.Result[0]
+
+	price := response.Price.PreMarketPrice.Raw
+	if response.Price.MarketState == "REGULAR" {
+		price = response.Price.RegularMarketPrice.Raw
+	}
+
+	result.Price = price
+	result.MarketState = response.Price.MarketState
+
+	return result, nil
 }
 
 type response struct {
@@ -47,44 +94,4 @@ type priceRaw struct {
 type err struct {
 	Code        string `json:"code"`
 	Description string `json:"description"`
-}
-
-func (p *Provider) Price(
-	ctx context.Context,
-	i sdk.Instrument,
-) (sdk.RestOrderBook, error) {
-	data := &response{}
-
-	in := &httpwareclient.SendIn{
-		Method:   http.MethodGet,
-		URL:      p.URL + i.FIGI + "?modules=price",
-		BodyRecv: data,
-		Coder:    httpwareclient.GetCoder(httpwareclient.JSON),
-	}
-
-	if err := httpwareclient.Send(ctx, in); err != nil {
-		return sdk.RestOrderBook{}, err
-	}
-
-	if data.QuoteSummary.Err != nil {
-		return sdk.RestOrderBook{},
-			fmt.Errorf("failed getting price, %s", data.QuoteSummary.Err.Code)
-	}
-
-	if len(data.QuoteSummary.Result) == 0 {
-		return sdk.RestOrderBook{},
-			fmt.Errorf("failed getting price, %s", "empty")
-	}
-
-	result := data.QuoteSummary.Result[0]
-
-	price := result.Price.PreMarketPrice.Raw
-	if result.Price.MarketState == "REGULAR" {
-		price = result.Price.RegularMarketPrice.Raw
-	}
-
-	return sdk.RestOrderBook{
-		FIGI:      result.Price.Symbol,
-		LastPrice: price,
-	}, nil
 }
