@@ -6,13 +6,14 @@ package graph
 import (
 	"context"
 
-	"github.com/imega/stock-miner/broker"
+	"github.com/imega/stock-miner/domain"
 	"github.com/imega/stock-miner/graph/generated"
 	"github.com/imega/stock-miner/graph/model"
+	"github.com/imega/stock-miner/stats"
 )
 
 func (r *mutationResolver) AddStockItemApproved(ctx context.Context, item model.StockItemInput) (*model.StockItem, error) {
-	in := broker.StockItem{
+	in := domain.StockItem{
 		Ticker:           item.Ticker,
 		FIGI:             item.Figi,
 		AmountLimit:      item.AmountLimit,
@@ -28,6 +29,14 @@ func (r *mutationResolver) AddStockItemApproved(ctx context.Context, item model.
 		AmountLimit:      item.AmountLimit,
 		TransactionLimit: item.TransactionLimit,
 	}, nil
+}
+
+func (r *mutationResolver) GlobalMiningStop(ctx context.Context) (bool, error) {
+	return r.MainerController.Stop(), nil
+}
+
+func (r *mutationResolver) GlobalMiningStart(ctx context.Context) (bool, error) {
+	return r.MainerController.Start(), nil
 }
 
 func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
@@ -60,6 +69,20 @@ func (r *queryResolver) StockItemApproved(ctx context.Context) ([]*model.StockIt
 	}
 
 	return result, nil
+}
+
+func (r *queryResolver) MemStats(ctx context.Context) (*model.MemStats, error) {
+	m := stats.GetMemStats()
+
+	return &model.MemStats{
+		Alloc:      m.Alloc,
+		TotalAlloc: m.TotalAlloc,
+		Sys:        m.Sys,
+	}, nil
+}
+
+func (r *queryResolver) GlobalMiningStatus(ctx context.Context) (bool, error) {
+	return r.MainerController.Status(), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

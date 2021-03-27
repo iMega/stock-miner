@@ -8,14 +8,6 @@ import (
 	"testing"
 )
 
-type HttpClientMock struct {
-	Func func(req *http.Request) (*http.Response, error)
-}
-
-func (c *HttpClientMock) Do(req *http.Request) (*http.Response, error) {
-	return c.Func(req)
-}
-
 func helperHTTPClient(in RequestFunc, fixture []byte) {
 	httpClient = &HttpClientMock{
 		Func: func(req *http.Request) (*http.Response, error) {
@@ -34,12 +26,11 @@ func TestSend_ReturnsValidBody(t *testing.T) {
 	senddata := &sendData{}
 	recvdata := &recvData{}
 	httpClient = &HttpClientMock{
-		Func: func(req *http.Request) (*http.Response, error) {
+		Func: func(*http.Request) (*http.Response, error) {
 			buffer := bytes.NewBuffer([]byte(`{"value":"test"}`))
-			body := ioutil.NopCloser(buffer)
 
 			return &http.Response{
-				Body: body,
+				Body: ioutil.NopCloser(buffer),
 			}, nil
 		},
 	}

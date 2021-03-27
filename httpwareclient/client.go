@@ -68,6 +68,11 @@ func RetryTriceTripperwares() []httpwares.Tripperware {
 	return wares
 }
 
+// WithClient append tripperwares
+func WithClient(c HTTPClientDo) {
+	httpClient = c
+}
+
 // DefaultHTTPClient returns default http.Client with set timeouts
 func DefaultHTTPClient() *http.Client {
 	return &http.Client{
@@ -142,4 +147,12 @@ func Send(ctx context.Context, in *SendIn) error {
 	}
 
 	return nil
+}
+
+type HttpClientMock struct {
+	Func func(req *http.Request) (*http.Response, error)
+}
+
+func (c *HttpClientMock) Do(req *http.Request) (*http.Response, error) {
+	return c.Func(req)
 }

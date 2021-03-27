@@ -18,6 +18,7 @@ import (
 	health_http "github.com/imega/stock-miner/health/http"
 	"github.com/imega/stock-miner/session"
 	"github.com/imega/stock-miner/storage"
+	"github.com/imega/stock-miner/yahooprovider"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/sirupsen/logrus"
 )
@@ -88,20 +89,26 @@ func main() {
 		logger.Fatal(err)
 	}
 
+	yfURL, _ := env.Read("YAHOO_FINANCE_URL")
+	b := broker.New(
+		broker.WithLogger(logger),
+		broker.WithStockStorage(s),
+		broker.WithPricer(yahooprovider.New(yfURL)),
+	)
+
 	srv := handler.NewDefaultServer(
 		generated.NewExecutableSchema(
 			generated.Config{
 				Resolvers: &graph.Resolver{
-					UserStorage:  s,
-					StockStorage: s,
+					UserStorage:      s,
+					StockStorage:     s,
+					MainerController: b,
 				}},
 		),
 	)
 
 	mux.Handle("/playground", playground.Handler("GraphQL playground", "/query"))
 	mux.Handle("/query", loggerToContext(logger, session.DefenceHandler(srv)))
-
-	b := broker.New(broker.WithStorage(s), broker.WithLogger(logger))
 
 	d.RegisterShutdownFunc(
 		b.ShutdownFunc(),

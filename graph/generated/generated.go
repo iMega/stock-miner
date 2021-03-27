@@ -43,13 +43,23 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	MemStats struct {
+		Alloc      func(childComplexity int) int
+		Sys        func(childComplexity int) int
+		TotalAlloc func(childComplexity int) int
+	}
+
 	Mutation struct {
 		AddStockItemApproved func(childComplexity int, item model.StockItemInput) int
+		GlobalMiningStart    func(childComplexity int) int
+		GlobalMiningStop     func(childComplexity int) int
 	}
 
 	Query struct {
-		StockItemApproved func(childComplexity int) int
-		User              func(childComplexity int) int
+		GlobalMiningStatus func(childComplexity int) int
+		MemStats           func(childComplexity int) int
+		StockItemApproved  func(childComplexity int) int
+		User               func(childComplexity int) int
 	}
 
 	StockItem struct {
@@ -68,10 +78,14 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	AddStockItemApproved(ctx context.Context, item model.StockItemInput) (*model.StockItem, error)
+	GlobalMiningStop(ctx context.Context) (bool, error)
+	GlobalMiningStart(ctx context.Context) (bool, error)
 }
 type QueryResolver interface {
 	User(ctx context.Context) (*model.User, error)
 	StockItemApproved(ctx context.Context) ([]*model.StockItem, error)
+	MemStats(ctx context.Context) (*model.MemStats, error)
+	GlobalMiningStatus(ctx context.Context) (bool, error)
 }
 
 type executableSchema struct {
@@ -89,6 +103,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "MemStats.alloc":
+		if e.complexity.MemStats.Alloc == nil {
+			break
+		}
+
+		return e.complexity.MemStats.Alloc(childComplexity), true
+
+	case "MemStats.sys":
+		if e.complexity.MemStats.Sys == nil {
+			break
+		}
+
+		return e.complexity.MemStats.Sys(childComplexity), true
+
+	case "MemStats.totalAlloc":
+		if e.complexity.MemStats.TotalAlloc == nil {
+			break
+		}
+
+		return e.complexity.MemStats.TotalAlloc(childComplexity), true
+
 	case "Mutation.addStockItemApproved":
 		if e.complexity.Mutation.AddStockItemApproved == nil {
 			break
@@ -100,6 +135,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.AddStockItemApproved(childComplexity, args["item"].(model.StockItemInput)), true
+
+	case "Mutation.globalMiningStart":
+		if e.complexity.Mutation.GlobalMiningStart == nil {
+			break
+		}
+
+		return e.complexity.Mutation.GlobalMiningStart(childComplexity), true
+
+	case "Mutation.globalMiningStop":
+		if e.complexity.Mutation.GlobalMiningStop == nil {
+			break
+		}
+
+		return e.complexity.Mutation.GlobalMiningStop(childComplexity), true
+
+	case "Query.globalMiningStatus":
+		if e.complexity.Query.GlobalMiningStatus == nil {
+			break
+		}
+
+		return e.complexity.Query.GlobalMiningStatus(childComplexity), true
+
+	case "Query.memStats":
+		if e.complexity.Query.MemStats == nil {
+			break
+		}
+
+		return e.complexity.Query.MemStats(childComplexity), true
 
 	case "Query.stockItemApproved":
 		if e.complexity.Query.StockItemApproved == nil {
@@ -228,13 +291,19 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "graph/schema.graphqls", Input: `type Query {
+	{Name: "graph/schema.graphqls", Input: `# go run github.com/99designs/gqlgen generate
+type Query {
     user: User!
     stockItemApproved: [StockItem]
+    memStats: MemStats!
+    globalMiningStatus: Boolean!
 }
 
 type Mutation {
     addStockItemApproved(item: StockItemInput!): StockItem!
+
+    globalMiningStop: Boolean!
+    globalMiningStart: Boolean!
 }
 
 type User {
@@ -255,6 +324,12 @@ input StockItemInput {
     figi: String!
     amountLimit: Float!
     transactionLimit: Int!
+}
+
+type MemStats {
+    alloc: String!
+    totalAlloc: String!
+    sys: String!
 }
 `, BuiltIn: false},
 }
@@ -332,6 +407,111 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _MemStats_alloc(ctx context.Context, field graphql.CollectedField, obj *model.MemStats) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MemStats",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Alloc, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MemStats_totalAlloc(ctx context.Context, field graphql.CollectedField, obj *model.MemStats) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MemStats",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalAlloc, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MemStats_sys(ctx context.Context, field graphql.CollectedField, obj *model.MemStats) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MemStats",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sys, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_addStockItemApproved(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -372,6 +552,76 @@ func (ec *executionContext) _Mutation_addStockItemApproved(ctx context.Context, 
 	res := resTmp.(*model.StockItem)
 	fc.Result = res
 	return ec.marshalNStockItem2ᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐStockItem(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_globalMiningStop(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().GlobalMiningStop(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_globalMiningStart(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().GlobalMiningStart(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -439,6 +689,76 @@ func (ec *executionContext) _Query_stockItemApproved(ctx context.Context, field 
 	res := resTmp.([]*model.StockItem)
 	fc.Result = res
 	return ec.marshalOStockItem2ᚕᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐStockItem(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_memStats(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MemStats(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MemStats)
+	fc.Result = res
+	return ec.marshalNMemStats2ᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐMemStats(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_globalMiningStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GlobalMiningStatus(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1890,6 +2210,43 @@ func (ec *executionContext) unmarshalInputStockItemInput(ctx context.Context, ob
 
 // region    **************************** object.gotpl ****************************
 
+var memStatsImplementors = []string{"MemStats"}
+
+func (ec *executionContext) _MemStats(ctx context.Context, sel ast.SelectionSet, obj *model.MemStats) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, memStatsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MemStats")
+		case "alloc":
+			out.Values[i] = ec._MemStats_alloc(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "totalAlloc":
+			out.Values[i] = ec._MemStats_totalAlloc(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "sys":
+			out.Values[i] = ec._MemStats_sys(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -1907,6 +2264,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = graphql.MarshalString("Mutation")
 		case "addStockItemApproved":
 			out.Values[i] = ec._Mutation_addStockItemApproved(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "globalMiningStop":
+			out.Values[i] = ec._Mutation_globalMiningStop(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "globalMiningStart":
+			out.Values[i] = ec._Mutation_globalMiningStart(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -1959,6 +2326,34 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_stockItemApproved(ctx, field)
+				return res
+			})
+		case "memStats":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_memStats(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "globalMiningStatus":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_globalMiningStatus(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		case "__type":
@@ -2352,6 +2747,20 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNMemStats2githubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐMemStats(ctx context.Context, sel ast.SelectionSet, v model.MemStats) graphql.Marshaler {
+	return ec._MemStats(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMemStats2ᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐMemStats(ctx context.Context, sel ast.SelectionSet, v *model.MemStats) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._MemStats(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNStockItem2githubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐStockItem(ctx context.Context, sel ast.SelectionSet, v model.StockItem) graphql.Marshaler {

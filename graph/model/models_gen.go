@@ -2,6 +2,12 @@
 
 package model
 
+type MemStats struct {
+	Alloc      string `json:"alloc"`
+	TotalAlloc string `json:"totalAlloc"`
+	Sys        string `json:"sys"`
+}
+
 type StockItem struct {
 	Ticker           string  `json:"ticker"`
 	Figi             string  `json:"figi"`

@@ -1,69 +1,85 @@
 package broker
 
 import (
-	"context"
-
-	sdk "github.com/TinkoffCreditSystems/invest-openapi-go-sdk"
 	"github.com/imega/daemon"
-	"github.com/imega/stock-miner/yahooprovider"
+	"github.com/imega/stock-miner/domain"
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 )
 
 // Broker is the main struct
 type Broker struct {
-	storage    Storage
-	logger     logrus.FieldLogger
-	isShutdown bool
-}
-
-type Storage interface {
-	AddMarketPrice(context.Context, sdk.RestOrderBook) error
+	StockStorage  domain.StockStorage
+	Pricer        domain.Pricer
+	logger        logrus.FieldLogger
+	isShutdown    bool
+	cron          *cron.Cron
+	cronIsRunning bool
 }
 
 // New creates a new instance of Broker
 func New(opts ...Option) *Broker {
-	b := &Broker{}
+	b := &Broker{
+		cron: cron.New(),
+	}
 
 	for _, opt := range opts {
 		opt(b)
 	}
 
-	l := &logger{log: b.logger}
+	// wp := workerpool.New(5)
+	// task := make(chan domain.PriceReceiptMessageOut)
 
-	c := cron.New()
+	// go func() error {
+	// 	for {
+	// 		select {
+	// 		case t, ok := <-task:
+	// 			if !ok {
+	// 				return nil
+	// 			}
 
-	delay := cron.DelayIfStillRunning(l)
+	// 			wp.Submit(func() {
+	// 				// fmt.Printf("--START----%s-%s\n", t.Ticker, t.MarketState)
+	// 				<-time.After(5 * time.Second)
+	// 				fmt.Printf("--END------%s-%s\n", t.Ticker, t.MarketState)
+	// 			})
+	// 		}
+	// 	}
+	// }()
 
-	yProvider := yahooprovider.New()
+	b.run()
 
-	c.AddJob("@every 1s", delay(cron.FuncJob(func() {
-		p, err := yProvider.Price(context.Background(), sdk.Instrument{
-			FIGI: "AAPL",
-		})
-		if err != nil {
-			b.logger.Errorf("failed task, %s", err)
-		}
+	// b.cron.AddJob("@every 1s", delay(cron.FuncJob(func() {
 
-		if err := b.storage.AddMarketPrice(context.Background(), p); err != nil {
-			b.logger.Errorf("failed to add price, %s", err)
-		}
+	// 	i++
 
-		b.logger.Infof("======= %#v", p)
-	})))
+	// 	if 20 == wp.WaitingQueueSize() {
+	// 		c.Stop()
+	// 		<-time.After(10 * time.Second)
+	// 		c.Start()
+	// 	}
 
-	// c.Start()
+	// 	fmt.Printf("-------------------%d----------%d\n", i, wp.WaitingQueueSize())
+
+	// 	b.StockStorage.StockItemApprovedAll(context.Background(), task)
+	// 	// p, err := yProvider.Price(context.Background(), sdk.Instrument{
+	// 	// 	FIGI: "AAPL",
+	// 	// })
+	// 	// if err != nil {
+	// 	// 	b.logger.Errorf("failed task, %s", err)
+	// 	// }
+
+	// 	// if err := b.storage.AddMarketPrice(context.Background(), p); err != nil {
+	// 	// 	b.logger.Errorf("failed to add price, %s", err)
+	// 	// }
+	// 	// task <- helpers.RandomInt(1, 70)
+	// 	// b.logger.Infof("======= %#v", p)
+	// })))
 
 	return b
 }
 
 type Option func(b *Broker)
-
-func WithStorage(s Storage) Option {
-	return func(b *Broker) {
-		b.storage = s
-	}
-}
 
 func WithLogger(l logrus.FieldLogger) Option {
 	return func(b *Broker) {
@@ -74,5 +90,17 @@ func WithLogger(l logrus.FieldLogger) Option {
 func (b *Broker) ShutdownFunc() daemon.ShutdownFunc {
 	return func() {
 		b.isShutdown = true
+	}
+}
+
+func WithStockStorage(s domain.StockStorage) Option {
+	return func(b *Broker) {
+		b.StockStorage = s
+	}
+}
+
+func WithPricer(p domain.Pricer) Option {
+	return func(b *Broker) {
+		b.Pricer = p
 	}
 }

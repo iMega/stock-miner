@@ -8,8 +8,8 @@ import (
 	"github.com/containerd/containerd/log"
 	"github.com/dghubble/gologin/v2"
 	"github.com/dghubble/sessions"
-	"github.com/imega/stock-miner/broker"
 	"github.com/imega/stock-miner/contexkey"
+	"github.com/imega/stock-miner/domain"
 	"github.com/imega/stock-miner/session/google"
 )
 
@@ -23,7 +23,7 @@ type SessionStore struct {
 	ClientSecret string
 	CallbackURL  string
 	db           *sessions.CookieStore
-	userDB       broker.UserStorage
+	userDB       domain.UserStorage
 	isDevMode    bool
 }
 
@@ -59,7 +59,7 @@ func WithCallbackURL(s string) Option {
 	}
 }
 
-func WithUserStorage(s broker.UserStorage) Option {
+func WithUserStorage(s domain.UserStorage) Option {
 	return func(p *SessionStore) {
 		p.userDB = s
 	}

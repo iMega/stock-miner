@@ -1,10 +1,16 @@
+# go run github.com/99designs/gqlgen generate
 type Query {
     user: User!
     stockItemApproved: [StockItem]
+    memStats: MemStats!
+    globalMiningStatus: Boolean!
 }
 
 type Mutation {
     addStockItemApproved(item: StockItemInput!): StockItem!
+
+    globalMiningStop: Boolean!
+    globalMiningStart: Boolean!
 }
 
 type User {
@@ -25,4 +31,10 @@ input StockItemInput {
     figi: String!
     amountLimit: Float!
     transactionLimit: Int!
+}
+
+type MemStats {
+    alloc: String!
+    totalAlloc: String!
+    sys: String!
 }

@@ -1,8 +1,9 @@
 package graph
 
-import "github.com/imega/stock-miner/broker"
+import "github.com/imega/stock-miner/domain"
 
 type Resolver struct {
-	UserStorage  broker.UserStorage
-	StockStorage broker.StockStorage
+	UserStorage      domain.UserStorage
+	StockStorage     domain.StockStorage
+	MainerController domain.MainerController
 }

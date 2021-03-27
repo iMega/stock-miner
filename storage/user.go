@@ -6,25 +6,25 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/imega/stock-miner/broker"
 	"github.com/imega/stock-miner/contexkey"
+	"github.com/imega/stock-miner/domain"
 	sqlTool "github.com/imega/stock-miner/sql"
 )
 
-func (s *Storage) GetUser(ctx context.Context) (broker.User, error) {
+func (s *Storage) GetUser(ctx context.Context) (domain.User, error) {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return broker.User{}, fmt.Errorf("failed to extract user from context")
+		return domain.User{}, fmt.Errorf("failed to extract user from context")
 	}
 
 	q := `select name, avatar, role from user`
 	row := s.db.QueryRowContext(ctx, q, email)
 	var name, avatar, role string
 	if err := row.Scan(&name, &avatar, &role); err != nil {
-		return broker.User{}, fmt.Errorf("failed getting user")
+		return domain.User{}, fmt.Errorf("failed getting user")
 	}
 
-	return broker.User{
+	return domain.User{
 		Email:  email,
 		Name:   name,
 		Avatar: avatar,
@@ -32,7 +32,7 @@ func (s *Storage) GetUser(ctx context.Context) (broker.User, error) {
 	}, nil
 }
 
-func (s *Storage) CreateUser(ctx context.Context, user broker.User) error {
+func (s *Storage) CreateUser(ctx context.Context, user domain.User) error {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("failed to extract user from context")
@@ -55,7 +55,7 @@ func (s *Storage) CreateUser(ctx context.Context, user broker.User) error {
 	})
 }
 
-func (s *Storage) RemoveUser(ctx context.Context, user broker.User) error {
+func (s *Storage) RemoveUser(ctx context.Context, user domain.User) error {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
 		return fmt.Errorf("failed to extract user from context")

@@ -6,7 +6,7 @@ import (
 
 	"github.com/dghubble/gologin/v2"
 	"github.com/dghubble/gologin/v2/google"
-	"github.com/imega/stock-miner/broker"
+	"github.com/imega/stock-miner/domain"
 	"golang.org/x/oauth2"
 	googleOAuth2 "golang.org/x/oauth2/google"
 	googleApi "google.golang.org/api/oauth2/v2"
@@ -39,13 +39,13 @@ func GoogleSignInHandlers(
 	return loginHandler, callbackHandler
 }
 
-func UserFromContext(ctx context.Context) (broker.User, error) {
+func UserFromContext(ctx context.Context) (domain.User, error) {
 	googleUser, err := google.UserFromContext(ctx)
 	if err != nil {
-		return broker.User{}, err
+		return domain.User{}, err
 	}
 
-	return broker.User{
+	return domain.User{
 		Email:  googleUser.Email,
 		ID:     googleUser.Id,
 		Name:   googleUser.Name,

@@ -11,6 +11,7 @@ require (
 	github.com/containerd/fifo v0.0.0-20210316144830-115abcc95a1d // indirect
 	github.com/dghubble/gologin/v2 v2.3.0
 	github.com/dghubble/sessions v0.1.0
+	github.com/gammazero/workerpool v1.1.1
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
@@ -30,7 +31,7 @@ require (
 	golang.org/x/net v0.0.0-20210316092652-d523dce5a7f4 // indirect
 	golang.org/x/oauth2 v0.0.0-20210313182246-cd4f82c27b84
 	golang.org/x/sys v0.0.0-20210320140829-1e4c9ba3b0c4 // indirect
-	golang.org/x/text v0.3.5 // indirect
+	golang.org/x/text v0.3.5
 	google.golang.org/api v0.42.0
 	google.golang.org/genproto v0.0.0-20210319143718-93e7006c17a6 // indirect
 	google.golang.org/grpc v1.36.0 // indirect
