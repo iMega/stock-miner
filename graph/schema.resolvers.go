@@ -85,6 +85,20 @@ func (r *queryResolver) GlobalMiningStatus(ctx context.Context) (bool, error) {
 	return r.MainerController.Status(), nil
 }
 
+func (r *queryResolver) MarketStockItems(ctx context.Context) ([]*model.StockItem, error) {
+	return []*model.StockItem{
+		{
+			Ticker:            "IDCC",
+			Figi:              "BBG000HLJ7M4",
+			Isin:              "US45867G1013",
+			MinPriceIncrement: 0.01,
+			Lot:               1,
+			Currency:          "USD",
+			Name:              "InterDigItal Inc",
+		},
+	}, nil
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

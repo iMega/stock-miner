@@ -23,19 +23,12 @@ func (b *Broker) makePricerChannel(in, out chan domain.PriceReceiptMessage) {
 	wp := workerpool.New(5)
 
 	go func() {
-		for {
-			select {
-			case t, ok := <-in:
-				if !ok {
-					return
-				}
-
-				wp.Submit(func() {
-					res, err := b.Pricer.GetPrice(context.Background(), t)
-					res.Error = err
-					out <- res
-				})
-			}
+		for t := range in {
+			wp.Submit(func() {
+				res, err := b.Pricer.GetPrice(context.Background(), t)
+				res.Error = err
+				out <- res
+			})
 		}
 	}()
 }

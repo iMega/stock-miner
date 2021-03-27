@@ -57,16 +57,22 @@ type ComplexityRoot struct {
 
 	Query struct {
 		GlobalMiningStatus func(childComplexity int) int
+		MarketStockItems   func(childComplexity int) int
 		MemStats           func(childComplexity int) int
 		StockItemApproved  func(childComplexity int) int
 		User               func(childComplexity int) int
 	}
 
 	StockItem struct {
-		AmountLimit      func(childComplexity int) int
-		Figi             func(childComplexity int) int
-		Ticker           func(childComplexity int) int
-		TransactionLimit func(childComplexity int) int
+		AmountLimit       func(childComplexity int) int
+		Currency          func(childComplexity int) int
+		Figi              func(childComplexity int) int
+		Isin              func(childComplexity int) int
+		Lot               func(childComplexity int) int
+		MinPriceIncrement func(childComplexity int) int
+		Name              func(childComplexity int) int
+		Ticker            func(childComplexity int) int
+		TransactionLimit  func(childComplexity int) int
 	}
 
 	User struct {
@@ -86,6 +92,7 @@ type QueryResolver interface {
 	StockItemApproved(ctx context.Context) ([]*model.StockItem, error)
 	MemStats(ctx context.Context) (*model.MemStats, error)
 	GlobalMiningStatus(ctx context.Context) (bool, error)
+	MarketStockItems(ctx context.Context) ([]*model.StockItem, error)
 }
 
 type executableSchema struct {
@@ -157,6 +164,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GlobalMiningStatus(childComplexity), true
 
+	case "Query.marketStockItems":
+		if e.complexity.Query.MarketStockItems == nil {
+			break
+		}
+
+		return e.complexity.Query.MarketStockItems(childComplexity), true
+
 	case "Query.memStats":
 		if e.complexity.Query.MemStats == nil {
 			break
@@ -185,12 +199,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.StockItem.AmountLimit(childComplexity), true
 
+	case "StockItem.currency":
+		if e.complexity.StockItem.Currency == nil {
+			break
+		}
+
+		return e.complexity.StockItem.Currency(childComplexity), true
+
 	case "StockItem.figi":
 		if e.complexity.StockItem.Figi == nil {
 			break
 		}
 
 		return e.complexity.StockItem.Figi(childComplexity), true
+
+	case "StockItem.isin":
+		if e.complexity.StockItem.Isin == nil {
+			break
+		}
+
+		return e.complexity.StockItem.Isin(childComplexity), true
+
+	case "StockItem.lot":
+		if e.complexity.StockItem.Lot == nil {
+			break
+		}
+
+		return e.complexity.StockItem.Lot(childComplexity), true
+
+	case "StockItem.minPriceIncrement":
+		if e.complexity.StockItem.MinPriceIncrement == nil {
+			break
+		}
+
+		return e.complexity.StockItem.MinPriceIncrement(childComplexity), true
+
+	case "StockItem.name":
+		if e.complexity.StockItem.Name == nil {
+			break
+		}
+
+		return e.complexity.StockItem.Name(childComplexity), true
 
 	case "StockItem.ticker":
 		if e.complexity.StockItem.Ticker == nil {
@@ -297,6 +346,7 @@ type Query {
     stockItemApproved: [StockItem]
     memStats: MemStats!
     globalMiningStatus: Boolean!
+    marketStockItems: [StockItem]
 }
 
 type Mutation {
@@ -315,6 +365,13 @@ type User {
 type StockItem {
     ticker: String!
     figi: String!
+
+    isin: String!
+    minPriceIncrement: Float!
+    lot: Int!
+    currency: String!
+    name: String!
+
     amountLimit: Float!
     transactionLimit: Int!
 }
@@ -761,6 +818,38 @@ func (ec *executionContext) _Query_globalMiningStatus(ctx context.Context, field
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_marketStockItems(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MarketStockItems(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.StockItem)
+	fc.Result = res
+	return ec.marshalOStockItem2ᚕᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐStockItem(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -886,6 +975,181 @@ func (ec *executionContext) _StockItem_figi(ctx context.Context, field graphql.C
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Figi, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StockItem_isin(ctx context.Context, field graphql.CollectedField, obj *model.StockItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StockItem",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Isin, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StockItem_minPriceIncrement(ctx context.Context, field graphql.CollectedField, obj *model.StockItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StockItem",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MinPriceIncrement, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StockItem_lot(ctx context.Context, field graphql.CollectedField, obj *model.StockItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StockItem",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Lot, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StockItem_currency(ctx context.Context, field graphql.CollectedField, obj *model.StockItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StockItem",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Currency, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StockItem_name(ctx context.Context, field graphql.CollectedField, obj *model.StockItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StockItem",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2356,6 +2620,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "marketStockItems":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_marketStockItems(ctx, field)
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -2389,6 +2664,31 @@ func (ec *executionContext) _StockItem(ctx context.Context, sel ast.SelectionSet
 			}
 		case "figi":
 			out.Values[i] = ec._StockItem_figi(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "isin":
+			out.Values[i] = ec._StockItem_isin(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "minPriceIncrement":
+			out.Values[i] = ec._StockItem_minPriceIncrement(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lot":
+			out.Values[i] = ec._StockItem_lot(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "currency":
+			out.Values[i] = ec._StockItem_currency(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._StockItem_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

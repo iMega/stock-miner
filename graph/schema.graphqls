@@ -4,6 +4,7 @@ type Query {
     stockItemApproved: [StockItem]
     memStats: MemStats!
     globalMiningStatus: Boolean!
+    marketStockItems: [StockItem]
 }
 
 type Mutation {
@@ -22,6 +23,13 @@ type User {
 type StockItem {
     ticker: String!
     figi: String!
+
+    isin: String!
+    minPriceIncrement: Float!
+    lot: Int!
+    currency: String!
+    name: String!
+
     amountLimit: Float!
     transactionLimit: Int!
 }

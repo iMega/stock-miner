@@ -20,6 +20,7 @@ import (
 	"github.com/imega/stock-miner/storage"
 	"github.com/imega/stock-miner/yahooprovider"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -107,8 +108,16 @@ func main() {
 		),
 	)
 
+	// corsOptions := cors.Options{}
+
 	mux.Handle("/playground", playground.Handler("GraphQL playground", "/query"))
-	mux.Handle("/query", loggerToContext(logger, session.DefenceHandler(srv)))
+	mux.Handle(
+		"/query",
+		loggerToContext(
+			logger,
+			cors.AllowAll().Handler(session.DefenceHandler(srv)),
+		),
+	)
 
 	d.RegisterShutdownFunc(
 		b.ShutdownFunc(),

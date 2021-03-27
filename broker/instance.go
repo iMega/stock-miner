@@ -27,54 +27,7 @@ func New(opts ...Option) *Broker {
 		opt(b)
 	}
 
-	// wp := workerpool.New(5)
-	// task := make(chan domain.PriceReceiptMessageOut)
-
-	// go func() error {
-	// 	for {
-	// 		select {
-	// 		case t, ok := <-task:
-	// 			if !ok {
-	// 				return nil
-	// 			}
-
-	// 			wp.Submit(func() {
-	// 				// fmt.Printf("--START----%s-%s\n", t.Ticker, t.MarketState)
-	// 				<-time.After(5 * time.Second)
-	// 				fmt.Printf("--END------%s-%s\n", t.Ticker, t.MarketState)
-	// 			})
-	// 		}
-	// 	}
-	// }()
-
 	b.run()
-
-	// b.cron.AddJob("@every 1s", delay(cron.FuncJob(func() {
-
-	// 	i++
-
-	// 	if 20 == wp.WaitingQueueSize() {
-	// 		c.Stop()
-	// 		<-time.After(10 * time.Second)
-	// 		c.Start()
-	// 	}
-
-	// 	fmt.Printf("-------------------%d----------%d\n", i, wp.WaitingQueueSize())
-
-	// 	b.StockStorage.StockItemApprovedAll(context.Background(), task)
-	// 	// p, err := yProvider.Price(context.Background(), sdk.Instrument{
-	// 	// 	FIGI: "AAPL",
-	// 	// })
-	// 	// if err != nil {
-	// 	// 	b.logger.Errorf("failed task, %s", err)
-	// 	// }
-
-	// 	// if err := b.storage.AddMarketPrice(context.Background(), p); err != nil {
-	// 	// 	b.logger.Errorf("failed to add price, %s", err)
-	// 	// }
-	// 	// task <- helpers.RandomInt(1, 70)
-	// 	// b.logger.Infof("======= %#v", p)
-	// })))
 
 	return b
 }
