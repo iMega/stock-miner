@@ -9,15 +9,15 @@ type MemStats struct {
 }
 
 type StockItem struct {
-	Ticker            string  `json:"ticker"`
-	Figi              string  `json:"figi"`
-	Isin              string  `json:"isin"`
-	MinPriceIncrement float64 `json:"minPriceIncrement"`
-	Lot               int     `json:"lot"`
-	Currency          string  `json:"currency"`
-	Name              string  `json:"name"`
-	AmountLimit       float64 `json:"amountLimit"`
-	TransactionLimit  int     `json:"transactionLimit"`
+	Ticker            string   `json:"ticker"`
+	Figi              string   `json:"figi"`
+	Isin              *string  `json:"isin"`
+	MinPriceIncrement *float64 `json:"minPriceIncrement"`
+	Lot               *int     `json:"lot"`
+	Currency          *string  `json:"currency"`
+	Name              *string  `json:"name"`
+	AmountLimit       float64  `json:"amountLimit"`
+	TransactionLimit  int      `json:"transactionLimit"`
 }
 
 type StockItemInput struct {

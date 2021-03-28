@@ -8,7 +8,7 @@ type Query {
 }
 
 type Mutation {
-    addStockItemApproved(item: StockItemInput!): StockItem!
+    addStockItemApproved(items: [StockItemInput!]!): Boolean!
 
     globalMiningStop: Boolean!
     globalMiningStart: Boolean!
@@ -24,11 +24,11 @@ type StockItem {
     ticker: String!
     figi: String!
 
-    isin: String!
-    minPriceIncrement: Float!
-    lot: Int!
-    currency: String!
-    name: String!
+    isin: String
+    minPriceIncrement: Float
+    lot: Int
+    currency: String
+    name: String
 
     amountLimit: Float!
     transactionLimit: Int!

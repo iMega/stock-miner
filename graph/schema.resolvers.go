@@ -12,23 +12,20 @@ import (
 	"github.com/imega/stock-miner/stats"
 )
 
-func (r *mutationResolver) AddStockItemApproved(ctx context.Context, item model.StockItemInput) (*model.StockItem, error) {
-	in := domain.StockItem{
-		Ticker:           item.Ticker,
-		FIGI:             item.Figi,
-		AmountLimit:      item.AmountLimit,
-		TransactionLimit: item.TransactionLimit,
-	}
-	if err := r.StockStorage.AddStockItemApproved(ctx, in); err != nil {
-		return nil, err
+func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error) {
+	for _, item := range items {
+		in := domain.StockItem{
+			Ticker:           item.Ticker,
+			FIGI:             item.Figi,
+			AmountLimit:      item.AmountLimit,
+			TransactionLimit: item.TransactionLimit,
+		}
+		if err := r.StockStorage.AddStockItemApproved(ctx, in); err != nil {
+			return false, err
+		}
 	}
 
-	return &model.StockItem{
-		Ticker:           item.Ticker,
-		Figi:             item.Figi,
-		AmountLimit:      item.AmountLimit,
-		TransactionLimit: item.TransactionLimit,
-	}, nil
+	return true, nil
 }
 
 func (r *mutationResolver) GlobalMiningStop(ctx context.Context) (bool, error) {
@@ -86,17 +83,25 @@ func (r *queryResolver) GlobalMiningStatus(ctx context.Context) (bool, error) {
 }
 
 func (r *queryResolver) MarketStockItems(ctx context.Context) ([]*model.StockItem, error) {
-	return []*model.StockItem{
-		{
-			Ticker:            "IDCC",
-			Figi:              "BBG000HLJ7M4",
-			Isin:              "US45867G1013",
-			MinPriceIncrement: 0.01,
-			Lot:               1,
-			Currency:          "USD",
-			Name:              "InterDigItal Inc",
-		},
-	}, nil
+	items, err := r.Market.ListStockItems(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*model.StockItem
+	for _, item := range items {
+		result = append(result, &model.StockItem{
+			Ticker:            item.Ticker,
+			Figi:              item.FIGI,
+			Isin:              &item.ISIN,
+			MinPriceIncrement: &item.MinPriceIncrement,
+			Lot:               &item.Lot,
+			Currency:          &item.Currency,
+			Name:              &item.Name,
+		})
+	}
+
+	return result, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
