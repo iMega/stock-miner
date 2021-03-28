@@ -96,7 +96,7 @@ func Send(ctx context.Context, in *SendIn) error {
 		return fmt.Errorf("failed to encode request body, %s", err)
 	}
 
-	req, err := http.NewRequest(in.Method, in.URL, reader)
+	req, err := http.NewRequestWithContext(ctx, in.Method, in.URL, reader)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func Send(ctx context.Context, in *SendIn) error {
 		httpClient = httpwares.WrapClient(DefaultHTTPClient(), RetryTriceTripperwares()...)
 	}
 
-	r, err := httpClient.Do(req.WithContext(ctx))
+	r, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}

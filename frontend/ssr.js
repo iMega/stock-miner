@@ -47,6 +47,9 @@ const r = renderToStringWithData(
     );
 });
 
+// <script src="https://cdn.jsdelivr.net/npm/cross-fetch@3.1.2/dist/browser-ponyfill.min.js" />
+// <script src="https://cdn.jsdelivr.net/npm/@apollo/client@3.3.13/apollo-client.cjs.min.js" />
+
 r.then((res) => {
     fs.writeFile("./build/index.htm", `<!DOCTYPE html>${res}`, (err) => {
         if (err) {

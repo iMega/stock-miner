@@ -16,6 +16,7 @@ import (
 	"github.com/imega/stock-miner/graph"
 	"github.com/imega/stock-miner/graph/generated"
 	health_http "github.com/imega/stock-miner/health/http"
+	"github.com/imega/stock-miner/market"
 	"github.com/imega/stock-miner/session"
 	"github.com/imega/stock-miner/storage"
 	"github.com/imega/stock-miner/yahooprovider"
@@ -97,6 +98,10 @@ func main() {
 		broker.WithPricer(yahooprovider.New(yfURL)),
 	)
 
+	marketURL, _ := env.Read("MARKET_TINKOFF_URL")
+	marketToken, _ := env.Read("MARKET_TINKOFF_TOKEN")
+	marketInstance := market.New(marketURL, marketToken)
+
 	srv := handler.NewDefaultServer(
 		generated.NewExecutableSchema(
 			generated.Config{
@@ -104,6 +109,7 @@ func main() {
 					UserStorage:      s,
 					StockStorage:     s,
 					MainerController: b,
+					Market:           marketInstance,
 				}},
 		),
 	)

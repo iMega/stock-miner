@@ -26,6 +26,8 @@ module.exports = {
     externals: {
         react: "React",
         "react-dom": "ReactDOM",
+        // "cross-fetch": "cross-fetch",
+        // "@apollo/client": "@apollo/client",
     },
     module: {
         rules: [
