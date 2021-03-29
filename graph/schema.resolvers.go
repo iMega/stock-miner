@@ -5,6 +5,8 @@ package graph
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/imega/stock-miner/domain"
 	"github.com/imega/stock-miner/graph/generated"
@@ -104,11 +106,43 @@ func (r *queryResolver) MarketStockItems(ctx context.Context) ([]*model.StockIte
 	return result, nil
 }
 
+func (r *subscriptionResolver) MemStats(ctx context.Context) (<-chan *model.MemStats, error) {
+	ch := make(chan *model.MemStats)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				fmt.Println("========= MemStats:ctx.Don")
+				close(ch)
+				return
+
+			case <-time.After(1 * time.Second):
+				m := stats.GetMemStats()
+
+				ch <- &model.MemStats{
+					Alloc:      m.Alloc,
+					TotalAlloc: m.TotalAlloc,
+					Sys:        m.Sys,
+				}
+
+				fmt.Println("=========")
+			}
+		}
+	}()
+
+	return ch, nil
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// Subscription returns generated.SubscriptionResolver implementation.
+func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
+
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }
