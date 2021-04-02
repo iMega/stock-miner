@@ -3,7 +3,7 @@ import { PageHeader, Row, Col, Table, Input, Space, Button } from "antd";
 import { useQuery, useMutation, gql } from "@apollo/client";
 
 import Message from "../Message";
-import Link from "./Link";
+import Link from "../StockItemLink";
 
 const MarketStockItemsND = gql`
     query MarketStockItems {

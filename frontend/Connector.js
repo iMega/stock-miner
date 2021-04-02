@@ -3,15 +3,46 @@ import fetch from "cross-fetch";
 import {
     ApolloProvider,
     ApolloClient,
+    ApolloLink,
     InMemoryCache,
     HttpLink,
+    split,
 } from "@apollo/client";
+import { getMainDefinition } from "@apollo/client/utilities";
+import { WebSocketLink } from "@apollo/client/link/ws";
 
 const cache = new InMemoryCache();
 
+const wsLink =
+    process.browser && process.env.NODE_ENV === "production"
+        ? new WebSocketLink({
+              uri: "ws://127.0.0.1/query",
+              options: {
+                  reconnect: true,
+              },
+          })
+        : null;
+
+const httpLink = new HttpLink({ uri: "http://127.0.0.1/query", fetch });
+
+const splitLink =
+    process.browser && process.env.NODE_ENV === "production"
+        ? split(
+              ({ query }) => {
+                  const definition = getMainDefinition(query);
+                  return (
+                      definition.kind === "OperationDefinition" &&
+                      definition.operation === "subscription"
+                  );
+              },
+              wsLink,
+              httpLink
+          )
+        : httpLink;
+
 const client = new ApolloClient({
     ssrMode: false,
-    link: new HttpLink({ uri: "http://127.0.0.1/query", fetch }),
+    link: ApolloLink.from([splitLink]),
     cache,
     credentials: "same-origin",
 });

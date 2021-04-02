@@ -2,7 +2,7 @@ import React from "react";
 import { useQuery, gql } from "@apollo/client";
 import { PageHeader, Row, Col, Table } from "antd";
 
-import Link from "./Link";
+import Link from "../StockItemLink";
 
 const List = () => {
     const { loading, data } = useQuery(StockItemApprovedND);

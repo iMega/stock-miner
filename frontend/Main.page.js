@@ -24,6 +24,7 @@ const Main = () => (
                     <Content
                         style={{
                             minHeight: "100vh",
+                            background: "#fff",
                         }}
                     >
                         <Switch>
