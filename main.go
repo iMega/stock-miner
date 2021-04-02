@@ -6,8 +6,12 @@ import (
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/lru"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/containerd/containerd/log"
+	"github.com/gorilla/websocket"
 	"github.com/imega/daemon"
 	"github.com/imega/daemon/configuring/env"
 	httpserver "github.com/imega/daemon/http-server"
@@ -35,6 +39,8 @@ func main() {
 		Channel: "stock-miner",
 		Level:   "debug",
 	})
+
+	// httpwareclient.WithLogger(logger.(*logrus.Entry))
 
 	if err := storage.CreateDatabase(dbFilename); err != nil {
 		logger.Fatalf("failed to create database, ", err)
@@ -102,7 +108,14 @@ func main() {
 	marketToken, _ := env.Read("MARKET_TINKOFF_TOKEN")
 	marketInstance := market.New(marketURL, marketToken)
 
-	srv := handler.NewDefaultServer(
+	// handler.WebsocketUpgrader(websocket.Upgrader{
+	//     CheckOrigin: func(r *http.Request) bool {
+	//       return true
+	//     },
+	//   }),
+
+	// srv := handler.NewDefaultServer(
+	srv := handler.New(
 		generated.NewExecutableSchema(
 			generated.Config{
 				Resolvers: &graph.Resolver{
@@ -113,15 +126,45 @@ func main() {
 				}},
 		),
 	)
+	srv.AddTransport(&transport.Websocket{
+		Upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+		},
+		KeepAlivePingInterval: 15,
+	})
+	srv.AddTransport(transport.Options{})
+	srv.AddTransport(transport.GET{})
+	srv.AddTransport(transport.POST{})
+	srv.SetQueryCache(lru.New(1000))
 
-	// corsOptions := cors.Options{}
+	srv.Use(extension.Introspection{})
+	srv.Use(extension.AutomaticPersistedQuery{
+		Cache: lru.New(100),
+	})
+
+	corsOptions := cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{
+			http.MethodOptions,
+			http.MethodGet,
+			http.MethodPost,
+		},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+	}
+	// _ = corsOptions
 
 	mux.Handle("/playground", playground.Handler("GraphQL playground", "/query"))
 	mux.Handle(
 		"/query",
 		loggerToContext(
 			logger,
-			cors.AllowAll().Handler(session.DefenceHandler(srv)),
+			cors.New(corsOptions).Handler(session.DefenceHandler(srv)),
+			// session.DefenceHandler(srv),
 		),
 	)
 

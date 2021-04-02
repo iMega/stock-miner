@@ -4,7 +4,7 @@ func (b *Broker) Stop() bool {
 	b.cron.Stop()
 	b.cronIsRunning = false
 
-	return false
+	return true
 }
 
 func (b *Broker) Start() bool {

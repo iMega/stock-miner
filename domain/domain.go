@@ -19,3 +19,23 @@ type PriceReceiptMessage struct {
 	StockItem
 	Error error
 }
+
+type Slot struct {
+	Email string
+	StockItem
+
+	ID     string `json:"id"`
+	SlotID int    `json:"slot_id"`
+
+	StartPrice  float64 `json:"start_price"`
+	ChangePrice float64 `json:"change_price"`
+	BuyingPrice float64 `json:"buying_price"`
+	TargetPrice float64 `json:"target_price"`
+	Profit      float64 `json:"profit"`
+
+	Qty int `json:"qty"`
+
+	TargetAmount float64 `json:"target_amount"`
+	AmountSpent  float64 `json:"amount_spent"`
+	TotalProfit  float64 `json:"total_profit"`
+}

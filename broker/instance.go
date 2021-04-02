@@ -15,12 +15,14 @@ type Broker struct {
 	isShutdown    bool
 	cron          *cron.Cron
 	cronIsRunning bool
+	Stack         smaStack
 }
 
 // New creates a new instance of Broker
 func New(opts ...Option) *Broker {
 	b := &Broker{
-		cron: cron.New(),
+		cron:  cron.New(),
+		Stack: make(smaStack),
 	}
 
 	for _, opt := range opts {
