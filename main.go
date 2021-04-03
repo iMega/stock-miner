@@ -123,6 +123,7 @@ func main() {
 					StockStorage:     s,
 					MainerController: b,
 					Market:           marketInstance,
+					SettingsStorage:  s,
 				}},
 		),
 	)

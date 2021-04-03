@@ -45,6 +45,12 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	MarketCredentials struct {
+		APIURL func(childComplexity int) int
+		Name   func(childComplexity int) int
+		Token  func(childComplexity int) int
+	}
+
 	MemStats struct {
 		Alloc      func(childComplexity int) int
 		Sys        func(childComplexity int) int
@@ -55,14 +61,25 @@ type ComplexityRoot struct {
 		AddStockItemApproved func(childComplexity int, items []*model.StockItemInput) int
 		GlobalMiningStart    func(childComplexity int) int
 		GlobalMiningStop     func(childComplexity int) int
+		MarketCredentials    func(childComplexity int, creds model.MarketCredentialsInput) int
 	}
 
 	Query struct {
 		GlobalMiningStatus func(childComplexity int) int
 		MarketStockItems   func(childComplexity int) int
 		MemStats           func(childComplexity int) int
+		Settings           func(childComplexity int) int
 		StockItemApproved  func(childComplexity int) int
 		User               func(childComplexity int) int
+	}
+
+	Settings struct {
+		MarketCredentials func(childComplexity int) int
+		Slot              func(childComplexity int) int
+	}
+
+	SlotSettings struct {
+		Volume func(childComplexity int) int
 	}
 
 	StockItem struct {
@@ -90,6 +107,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	AddStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error)
+	MarketCredentials(ctx context.Context, creds model.MarketCredentialsInput) (bool, error)
 	GlobalMiningStop(ctx context.Context) (bool, error)
 	GlobalMiningStart(ctx context.Context) (bool, error)
 }
@@ -99,6 +117,7 @@ type QueryResolver interface {
 	MemStats(ctx context.Context) (*model.MemStats, error)
 	GlobalMiningStatus(ctx context.Context) (bool, error)
 	MarketStockItems(ctx context.Context) ([]*model.StockItem, error)
+	Settings(ctx context.Context) (*model.Settings, error)
 }
 type SubscriptionResolver interface {
 	MemStats(ctx context.Context) (<-chan *model.MemStats, error)
@@ -118,6 +137,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "MarketCredentials.apiUrl":
+		if e.complexity.MarketCredentials.APIURL == nil {
+			break
+		}
+
+		return e.complexity.MarketCredentials.APIURL(childComplexity), true
+
+	case "MarketCredentials.name":
+		if e.complexity.MarketCredentials.Name == nil {
+			break
+		}
+
+		return e.complexity.MarketCredentials.Name(childComplexity), true
+
+	case "MarketCredentials.token":
+		if e.complexity.MarketCredentials.Token == nil {
+			break
+		}
+
+		return e.complexity.MarketCredentials.Token(childComplexity), true
 
 	case "MemStats.alloc":
 		if e.complexity.MemStats.Alloc == nil {
@@ -166,6 +206,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.GlobalMiningStop(childComplexity), true
 
+	case "Mutation.marketCredentials":
+		if e.complexity.Mutation.MarketCredentials == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_marketCredentials_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.MarketCredentials(childComplexity, args["creds"].(model.MarketCredentialsInput)), true
+
 	case "Query.globalMiningStatus":
 		if e.complexity.Query.GlobalMiningStatus == nil {
 			break
@@ -187,6 +239,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.MemStats(childComplexity), true
 
+	case "Query.settings":
+		if e.complexity.Query.Settings == nil {
+			break
+		}
+
+		return e.complexity.Query.Settings(childComplexity), true
+
 	case "Query.stockItemApproved":
 		if e.complexity.Query.StockItemApproved == nil {
 			break
@@ -200,6 +259,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.User(childComplexity), true
+
+	case "Settings.marketCredentials":
+		if e.complexity.Settings.MarketCredentials == nil {
+			break
+		}
+
+		return e.complexity.Settings.MarketCredentials(childComplexity), true
+
+	case "Settings.slot":
+		if e.complexity.Settings.Slot == nil {
+			break
+		}
+
+		return e.complexity.Settings.Slot(childComplexity), true
+
+	case "SlotSettings.volume":
+		if e.complexity.SlotSettings.Volume == nil {
+			break
+		}
+
+		return e.complexity.SlotSettings.Volume(childComplexity), true
 
 	case "StockItem.amountLimit":
 		if e.complexity.StockItem.AmountLimit == nil {
@@ -380,10 +460,13 @@ type Query {
     memStats: MemStats!
     globalMiningStatus: Boolean!
     marketStockItems: [StockItem]
+    settings: Settings!
 }
 
 type Mutation {
     addStockItemApproved(items: [StockItemInput!]!): Boolean!
+
+    marketCredentials(creds: MarketCredentialsInput!): Boolean!
 
     globalMiningStop: Boolean!
     globalMiningStart: Boolean!
@@ -425,6 +508,28 @@ type MemStats {
     totalAlloc: String!
     sys: String!
 }
+
+# User settings
+type Settings {
+    slot: SlotSettings
+    marketCredentials: [MarketCredentials]
+}
+
+type SlotSettings {
+    volume: Int!
+}
+
+type MarketCredentials {
+    name: String!
+    token: String!
+    apiUrl: String!
+}
+
+input MarketCredentialsInput {
+    name: String!
+    apiUrl: String!
+    token: String!
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -445,6 +550,21 @@ func (ec *executionContext) field_Mutation_addStockItemApproved_args(ctx context
 		}
 	}
 	args["items"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_marketCredentials_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.MarketCredentialsInput
+	if tmp, ok := rawArgs["creds"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("creds"))
+		arg0, err = ec.unmarshalNMarketCredentialsInput2githubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐMarketCredentialsInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["creds"] = arg0
 	return args, nil
 }
 
@@ -500,6 +620,111 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _MarketCredentials_name(ctx context.Context, field graphql.CollectedField, obj *model.MarketCredentials) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketCredentials",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketCredentials_token(ctx context.Context, field graphql.CollectedField, obj *model.MarketCredentials) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketCredentials",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Token, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MarketCredentials_apiUrl(ctx context.Context, field graphql.CollectedField, obj *model.MarketCredentials) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "MarketCredentials",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.APIURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _MemStats_alloc(ctx context.Context, field graphql.CollectedField, obj *model.MemStats) (ret graphql.Marshaler) {
 	defer func() {
@@ -632,6 +857,48 @@ func (ec *executionContext) _Mutation_addStockItemApproved(ctx context.Context, 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().AddStockItemApproved(rctx, args["items"].([]*model.StockItemInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_marketCredentials(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_marketCredentials_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().MarketCredentials(rctx, args["creds"].(model.MarketCredentialsInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -887,6 +1154,41 @@ func (ec *executionContext) _Query_marketStockItems(ctx context.Context, field g
 	return ec.marshalOStockItem2ᚕᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐStockItem(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_settings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Settings(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Settings)
+	fc.Result = res
+	return ec.marshalNSettings2ᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐSettings(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -956,6 +1258,105 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Settings_slot(ctx context.Context, field graphql.CollectedField, obj *model.Settings) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Settings",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Slot, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.SlotSettings)
+	fc.Result = res
+	return ec.marshalOSlotSettings2ᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐSlotSettings(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Settings_marketCredentials(ctx context.Context, field graphql.CollectedField, obj *model.Settings) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Settings",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketCredentials, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MarketCredentials)
+	fc.Result = res
+	return ec.marshalOMarketCredentials2ᚕᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐMarketCredentials(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SlotSettings_volume(ctx context.Context, field graphql.CollectedField, obj *model.SlotSettings) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SlotSettings",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Volume, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _StockItem_ticker(ctx context.Context, field graphql.CollectedField, obj *model.StockItem) (ret graphql.Marshaler) {
@@ -2489,6 +2890,42 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputMarketCredentialsInput(ctx context.Context, obj interface{}) (model.MarketCredentialsInput, error) {
+	var it model.MarketCredentialsInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "apiUrl":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("apiUrl"))
+			it.APIURL, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "token":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("token"))
+			it.Token, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputStockItemInput(ctx context.Context, obj interface{}) (model.StockItemInput, error) {
 	var it model.StockItemInput
 	var asMap = obj.(map[string]interface{})
@@ -2540,6 +2977,43 @@ func (ec *executionContext) unmarshalInputStockItemInput(ctx context.Context, ob
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var marketCredentialsImplementors = []string{"MarketCredentials"}
+
+func (ec *executionContext) _MarketCredentials(ctx context.Context, sel ast.SelectionSet, obj *model.MarketCredentials) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, marketCredentialsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MarketCredentials")
+		case "name":
+			out.Values[i] = ec._MarketCredentials_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "token":
+			out.Values[i] = ec._MarketCredentials_token(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "apiUrl":
+			out.Values[i] = ec._MarketCredentials_apiUrl(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
 
 var memStatsImplementors = []string{"MemStats"}
 
@@ -2595,6 +3069,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = graphql.MarshalString("Mutation")
 		case "addStockItemApproved":
 			out.Values[i] = ec._Mutation_addStockItemApproved(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "marketCredentials":
+			out.Values[i] = ec._Mutation_marketCredentials(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2698,10 +3177,77 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_marketStockItems(ctx, field)
 				return res
 			})
+		case "settings":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_settings(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var settingsImplementors = []string{"Settings"}
+
+func (ec *executionContext) _Settings(ctx context.Context, sel ast.SelectionSet, obj *model.Settings) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, settingsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Settings")
+		case "slot":
+			out.Values[i] = ec._Settings_slot(ctx, field, obj)
+		case "marketCredentials":
+			out.Values[i] = ec._Settings_marketCredentials(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var slotSettingsImplementors = []string{"SlotSettings"}
+
+func (ec *executionContext) _SlotSettings(ctx context.Context, sel ast.SelectionSet, obj *model.SlotSettings) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, slotSettingsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SlotSettings")
+		case "volume":
+			out.Values[i] = ec._SlotSettings_volume(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3121,6 +3667,11 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) unmarshalNMarketCredentialsInput2githubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐMarketCredentialsInput(ctx context.Context, v interface{}) (model.MarketCredentialsInput, error) {
+	res, err := ec.unmarshalInputMarketCredentialsInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNMemStats2githubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐMemStats(ctx context.Context, sel ast.SelectionSet, v model.MemStats) graphql.Marshaler {
 	return ec._MemStats(ctx, sel, &v)
 }
@@ -3133,6 +3684,20 @@ func (ec *executionContext) marshalNMemStats2ᚖgithubᚗcomᚋimegaᚋstockᚑm
 		return graphql.Null
 	}
 	return ec._MemStats(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSettings2githubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐSettings(ctx context.Context, sel ast.SelectionSet, v model.Settings) graphql.Marshaler {
+	return ec._Settings(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSettings2ᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐSettings(ctx context.Context, sel ast.SelectionSet, v *model.Settings) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Settings(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNStockItemInput2ᚕᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐStockItemInputᚄ(ctx context.Context, v interface{}) ([]*model.StockItemInput, error) {
@@ -3471,6 +4036,60 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 		return graphql.Null
 	}
 	return graphql.MarshalInt(*v)
+}
+
+func (ec *executionContext) marshalOMarketCredentials2ᚕᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐMarketCredentials(ctx context.Context, sel ast.SelectionSet, v []*model.MarketCredentials) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOMarketCredentials2ᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐMarketCredentials(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOMarketCredentials2ᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐMarketCredentials(ctx context.Context, sel ast.SelectionSet, v *model.MarketCredentials) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MarketCredentials(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSlotSettings2ᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐSlotSettings(ctx context.Context, sel ast.SelectionSet, v *model.SlotSettings) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SlotSettings(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOStockItem2ᚕᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐStockItem(ctx context.Context, sel ast.SelectionSet, v []*model.StockItem) graphql.Marshaler {

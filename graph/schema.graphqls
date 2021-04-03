@@ -5,10 +5,13 @@ type Query {
     memStats: MemStats!
     globalMiningStatus: Boolean!
     marketStockItems: [StockItem]
+    settings: Settings!
 }
 
 type Mutation {
     addStockItemApproved(items: [StockItemInput!]!): Boolean!
+
+    marketCredentials(creds: MarketCredentialsInput!): Boolean!
 
     globalMiningStop: Boolean!
     globalMiningStart: Boolean!
@@ -49,4 +52,26 @@ type MemStats {
     alloc: String!
     totalAlloc: String!
     sys: String!
+}
+
+# User settings
+type Settings {
+    slot: SlotSettings
+    marketCredentials: [MarketCredentials]
+}
+
+type SlotSettings {
+    volume: Int!
+}
+
+type MarketCredentials {
+    name: String!
+    token: String!
+    apiUrl: String!
+}
+
+input MarketCredentialsInput {
+    name: String!
+    apiUrl: String!
+    token: String!
 }

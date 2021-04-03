@@ -2,10 +2,31 @@
 
 package model
 
+type MarketCredentials struct {
+	Name   string `json:"name"`
+	Token  string `json:"token"`
+	APIURL string `json:"apiUrl"`
+}
+
+type MarketCredentialsInput struct {
+	Name   string `json:"name"`
+	APIURL string `json:"apiUrl"`
+	Token  string `json:"token"`
+}
+
 type MemStats struct {
 	Alloc      string `json:"alloc"`
 	TotalAlloc string `json:"totalAlloc"`
 	Sys        string `json:"sys"`
+}
+
+type Settings struct {
+	Slot              *SlotSettings        `json:"slot"`
+	MarketCredentials []*MarketCredentials `json:"marketCredentials"`
+}
+
+type SlotSettings struct {
+	Volume int `json:"volume"`
 }
 
 type StockItem struct {

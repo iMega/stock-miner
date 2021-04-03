@@ -30,6 +30,31 @@ func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*mo
 	return true, nil
 }
 
+func (r *mutationResolver) MarketCredentials(ctx context.Context, creds model.MarketCredentialsInput) (bool, error) {
+	s, err := r.SettingsStorage.Settings(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to save creds, %s", err)
+	}
+
+	if _, ok := s.MarketCredentials[creds.Name]; !ok {
+		if s.MarketCredentials == nil {
+			s.MarketCredentials = make(map[string]domain.MarketCredentials)
+		}
+		s.MarketCredentials[creds.Name] = domain.MarketCredentials{}
+	}
+
+	s.MarketCredentials[creds.Name] = domain.MarketCredentials{
+		Token:  creds.Token,
+		APIURL: creds.APIURL,
+	}
+
+	if err := r.SettingsStorage.SaveSettings(ctx, s); err != nil {
+		return false, fmt.Errorf("failed to save creds, %s", err)
+	}
+
+	return true, nil
+}
+
 func (r *mutationResolver) GlobalMiningStop(ctx context.Context) (bool, error) {
 	return r.MainerController.Stop(), nil
 }
@@ -104,6 +129,27 @@ func (r *queryResolver) MarketStockItems(ctx context.Context) ([]*model.StockIte
 	}
 
 	return result, nil
+}
+
+func (r *queryResolver) Settings(ctx context.Context) (*model.Settings, error) {
+	s, err := r.SettingsStorage.Settings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var cred []*model.MarketCredentials
+	for k, c := range s.MarketCredentials {
+		cred = append(cred, &model.MarketCredentials{
+			Name:   k,
+			Token:  c.Token,
+			APIURL: c.APIURL,
+		})
+	}
+
+	return &model.Settings{
+		Slot:              (*model.SlotSettings)(&s.Slot),
+		MarketCredentials: cred,
+	}, nil
 }
 
 func (r *subscriptionResolver) MemStats(ctx context.Context) (<-chan *model.MemStats, error) {

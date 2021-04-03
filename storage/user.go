@@ -17,11 +17,11 @@ func (s *Storage) GetUser(ctx context.Context) (domain.User, error) {
 		return domain.User{}, fmt.Errorf("failed to extract user from context")
 	}
 
-	q := `select name, avatar, role from user`
+	q := `select name, avatar, role from user where email = ?`
 	row := s.db.QueryRowContext(ctx, q, email)
 	var name, avatar, role string
 	if err := row.Scan(&name, &avatar, &role); err != nil {
-		return domain.User{}, fmt.Errorf("failed getting user")
+		return domain.User{}, fmt.Errorf("failed getting user, %s", err)
 	}
 
 	return domain.User{

@@ -42,6 +42,18 @@ func CreateDatabase(name string) error {
 			return err
 		}
 
+		if err := settingsTable(ctx, tx); err != nil {
+			return err
+		}
+
+		if err := dealingsTable(ctx, tx); err != nil {
+			return err
+		}
+
+		if err := slotTable(ctx, tx); err != nil {
+			return err
+		}
+
 		return nil
 	})
 

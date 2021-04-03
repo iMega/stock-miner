@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
 import Connector from "./Connector";
 import PageStat from "./Stat";
 import { Add, List } from "./StockItem";
+import Profile from "./Profile";
 
 const { Sider, Content } = Layout;
 
@@ -29,7 +30,7 @@ const Main = () => (
                     >
                         <Switch>
                             <Route path={LinkProfile}>
-                                <div>profile</div>
+                                <Profile />
                             </Route>
                             <Route path={LinkStockItemList}>
                                 <List />

@@ -7,4 +7,5 @@ type Resolver struct {
 	StockStorage     domain.StockStorage
 	MainerController domain.MainerController
 	Market           domain.Market
+	SettingsStorage  domain.SettingsStorage
 }
