@@ -55,6 +55,21 @@ func (r *mutationResolver) MarketCredentials(ctx context.Context, creds model.Ma
 	return true, nil
 }
 
+func (r *mutationResolver) Slot(ctx context.Context, global model.SlotSettingsInput) (bool, error) {
+	s, err := r.SettingsStorage.Settings(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to save slot, %s", err)
+	}
+
+	s.Slot.Volume = global.Volume
+
+	if err := r.SettingsStorage.SaveSettings(ctx, s); err != nil {
+		return false, fmt.Errorf("failed to save slot, %s", err)
+	}
+
+	return true, nil
+}
+
 func (r *mutationResolver) GlobalMiningStop(ctx context.Context) (bool, error) {
 	return r.MainerController.Stop(), nil
 }

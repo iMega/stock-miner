@@ -62,6 +62,7 @@ type ComplexityRoot struct {
 		GlobalMiningStart    func(childComplexity int) int
 		GlobalMiningStop     func(childComplexity int) int
 		MarketCredentials    func(childComplexity int, creds model.MarketCredentialsInput) int
+		Slot                 func(childComplexity int, global model.SlotSettingsInput) int
 	}
 
 	Query struct {
@@ -108,6 +109,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	AddStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error)
 	MarketCredentials(ctx context.Context, creds model.MarketCredentialsInput) (bool, error)
+	Slot(ctx context.Context, global model.SlotSettingsInput) (bool, error)
 	GlobalMiningStop(ctx context.Context) (bool, error)
 	GlobalMiningStart(ctx context.Context) (bool, error)
 }
@@ -217,6 +219,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.MarketCredentials(childComplexity, args["creds"].(model.MarketCredentialsInput)), true
+
+	case "Mutation.slot":
+		if e.complexity.Mutation.Slot == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_slot_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Slot(childComplexity, args["global"].(model.SlotSettingsInput)), true
 
 	case "Query.globalMiningStatus":
 		if e.complexity.Query.GlobalMiningStatus == nil {
@@ -466,7 +480,9 @@ type Query {
 type Mutation {
     addStockItemApproved(items: [StockItemInput!]!): Boolean!
 
+    # settings
     marketCredentials(creds: MarketCredentialsInput!): Boolean!
+    slot(global: SlotSettingsInput!): Boolean!
 
     globalMiningStop: Boolean!
     globalMiningStart: Boolean!
@@ -530,6 +546,10 @@ input MarketCredentialsInput {
     apiUrl: String!
     token: String!
 }
+
+input SlotSettingsInput {
+    volume: Int!
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -565,6 +585,21 @@ func (ec *executionContext) field_Mutation_marketCredentials_args(ctx context.Co
 		}
 	}
 	args["creds"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_slot_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.SlotSettingsInput
+	if tmp, ok := rawArgs["global"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("global"))
+		arg0, err = ec.unmarshalNSlotSettingsInput2githubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐSlotSettingsInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["global"] = arg0
 	return args, nil
 }
 
@@ -899,6 +934,48 @@ func (ec *executionContext) _Mutation_marketCredentials(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().MarketCredentials(rctx, args["creds"].(model.MarketCredentialsInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_slot(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_slot_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Slot(rctx, args["global"].(model.SlotSettingsInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2926,6 +3003,26 @@ func (ec *executionContext) unmarshalInputMarketCredentialsInput(ctx context.Con
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputSlotSettingsInput(ctx context.Context, obj interface{}) (model.SlotSettingsInput, error) {
+	var it model.SlotSettingsInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "volume":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("volume"))
+			it.Volume, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputStockItemInput(ctx context.Context, obj interface{}) (model.StockItemInput, error) {
 	var it model.StockItemInput
 	var asMap = obj.(map[string]interface{})
@@ -3074,6 +3171,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "marketCredentials":
 			out.Values[i] = ec._Mutation_marketCredentials(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "slot":
+			out.Values[i] = ec._Mutation_slot(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3698,6 +3800,11 @@ func (ec *executionContext) marshalNSettings2ᚖgithubᚗcomᚋimegaᚋstockᚑm
 		return graphql.Null
 	}
 	return ec._Settings(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNSlotSettingsInput2githubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐSlotSettingsInput(ctx context.Context, v interface{}) (model.SlotSettingsInput, error) {
+	res, err := ec.unmarshalInputSlotSettingsInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNStockItemInput2ᚕᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐStockItemInputᚄ(ctx context.Context, v interface{}) ([]*model.StockItemInput, error) {

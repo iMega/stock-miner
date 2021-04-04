@@ -29,6 +29,10 @@ type SlotSettings struct {
 	Volume int `json:"volume"`
 }
 
+type SlotSettingsInput struct {
+	Volume int `json:"volume"`
+}
+
 type StockItem struct {
 	Ticker            string   `json:"ticker"`
 	Figi              string   `json:"figi"`

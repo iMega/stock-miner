@@ -20,6 +20,12 @@ const MarketCredentialsND = gql`
     }
 `;
 
+const slotND = gql`
+    mutation Slot($in: SlotSettingsInput!) {
+        slot(global: $in)
+    }
+`;
+
 const ProfileAndSettingsND = gql`
     query Profile {
         user {
@@ -56,18 +62,26 @@ const tailLayout = {
 };
 
 const Profile = () => {
-    const [provider, setProvider] = React.useState(1);
+    const [creds, setCreds] = React.useState();
+    const [slot, setSlot] = React.useState();
     const { loading, data } = useQuery(ProfileAndSettingsND);
     const [saveCreds] = useMutation(MarketCredentialsND);
+    const [saveSlot] = useMutation(slotND);
     React.useEffect(() => {
         if (loading === false && data) {
             console.log(data);
-            // setDs(data.marketStockItems);
+            setCreds({
+                provider: data.settings.marketCredentials[0].name,
+                url: data.settings.marketCredentials[0].apiUrl,
+                token: data.settings.marketCredentials[0].token,
+            });
+            setSlot({
+                volume: data.settings.slot.volume,
+            });
         }
     }, [loading, data]);
 
-    const onFieldsChange2 = async (all) => {
-        console.log(all);
+    const onSaveCreds = async (all) => {
         try {
             const { data } = await saveCreds({
                 variables: {
@@ -88,11 +102,44 @@ const Profile = () => {
         }
     };
 
+    const onSaveSlot = async (all) => {
+        try {
+            const { data } = await saveSlot({
+                variables: {
+                    in: {
+                        volume: all.volume,
+                    },
+                },
+            });
+            if (data.slot === true) {
+                Message.Success();
+                return;
+            }
+            Message.Failure();
+        } catch (e) {
+            Message.Failure();
+        }
+    };
+
     const [credForm] = Form.useForm();
+    const selectProvider = (e) => {
+        const creds = data.settings.marketCredentials;
+        const idx = creds.findIndex((i) => i.name === e.target.value);
+        credForm.setFieldsValue({
+            provider: creds[idx].name,
+            url: creds[idx].apiUrl,
+            token: creds[idx].token,
+        });
+    };
     const [slotForm] = Form.useForm();
     const Settings = () => (
         <React.Fragment>
-            <Form {...layout} form={credForm} onFinish={onFieldsChange2}>
+            <Form
+                {...layout}
+                form={credForm}
+                onFinish={onSaveCreds}
+                initialValues={creds}
+            >
                 <Form.Item
                     label="Market provider"
                     name="provider"
@@ -103,11 +150,7 @@ const Profile = () => {
                         },
                     ]}
                 >
-                    <Radio.Group
-                        onChange={(e) => setProvider(e.target.value)}
-                        value={provider}
-                        defaultValue={provider}
-                    >
+                    <Radio.Group onChange={selectProvider}>
                         <Radio value={"tinkoff"} style={radioStyle}>
                             Tinkoff production
                         </Radio>
@@ -147,7 +190,12 @@ const Profile = () => {
                 </Form.Item>
             </Form>
             <Divider />
-            <Form {...layout} form={slotForm} onValuesChange={onFieldsChange2}>
+            <Form
+                {...layout}
+                form={slotForm}
+                onFinish={onSaveSlot}
+                initialValues={slot}
+            >
                 <Form.Item
                     label="Volume of slot"
                     name="volume"
@@ -161,13 +209,13 @@ const Profile = () => {
                     <InputNumber min={1} max={10} />
                 </Form.Item>
                 <Form.Item {...tailLayout}>
-                    <Button type="primary">Save</Button>
+                    <Button type="primary" htmlType="submit">
+                        Save
+                    </Button>
                 </Form.Item>
             </Form>
         </React.Fragment>
     );
-
-    console.log("RENDER");
 
     return (
         <PageHeader

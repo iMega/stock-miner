@@ -11,7 +11,9 @@ type Query {
 type Mutation {
     addStockItemApproved(items: [StockItemInput!]!): Boolean!
 
+    # settings
     marketCredentials(creds: MarketCredentialsInput!): Boolean!
+    slot(global: SlotSettingsInput!): Boolean!
 
     globalMiningStop: Boolean!
     globalMiningStart: Boolean!
@@ -74,4 +76,8 @@ input MarketCredentialsInput {
     name: String!
     apiUrl: String!
     token: String!
+}
+
+input SlotSettingsInput {
+    volume: Int!
 }
