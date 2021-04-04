@@ -38,8 +38,8 @@ func (b *Broker) makePricerChannel(in, out, out2 chan domain.PriceReceiptMessage
 					b.logger.Errorf("failed getting price from YF, %s", err)
 				}
 				res.Error = err
-				// b.logger.Info("+++++ %#v", t)
-				// b.logger.Infof("++ %f", t.Price)
+
+				b.logger.Infof("-------- %s %f", res.Ticker, res.Price)
 
 				if !b.Stack.Add(res.Ticker, res.Price) {
 					return

@@ -1,6 +1,10 @@
 package broker
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/shopspring/decimal"
+)
 
 type smaStack map[string]*smaFrame
 
@@ -61,13 +65,14 @@ func (s *smaFrame) NextCur() {
 }
 
 func (s *smaFrame) CalcAvg() {
-	r := 0.0
+	r := decimal.NewFromFloat(0)
 	for _, v := range s.Fifo {
-		r = r + v
+		r = r.Add(decimal.NewFromFloat(v))
 	}
 
 	s.Avg[0] = s.Avg[1]
-	s.Avg[1] = r / capacity
+	f, _ := r.DivRound(decimal.NewFromInt(capacity), 4).Float64()
+	s.Avg[1] = f
 }
 
 func (s *smaFrame) IsTrendUp() bool {
