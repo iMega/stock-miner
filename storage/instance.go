@@ -11,7 +11,8 @@ import (
 type Option func(b *Storage)
 
 type Storage struct {
-	db *sql.DB
+	db       *sql.DB
+	settings map[string]domain.Settings
 }
 
 func WithSqllite(db *sql.DB) Option {
@@ -21,7 +22,9 @@ func WithSqllite(db *sql.DB) Option {
 }
 
 func New(opts ...Option) *Storage {
-	s := &Storage{}
+	s := &Storage{
+		settings: make(map[string]domain.Settings),
+	}
 
 	for _, opt := range opts {
 		opt(s)

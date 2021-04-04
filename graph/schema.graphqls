@@ -60,6 +60,7 @@ type MemStats {
 type Settings {
     slot: SlotSettings
     marketCredentials: [MarketCredentials]
+    marketProvider: String!
 }
 
 type SlotSettings {

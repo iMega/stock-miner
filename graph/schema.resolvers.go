@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/imega/stock-miner/contexkey"
 	"github.com/imega/stock-miner/domain"
 	"github.com/imega/stock-miner/graph/generated"
 	"github.com/imega/stock-miner/graph/model"
@@ -47,6 +48,7 @@ func (r *mutationResolver) MarketCredentials(ctx context.Context, creds model.Ma
 		Token:  creds.Token,
 		APIURL: creds.APIURL,
 	}
+	s.MarketProvider = creds.Name
 
 	if err := r.SettingsStorage.SaveSettings(ctx, s); err != nil {
 		return false, fmt.Errorf("failed to save creds, %s", err)
@@ -125,7 +127,15 @@ func (r *queryResolver) GlobalMiningStatus(ctx context.Context) (bool, error) {
 }
 
 func (r *queryResolver) MarketStockItems(ctx context.Context) ([]*model.StockItem, error) {
-	items, err := r.Market.ListStockItems(ctx)
+	s, err := r.SettingsStorage.Settings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ctxNew := contexkey.WithToken(ctx, s.MarketCredentials[s.MarketProvider].Token)
+	ctxNew = contexkey.WithAPIURL(ctxNew, s.MarketCredentials[s.MarketProvider].APIURL)
+
+	items, err := r.Market.ListStockItems(ctxNew)
 	if err != nil {
 		return nil, err
 	}

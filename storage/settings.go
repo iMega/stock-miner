@@ -18,6 +18,10 @@ func (s *Storage) Settings(ctx context.Context) (domain.Settings, error) {
 		return result, fmt.Errorf("failed to extract user from context")
 	}
 
+	if v, ok := s.settings[email]; ok {
+		return v, nil
+	}
+
 	q := "select doc from settings where email = ?"
 
 	var doc string
@@ -31,6 +35,8 @@ func (s *Storage) Settings(ctx context.Context) (domain.Settings, error) {
 	if err := json.Unmarshal([]byte(doc), &result); err != nil {
 		return result, fmt.Errorf("failed to unmarshal settings, %s", err)
 	}
+
+	s.settings[email] = result
 
 	return result, nil
 }
@@ -50,6 +56,8 @@ func (s *Storage) SaveSettings(ctx context.Context, set domain.Settings) error {
 	if _, err := s.db.ExecContext(ctx, q, email, string(b), string(b)); err != nil {
 		return fmt.Errorf("failed to save settings, %s", err)
 	}
+
+	s.settings[email] = set
 
 	return nil
 }

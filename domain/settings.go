@@ -11,6 +11,7 @@ type Settings struct {
 	Slot SlotSettings `json:"slot,omitempty"`
 
 	MarketCredentials map[string]MarketCredentials `json:"market_credentials,omitempty"`
+	MarketProvider    string                       `json:"market_provider,omitempty"`
 }
 
 type SlotSettings struct {

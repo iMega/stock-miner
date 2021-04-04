@@ -76,6 +76,7 @@ type ComplexityRoot struct {
 
 	Settings struct {
 		MarketCredentials func(childComplexity int) int
+		MarketProvider    func(childComplexity int) int
 		Slot              func(childComplexity int) int
 	}
 
@@ -280,6 +281,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Settings.MarketCredentials(childComplexity), true
+
+	case "Settings.marketProvider":
+		if e.complexity.Settings.MarketProvider == nil {
+			break
+		}
+
+		return e.complexity.Settings.MarketProvider(childComplexity), true
 
 	case "Settings.slot":
 		if e.complexity.Settings.Slot == nil {
@@ -529,6 +537,7 @@ type MemStats {
 type Settings {
     slot: SlotSettings
     marketCredentials: [MarketCredentials]
+    marketProvider: String!
 }
 
 type SlotSettings {
@@ -1399,6 +1408,41 @@ func (ec *executionContext) _Settings_marketCredentials(ctx context.Context, fie
 	res := resTmp.([]*model.MarketCredentials)
 	fc.Result = res
 	return ec.marshalOMarketCredentials2ᚕᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐMarketCredentials(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Settings_marketProvider(ctx context.Context, field graphql.CollectedField, obj *model.Settings) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Settings",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketProvider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SlotSettings_volume(ctx context.Context, field graphql.CollectedField, obj *model.SlotSettings) (ret graphql.Marshaler) {
@@ -3323,6 +3367,11 @@ func (ec *executionContext) _Settings(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._Settings_slot(ctx, field, obj)
 		case "marketCredentials":
 			out.Values[i] = ec._Settings_marketCredentials(ctx, field, obj)
+		case "marketProvider":
+			out.Values[i] = ec._Settings_marketProvider(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

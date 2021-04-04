@@ -23,6 +23,7 @@ type MemStats struct {
 type Settings struct {
 	Slot              *SlotSettings        `json:"slot"`
 	MarketCredentials []*MarketCredentials `json:"marketCredentials"`
+	MarketProvider    string               `json:"marketProvider"`
 }
 
 type SlotSettings struct {

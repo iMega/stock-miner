@@ -2,9 +2,11 @@ package tinkoff
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	sdk "github.com/TinkoffCreditSystems/invest-openapi-go-sdk"
+	"github.com/imega/stock-miner/contexkey"
 	"github.com/imega/stock-miner/domain"
 	"github.com/imega/stock-miner/httpwareclient"
 )
@@ -25,13 +27,23 @@ type payload struct {
 }
 
 func (m *Market) ListStockItems(ctx context.Context) ([]*domain.StockItem, error) {
+	token, ok := contexkey.TokenFromContext(ctx)
+	if !ok {
+		return nil, fmt.Errorf("failed to extract token from context")
+	}
+
+	apiurl, ok := contexkey.APIURLFromContext(ctx)
+	if !ok {
+		return nil, fmt.Errorf("failed to extract apiurl from context")
+	}
+
 	data := &response{}
 	req := &httpwareclient.SendIn{
 		Method: http.MethodGet,
 		Headers: map[string]string{
-			"Authorization": "Bearer " + m.Token,
+			"Authorization": "Bearer " + token,
 		},
-		URL:      m.URL + "/market/stocks",
+		URL:      apiurl + "/market/stocks",
 		BodyRecv: data,
 		Coder:    httpwareclient.GetCoder(httpwareclient.JSON),
 	}
