@@ -97,16 +97,21 @@ func main() {
 		logger.Fatal(err)
 	}
 
+	// Market
+	marketURL, _ := env.Read("MARKET_TINKOFF_URL")
+	marketToken, _ := env.Read("MARKET_TINKOFF_TOKEN")
+	marketInstance := market.New(marketURL, marketToken)
+
+	// Broker
 	yfURL, _ := env.Read("YAHOO_FINANCE_URL")
 	b := broker.New(
 		broker.WithLogger(logger),
 		broker.WithStockStorage(s),
 		broker.WithPricer(yahooprovider.New(yfURL)),
+		broker.WithMarket(marketInstance),
+		broker.WithSettingsStorage(s),
+		broker.WithStack(s),
 	)
-
-	marketURL, _ := env.Read("MARKET_TINKOFF_URL")
-	marketToken, _ := env.Read("MARKET_TINKOFF_TOKEN")
-	marketInstance := market.New(marketURL, marketToken)
 
 	// handler.WebsocketUpgrader(websocket.Upgrader{
 	//     CheckOrigin: func(r *http.Request) bool {

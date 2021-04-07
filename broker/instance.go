@@ -9,20 +9,24 @@ import (
 
 // Broker is the main struct
 type Broker struct {
-	StockStorage  domain.StockStorage
-	Pricer        domain.Pricer
+	StockStorage    domain.StockStorage
+	Pricer          domain.Pricer
+	Market          domain.Market
+	SMAStack        smaStack
+	SettingsStorage domain.SettingsStorage
+	Stack           domain.Stack
+
 	logger        logrus.FieldLogger
 	isShutdown    bool
 	cron          *cron.Cron
 	cronIsRunning bool
-	Stack         smaStack
 }
 
 // New creates a new instance of Broker
 func New(opts ...Option) *Broker {
 	b := &Broker{
-		cron:  cron.New(),
-		Stack: make(smaStack),
+		cron:     cron.New(),
+		SMAStack: make(smaStack),
 	}
 
 	for _, opt := range opts {
@@ -57,5 +61,23 @@ func WithStockStorage(s domain.StockStorage) Option {
 func WithPricer(p domain.Pricer) Option {
 	return func(b *Broker) {
 		b.Pricer = p
+	}
+}
+
+func WithMarket(d domain.Market) Option {
+	return func(b *Broker) {
+		b.Market = d
+	}
+}
+
+func WithSettingsStorage(d domain.SettingsStorage) Option {
+	return func(b *Broker) {
+		b.SettingsStorage = d
+	}
+}
+
+func WithStack(d domain.Stack) Option {
+	return func(b *Broker) {
+		b.Stack = d
 	}
 }

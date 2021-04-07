@@ -26,7 +26,12 @@ type payload struct {
 	Instruments []sdk.Instrument `json:"instruments"`
 }
 
-func (m *Market) ListStockItems(ctx context.Context) ([]*domain.StockItem, error) {
+type tokenURL struct {
+	Token string
+	URL   string
+}
+
+func ExtractTokenURL(ctx context.Context) (*tokenURL, error) {
 	token, ok := contexkey.TokenFromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("failed to extract token from context")
@@ -37,13 +42,25 @@ func (m *Market) ListStockItems(ctx context.Context) ([]*domain.StockItem, error
 		return nil, fmt.Errorf("failed to extract apiurl from context")
 	}
 
+	return &tokenURL{
+		Token: token,
+		URL:   apiurl,
+	}, nil
+}
+
+func (m *Market) ListStockItems(ctx context.Context) ([]*domain.StockItem, error) {
+	tu, err := ExtractTokenURL(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	data := &response{}
 	req := &httpwareclient.SendIn{
 		Method: http.MethodGet,
 		Headers: map[string]string{
-			"Authorization": "Bearer " + token,
+			"Authorization": "Bearer " + tu.Token,
 		},
-		URL:      apiurl + "/market/stocks",
+		URL:      tu.URL + "/market/stocks",
 		BodyRecv: data,
 		Coder:    httpwareclient.GetCoder(httpwareclient.JSON),
 	}

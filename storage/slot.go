@@ -10,7 +10,7 @@ import (
 	tools "github.com/imega/stock-miner/sql"
 )
 
-func (s *Storage) Slot(ctx context.Context) ([]domain.Slot, error) {
+func (s *Storage) Slot(ctx context.Context, figi string) ([]domain.Slot, error) {
 	var result []domain.Slot
 
 	email, ok := contexkey.EmailFromContext(ctx)
@@ -33,10 +33,10 @@ func (s *Storage) Slot(ctx context.Context) ([]domain.Slot, error) {
         target_amount,
         total_profit
     from slot
-    where email = ?
+    where email = ? and figi = ?
     `
 
-	rows, err := s.db.QueryContext(ctx, q, email)
+	rows, err := s.db.QueryContext(ctx, q, email, figi)
 	defer rows.Close()
 	if err != nil {
 		return result, err

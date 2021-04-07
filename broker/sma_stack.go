@@ -48,8 +48,9 @@ type smaFrame struct {
 }
 
 func (s *smaFrame) Add(v float64) {
-	s.Fifo[s.Cur] = v
-	s.Last = v
+	f, _ := decimal.NewFromFloat(v).Truncate(2).Float64()
+	s.Fifo[s.Cur] = f
+	s.Last = f
 	s.CalcAvg()
 	s.NextCur()
 }

@@ -39,3 +39,16 @@ type Slot struct {
 	AmountSpent  float64 `json:"amount_spent"`
 	TotalProfit  float64 `json:"total_profit"`
 }
+
+type OrderBook struct {
+	StockItem
+	Bids        []PriceQty `json:"bids"`
+	Asks        []PriceQty `json:"asks"`
+	TradeStatus string     `json:"tradeStatus"`
+	LastPrice   float64    `json:"lastPrice"`
+}
+
+type PriceQty struct {
+	Price float64
+	Qty   float64
+}

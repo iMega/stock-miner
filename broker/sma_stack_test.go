@@ -26,7 +26,7 @@ func Test_smaStack(t *testing.T) {
 		t.Fatalf("failed to calc trend frame")
 	}
 
-	if v, err := st.IsTrendUp("AAPL"); err != nil && !v {
+	if v, err := st.IsTrendUp("AAPL"); err != nil || !v {
 		t.Fatalf("failed to calc outer trend frame")
 	}
 }
@@ -37,5 +37,46 @@ func BenchmarkRingAdd(b *testing.B) {
 	st := make(smaStack)
 	for i := 0; i < b.N; i++ {
 		st.Add("AAPL", float64(i))
+	}
+}
+
+func Test_Regression_1(t *testing.T) {
+	st := make(smaStack)
+
+	st.Add("AAPL", 125.38)
+	st.Add("AAPL", 125.39)
+	st.Add("AAPL", 125.38)
+	st.Add("AAPL", 125.4)
+	st.Add("AAPL", 125.38)
+
+	st.Add("AAPL", 125.3)
+
+	if v, err := st.IsTrendUp("AAPL"); err != nil || v == true {
+		t.Fatalf("failed to calc outer trend frame")
+	}
+
+	st.Add("AAPL", 125.33)
+	if v, err := st.IsTrendUp("AAPL"); err != nil || v == true {
+		t.Fatalf("failed to calc outer trend frame")
+	}
+
+	st.Add("AAPL", 125.3)
+	if v, err := st.IsTrendUp("AAPL"); err != nil || v == true {
+		t.Fatalf("failed to calc outer trend frame")
+	}
+
+	st.Add("AAPL", 125.31)
+	if v, err := st.IsTrendUp("AAPL"); err != nil || v == true {
+		t.Fatalf("failed to calc outer trend frame")
+	}
+
+	st.Add("AAPL", 125.38)
+	if v, err := st.IsTrendUp("AAPL"); err != nil || v == false {
+		t.Fatalf("failed to calc outer trend frame")
+	}
+
+	st.Add("AAPL", 125.31)
+	if v, err := st.IsTrendUp("AAPL"); err != nil || v == false {
+		t.Fatalf("failed to calc outer trend frame")
 	}
 }
