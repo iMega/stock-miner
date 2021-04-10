@@ -79,3 +79,22 @@ func (s *smaFrame) CalcAvg() {
 func (s *smaFrame) IsTrendUp() bool {
 	return s.Avg[0] <= s.Avg[1]
 }
+
+func (s *smaFrame) Prev() float64 {
+	prev := s.Cur - 1
+	if s.Cur == 0 {
+		prev = capacity - 1
+	}
+
+	return s.Fifo[prev]
+}
+
+func (s *smaFrame) IsFull() bool {
+	for _, v := range s.Fifo {
+		if v == 0 {
+			return false
+		}
+	}
+
+	return true
+}

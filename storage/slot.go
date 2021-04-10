@@ -130,3 +130,7 @@ func slotTable(ctx context.Context, tx *sql.Tx) error {
 
 	return err
 }
+
+func slotTableMigrate(ctx context.Context, tx *sql.Tx, ti tableInfo) error {
+	return nil
+}

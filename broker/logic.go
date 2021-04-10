@@ -2,10 +2,12 @@ package broker
 
 import (
 	"context"
+	"sort"
 
 	"github.com/gammazero/workerpool"
 	"github.com/imega/stock-miner/contexkey"
 	"github.com/imega/stock-miner/domain"
+	"github.com/imega/stock-miner/uuid"
 	"github.com/robfig/cron/v3"
 )
 
@@ -34,13 +36,18 @@ func (b *Broker) makePricerChannel(in, out, out2 chan domain.PriceReceiptMessage
 		for task := range in {
 			t := task
 			wp.Submit(func() {
-				res, err := b.Pricer.GetPrice(context.Background(), t)
-				if err != nil {
-					b.logger.Errorf("failed getting price from YF, %s", err)
-				}
-				res.Error = err
+				// res, err := b.Pricer.GetPrice(context.Background(), t)
+				// if err != nil {
+				// 	b.logger.Errorf("failed getting price from YF, %s", err)
+				// }
+				// res.Error = err
 
 				// b.logger.Infof("-------- %s %f", res.Ticker, res.Price)
+
+				res, err := b.getPrice(t)
+				if err != nil {
+					return
+				}
 
 				if !b.SMAStack.Add(res.Ticker, res.Price) {
 					return
@@ -64,7 +71,7 @@ func (b *Broker) makePriceStorageChannel(in chan domain.PriceReceiptMessage) *wo
 			wp.Submit(func() {
 				err := b.StockStorage.AddMarketPrice(context.Background(), t)
 				if err != nil {
-					b.logger.Infof("+++++222 %s", err)
+					b.logger.Errorf("failed to add market price, %s", err)
 				}
 			})
 		}
@@ -95,25 +102,82 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage) *workerpool.WorkerPo
 					return
 				}
 
-				ctx = contexkey.WithToken(ctx, settings.MarketCredentials[settings.MarketProvider].Token)
-				ctx = contexkey.WithAPIURL(ctx, settings.MarketCredentials[settings.MarketProvider].APIURL)
-				ob, _ := b.Market.OrderBook(ctx, t.StockItem)
+				var byuing []float64
+				for _, slot := range slots {
+					byuing = append(byuing, slot.BuyingPrice)
+				}
+				sort.Float64s(byuing)
 
 				trend, err := b.SMAStack.IsTrendUp(t.Ticker)
 				if err != nil {
 					return
 				}
-				frame, err := b.SMAStack.Get(t.Ticker)
-				if err != nil {
+
+				if trend || byuing[0] >= t.Price {
 					return
 				}
 
-				// b.Stack.Add(t.Ticker, t.Price)
-				// v, _ := b.Stack.Get(t.Ticker)
-				b.logger.Infof("%s LP: %f, SMALP: %f, TrendUP: %v, FR:%#v", t.Ticker, ob.LastPrice, frame.Last, trend, frame.Fifo)
+				cred := settings.MarketCredentials[settings.MarketProvider]
+				ctx = contexkey.WithToken(ctx, cred.Token)
+				ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
+
+				frame, err := b.SMAStack.Get(t.Ticker)
+				if err != nil {
+					b.logger.Errorf("failed getting frame from stack, %s", err)
+					return
+				}
+
+				if !frame.IsFull() {
+					b.logger.Error("frame is not full")
+					return
+				}
+
+				emptySlot := domain.Slot{
+					ID:          uuid.NewID().String(),
+					Email:       t.Email,
+					StockItem:   t.StockItem,
+					SlotID:      len(slots) + 1,
+					StartPrice:  frame.Prev(),
+					ChangePrice: frame.Last,
+				}
+
+				slot, err := b.Market.OrderBuy(ctx, emptySlot)
+				if err != nil {
+					b.logger.Errorf("failed to buy item, %s", err)
+					return
+				}
+
+				if err := b.Stack.BuyStockItem(ctx, slot); err != nil {
+					b.logger.Errorf("failed to save item to stock, %s", err)
+					return
+				}
+
+				b.logger.Infof("Buy: %s, price: %f", t.Ticker, slot.BuyingPrice)
 			})
 		}
 	}()
 
 	return wp
+}
+
+func (b *Broker) getPrice(msg domain.PriceReceiptMessage) (domain.PriceReceiptMessage, error) {
+	result := msg
+
+	ctx := contexkey.WithEmail(context.Background(), msg.Email)
+	settings, err := b.SettingsStorage.Settings(ctx)
+	if err != nil {
+		return result, err
+	}
+
+	cred := settings.MarketCredentials[settings.MarketProvider]
+	ctx = contexkey.WithToken(ctx, cred.Token)
+	ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
+	ob, err := b.Market.OrderBook(ctx, msg.StockItem)
+	if err != nil {
+		return result, err
+	}
+
+	result.Price = ob.LastPrice
+
+	return result, nil
 }
