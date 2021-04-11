@@ -11,6 +11,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var GraphQLUrl = "http://app/query"
+
 var _ = BeforeSuite(func() {
 	err := WaitForSystemUnderTestReady()
 	Expect(err).NotTo(HaveOccurred())

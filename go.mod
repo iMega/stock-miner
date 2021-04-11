@@ -17,6 +17,7 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/gorilla/websocket v1.4.2
+	github.com/hasura/go-graphql-client v0.2.0
 	github.com/imega/daemon v0.0.0-20210227164626-fcae13cbb17f
 	github.com/improbable-eng/go-httpwares v0.0.0-20200609095714-edc8019f93cc
 	github.com/julienschmidt/httprouter v1.3.0

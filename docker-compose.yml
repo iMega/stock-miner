@@ -7,8 +7,6 @@ services:
       args:
         - GO_IMG=${GO_IMG}
         - CWD=${CWD}
-    volumes:
-      - ./:${CWD}
     working_dir: ${CWD}
     environment:
       - STOCK_MINER_HTTP_SERVER_HOST=0.0.0.0:80

@@ -4,7 +4,7 @@ GO_IMG = golang:1.15.8-alpine3.13
 NODE_IMG = node:15.12.0-alpine3.13
 BUILDER=builder
 
-test: build lint unit acceptance
+test: build unit acceptance
 
 builder:
 	@docker build --build-arg GO_IMG=$(GO_IMG) \
@@ -32,6 +32,12 @@ unit: builder
 
 acceptance: builder down
 	GO_IMG=$(BUILDER) CWD=$(CWD) docker-compose up -d --build --scale acceptance=0
+	GO_IMG=$(BUILDER) CWD=$(CWD) docker-compose up --abort-on-container-exit acceptance
+
+b:
+	GO_IMG=$(BUILDER) CWD=$(CWD) docker-compose up -d --build --scale acceptance=0
+
+a:
 	GO_IMG=$(BUILDER) CWD=$(CWD) docker-compose up --abort-on-container-exit acceptance
 
 down:

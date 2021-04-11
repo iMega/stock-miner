@@ -5,10 +5,9 @@ ARG CWD
 ENV GOFLAGS=
 ENV LOG_LEVEL=debug
 
-RUN apk add --update curl alpine-sdk gcc
-
 WORKDIR $CWD
-COPY . .
+ADD . .
+
 RUN go run -tags=dev assets/generate.go && \
     go build -v -ldflags "-X main.isDevMode=true" -o /app .
 
