@@ -19,27 +19,53 @@ func (s *Storage) Slot(ctx context.Context, figi string) ([]domain.Slot, error) 
 	}
 
 	q := `select
-        slot_id,
-        id,
-        ticker,
-        figi,
-        start_price,
-        change_price,
-        buying_price,
-        target_price,
-        profit,
-        qty,
-        amount_spent,
-        target_amount,
-        total_profit
-    from slot
-    where email = ? and figi = ?
+            slot_id,
+            id,
+            ticker,
+            figi,
+            start_price,
+            change_price,
+            buying_price,
+            target_price,
+            profit,
+            qty,
+            amount_spent,
+            target_amount,
+            total_profit
+        from slot
+        where email = ? and figi = ?
     `
 
 	rows, err := s.db.QueryContext(ctx, q, email, figi)
 	defer rows.Close()
 	if err != nil {
 		return result, err
+	}
+
+	for rows.Next() {
+		slot := domain.Slot{
+			Email: email,
+		}
+		err := rows.Scan(
+			&slot.SlotID,
+			&slot.ID,
+			&slot.Ticker,
+			&slot.FIGI,
+			&slot.StartPrice,
+			&slot.ChangePrice,
+			&slot.BuyingPrice,
+			&slot.TargetPrice,
+			&slot.Profit,
+			&slot.Qty,
+			&slot.AmountSpent,
+			&slot.TargetAmount,
+			&slot.TotalProfit,
+		)
+		if err != nil {
+			return result, err
+		}
+
+		result = append(result, slot)
 	}
 
 	return result, nil
