@@ -33,8 +33,12 @@ func (s *Storage) Slot(ctx context.Context, figi string) ([]domain.Slot, error) 
             target_amount,
             total_profit
         from slot
-        where email = ? and figi = ?
+        where email = ?
     `
+
+	if figi != "" {
+		q = q + "and figi = ?"
+	}
 
 	rows, err := s.db.QueryContext(ctx, q, email, figi)
 	defer rows.Close()

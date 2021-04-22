@@ -2,6 +2,25 @@
 
 package model
 
+type Deal struct {
+	ID           string   `json:"id"`
+	Ticker       string   `json:"ticker"`
+	Figi         string   `json:"figi"`
+	StartPrice   float64  `json:"startPrice"`
+	ChangePrice  float64  `json:"changePrice"`
+	BuyingPrice  *float64 `json:"buyingPrice"`
+	TargetPrice  *float64 `json:"targetPrice"`
+	Profit       *float64 `json:"profit"`
+	SalePrice    *float64 `json:"salePrice"`
+	Qty          *int     `json:"qty"`
+	AmountSpent  *float64 `json:"amountSpent"`
+	AmountIncome *float64 `json:"amountIncome"`
+	TotalProfit  *float64 `json:"totalProfit"`
+	BuyAt        *string  `json:"buyAt"`
+	Duration     *int     `json:"duration"`
+	SellAt       *string  `json:"sellAt"`
+}
+
 type MarketCredentials struct {
 	Name   string `json:"name"`
 	Token  string `json:"token"`
@@ -24,6 +43,21 @@ type Settings struct {
 	Slot              *SlotSettings        `json:"slot"`
 	MarketCredentials []*MarketCredentials `json:"marketCredentials"`
 	MarketProvider    string               `json:"marketProvider"`
+}
+
+type Slot struct {
+	ID           string   `json:"id"`
+	Ticker       string   `json:"ticker"`
+	Figi         string   `json:"figi"`
+	StartPrice   float64  `json:"startPrice"`
+	ChangePrice  float64  `json:"changePrice"`
+	BuyingPrice  *float64 `json:"buyingPrice"`
+	TargetPrice  *float64 `json:"targetPrice"`
+	Profit       *float64 `json:"profit"`
+	Qty          *int     `json:"qty"`
+	AmountSpent  *float64 `json:"amountSpent"`
+	TargetAmount *float64 `json:"targetAmount"`
+	TotalProfit  *float64 `json:"totalProfit"`
 }
 
 type SlotSettings struct {

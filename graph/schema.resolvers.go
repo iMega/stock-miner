@@ -177,6 +177,68 @@ func (r *queryResolver) Settings(ctx context.Context) (*model.Settings, error) {
 	}, nil
 }
 
+func (r *queryResolver) Slots(ctx context.Context) ([]*model.Slot, error) {
+	var result []*model.Slot
+
+	slots, err := r.StockStorage.Slot(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, slot := range slots {
+		result = append(result, &model.Slot{
+			ID:           slot.ID,
+			Ticker:       slot.Ticker,
+			Figi:         slot.FIGI,
+			StartPrice:   slot.StartPrice,
+			ChangePrice:  slot.ChangePrice,
+			BuyingPrice:  &slot.BuyingPrice,
+			TargetPrice:  &slot.TargetPrice,
+			Profit:       &slot.Profit,
+			Qty:          &slot.Qty,
+			AmountSpent:  &slot.AmountSpent,
+			TargetAmount: &slot.TargetAmount,
+			TotalProfit:  &slot.TotalProfit,
+		})
+	}
+
+	return result, nil
+}
+
+func (r *queryResolver) Dealings(ctx context.Context) ([]*model.Deal, error) {
+	var result []*model.Deal
+
+	dealings, err := r.StockStorage.Dealings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, deal := range dealings {
+		buyAt := deal.BuyAt.Format("RFC3339")
+		sellAt := deal.SellAt.Format("RFC3339")
+		result = append(result, &model.Deal{
+			ID:           deal.ID,
+			Ticker:       deal.Ticker,
+			Figi:         deal.FIGI,
+			StartPrice:   deal.Slot.StartPrice,
+			ChangePrice:  deal.Slot.ChangePrice,
+			BuyingPrice:  &deal.Slot.BuyingPrice,
+			TargetPrice:  &deal.Slot.TargetPrice,
+			Profit:       &deal.Slot.Profit,
+			SalePrice:    &deal.SalePrice,
+			Qty:          &deal.Slot.Qty,
+			AmountSpent:  &deal.Slot.AmountSpent,
+			AmountIncome: &deal.AmountIncome,
+			TotalProfit:  &deal.TotalProfit,
+			BuyAt:        &buyAt,
+			Duration:     &deal.Duration,
+			SellAt:       &sellAt,
+		})
+	}
+
+	return result, nil
+}
+
 func (r *subscriptionResolver) MemStats(ctx context.Context) (<-chan *model.MemStats, error) {
 	ch := make(chan *model.MemStats)
 

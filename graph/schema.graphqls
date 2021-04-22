@@ -6,6 +6,8 @@ type Query {
     globalMiningStatus: Boolean!
     marketStockItems: [StockItem]
     settings: Settings!
+    slots: [Slot]
+    dealings: [Deal]
 }
 
 type Mutation {
@@ -81,4 +83,44 @@ input MarketCredentialsInput {
 
 input SlotSettingsInput {
     volume: Int!
+}
+
+type Slot {
+    id: String!
+    ticker: String!
+    figi: String!
+
+    startPrice: Float!
+    changePrice: Float!
+    buyingPrice: Float
+    targetPrice: Float
+    profit: Float
+
+    qty: Int
+    amountSpent: Float
+    targetAmount: Float
+    totalProfit: Float
+}
+
+type Deal {
+    id: String!
+    ticker: String!
+    figi: String!
+
+    startPrice: Float!
+    changePrice: Float!
+    buyingPrice: Float
+    targetPrice: Float
+    profit: Float
+
+    salePrice: Float
+    qty: Int
+    amountSpent: Float
+
+    amountIncome: Float
+    totalProfit: Float
+
+    buyAt: String
+    duration: Int
+    sellAt: String
 }
