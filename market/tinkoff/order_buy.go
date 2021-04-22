@@ -2,6 +2,7 @@ package tinkoff
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	sdk "github.com/TinkoffCreditSystems/invest-openapi-go-sdk"
@@ -25,17 +26,23 @@ func (m *Market) OrderBuy(ctx context.Context, i domain.Slot) (domain.Slot, erro
 		return domain.Slot{}, err
 	}
 
+	if i.FIGI == "" {
+		return domain.Slot{}, fmt.Errorf("FIGI is empty")
+	}
+
+	if i.Qty < 1 {
+		return domain.Slot{}, fmt.Errorf("quantity must be more zero")
+	}
+
 	dataSend := &requestOrderAdd{
-		Lots:      i.Lot,
+		Lots:      i.Qty,
 		Operation: string(sdk.BUY),
 	}
 
 	data := &responseOrderAdd{}
 	req := &httpwareclient.SendIn{
-		Method: http.MethodPost,
-		Headers: map[string]string{
-			"Authorization": "Bearer " + tu.Token,
-		},
+		Method:   http.MethodPost,
+		Headers:  map[string]string{"Authorization": "Bearer " + tu.Token},
 		URL:      tu.URL + "/orders/market-order?figi=" + i.FIGI,
 		BodySend: dataSend,
 		BodyRecv: data,
@@ -44,6 +51,14 @@ func (m *Market) OrderBuy(ctx context.Context, i domain.Slot) (domain.Slot, erro
 
 	if err := httpwareclient.Send(ctx, req); err != nil {
 		return domain.Slot{}, err
+	}
+
+	if data.Status != statusOk {
+		return domain.Slot{}, fmt.Errorf(
+			"failed to buy, status is %s, %s",
+			data.Status,
+			data.Payload.Message,
+		)
 	}
 
 	return domain.Slot{

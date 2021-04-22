@@ -11,6 +11,11 @@ import (
 	"github.com/imega/stock-miner/httpwareclient"
 )
 
+const (
+	statusError = "Error"
+	statusOk    = "Ok"
+)
+
 type Market struct {
 	URL   string
 	Token string
