@@ -46,6 +46,7 @@ func (b *Broker) makePricerChannel(in, out, out2 chan domain.PriceReceiptMessage
 
 				res, err := b.getPrice(t)
 				if err != nil {
+					b.logger.Errorf("failed getting price, %s", err)
 					return
 				}
 
@@ -90,36 +91,19 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage) *workerpool.WorkerPo
 				ctx := contexkey.WithEmail(context.Background(), t.Email)
 				settings, err := b.SettingsStorage.Settings(ctx)
 				if err != nil {
+					b.logger.Errorf("failed getting settings, %s", err)
 					return
 				}
 
 				slots, err := b.Stack.Slot(ctx, t.FIGI)
 				if err != nil {
+					b.logger.Errorf("failed getting slot, %s", err)
 					return
 				}
 
 				if settings.Slot.Volume <= len(slots) {
 					return
 				}
-
-				var byuing []float64
-				for _, slot := range slots {
-					byuing = append(byuing, slot.BuyingPrice)
-				}
-				sort.Float64s(byuing)
-
-				trend, err := b.SMAStack.IsTrendUp(t.Ticker)
-				if err != nil {
-					return
-				}
-
-				if trend || byuing[0] >= t.Price {
-					return
-				}
-
-				cred := settings.MarketCredentials[settings.MarketProvider]
-				ctx = contexkey.WithToken(ctx, cred.Token)
-				ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
 
 				frame, err := b.SMAStack.Get(t.Ticker)
 				if err != nil {
@@ -132,6 +116,26 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage) *workerpool.WorkerPo
 					return
 				}
 
+				var byuing []float64
+				for _, slot := range slots {
+					byuing = append(byuing, slot.BuyingPrice)
+				}
+				sort.Float64s(byuing)
+
+				trend, err := b.SMAStack.IsTrendUp(t.Ticker)
+				if err != nil {
+					b.logger.Errorf("failed getting trend, %s", err)
+					return
+				}
+
+				if trend || len(byuing) > 0 && byuing[0] >= t.Price {
+					return
+				}
+
+				cred := settings.MarketCredentials[settings.MarketProvider]
+				ctx = contexkey.WithToken(ctx, cred.Token)
+				ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
+
 				emptySlot := domain.Slot{
 					ID:          uuid.NewID().String(),
 					Email:       t.Email,
@@ -139,6 +143,7 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage) *workerpool.WorkerPo
 					SlotID:      len(slots) + 1,
 					StartPrice:  frame.Prev(),
 					ChangePrice: frame.Last,
+					Qty:         1,
 				}
 
 				slot, err := b.Market.OrderBuy(ctx, emptySlot)
@@ -146,6 +151,8 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage) *workerpool.WorkerPo
 					b.logger.Errorf("failed to buy item, %s", err)
 					return
 				}
+
+				b.logger.Infof("===== %#v", slot)
 
 				if err := b.Stack.BuyStockItem(ctx, slot); err != nil {
 					b.logger.Errorf("failed to save item to stock, %s", err)

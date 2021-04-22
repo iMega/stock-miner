@@ -24,7 +24,7 @@ func New() *mockHTTPServer {
 	router := httprouter.New()
 	m := &mockHTTPServer{
 		server: &http.Server{
-			Addr:    "0.0.0.0:8080",
+			Addr:    "0.0.0.0:80",
 			Handler: router,
 		},
 		handlers: make(map[string]http.HandlerFunc),

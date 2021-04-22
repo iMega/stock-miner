@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/imega/stock-miner/tests/helpers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -14,8 +15,14 @@ import (
 var GraphQLUrl = "http://app/query"
 
 var _ = BeforeSuite(func() {
+	helpers.MockHTTPServer.BeforeSuite()
+
 	err := WaitForSystemUnderTestReady()
 	Expect(err).NotTo(HaveOccurred())
+})
+
+var _ = AfterSuite(func() {
+	helpers.MockHTTPServer.AfterSuite()
 })
 
 func WaitForSystemUnderTestReady() error {
