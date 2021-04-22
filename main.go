@@ -24,6 +24,8 @@ import (
 	"github.com/imega/stock-miner/session"
 	"github.com/imega/stock-miner/storage"
 	"github.com/imega/stock-miner/yahooprovider"
+	"github.com/improbable-eng/go-httpwares"
+	http_logrus "github.com/improbable-eng/go-httpwares/logging/logrus"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
@@ -89,7 +91,16 @@ func main() {
 		),
 	)
 
-	h := httpserver.New("stock-miner", logger, mux)
+	h := httpserver.New(
+		"stock-miner",
+		httpserver.WithLogger(logger),
+		httpserver.WithHandler(mux),
+		httpserver.WithLogrusOptions(http_logrus.WithDecider(
+			func(w httpwares.WrappedResponseWriter, r *http.Request) bool {
+				return r.URL.Path != "/healthcheck"
+			},
+		)),
+	)
 	cr := env.Once(h.WatcherConfigFunc)
 
 	d, err := daemon.New(logger, cr)
