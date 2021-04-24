@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	sdk "github.com/TinkoffCreditSystems/invest-openapi-go-sdk"
@@ -44,7 +45,10 @@ var _ = Describe("Automatically buy", func() {
 		type SlotSettingsInput map[string]interface{}
 
 		variables := map[string]interface{}{
-			"in": SlotSettingsInput{"volume": 10},
+			"in": SlotSettingsInput{
+				"volume":              10,
+				"modificatorMinPrice": 2,
+			},
 		}
 		err := client.Mutate(ctx, &req, variables)
 		Expect(err).NotTo(HaveOccurred())
@@ -148,10 +152,12 @@ var _ = Describe("Automatically buy", func() {
 			}
 
 			if "/orders/market-order" == r.URL.Path {
+				orderID := 235774468340 + requestCount
 				var requestOrderAdd struct {
 					Lots      int    `json:"lots"`
 					Operation string `json:"operation"`
 				}
+
 				b, _ := ioutil.ReadAll(r.Body)
 				json.Unmarshal(b, &requestOrderAdd)
 
@@ -164,17 +170,18 @@ var _ = Describe("Automatically buy", func() {
 				}
 				if requestOrderAdd.Operation == string(sdk.BUY) && requestOrderAdd.Lots == 1 {
 					data = map[string]interface{}{
-						"status": "Ok",
+						"trackingId": "dbb781ba4e984bd9",
+						"status":     "Ok",
 						"payload": map[string]interface{}{
-							"executedLots": 1,
-							// orderId
-							// operation
-							// status
-							// rejectReason
-							// requestedLots
-							// executedLots
-							// commission
-							// message
+							"orderId":       strconv.Itoa(orderID),
+							"operation":     "Buy",
+							"status":        "Fill",
+							"executedLots":  1,
+							"requestedLots": 1,
+							"commission": map[string]interface{}{
+								"currency": "USD",
+								"value":    0,
+							},
 						},
 					}
 				}
@@ -192,7 +199,7 @@ var _ = Describe("Automatically buy", func() {
 		err := client.Mutate(ctx, &reqGlobalMiningStart, variables)
 		Expect(err).NotTo(HaveOccurred())
 
-		<-time.After(14 * time.Second)
+		<-time.After(13 * time.Second)
 
 		var reqGlobalMiningStop struct {
 			GlobalMiningStop bool `graphql:"globalMiningStop"`
@@ -200,5 +207,110 @@ var _ = Describe("Automatically buy", func() {
 		variables = map[string]interface{}{}
 		err = client.Mutate(ctx, &reqGlobalMiningStop, variables)
 		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("check slots", func() {
+		type Slot struct {
+			Id     graphql.String
+			Ticker graphql.String
+			Figi   graphql.String
+
+			StartPrice  graphql.Float
+			ChangePrice graphql.Float
+			BuyingPrice graphql.Float
+			TargetPrice graphql.Float
+			Profit      graphql.Float
+
+			Qty          graphql.Int
+			AmountSpent  graphql.Float
+			TargetAmount graphql.Float
+			TotalProfit  graphql.Float
+		}
+		type Slots struct {
+			Slots []Slot
+		}
+
+		expected := Slots{
+			Slots: []Slot{
+				{
+					Id:           "",
+					Ticker:       "AAPL",
+					Figi:         "BBG000B9XRY4",
+					StartPrice:   94,
+					ChangePrice:  94,
+					BuyingPrice:  0,
+					TargetPrice:  0,
+					Profit:       0,
+					Qty:          1,
+					AmountSpent:  0,
+					TargetAmount: 0,
+					TotalProfit:  0,
+				},
+			},
+		}
+
+		reqSlots := Slots{}
+		variables := map[string]interface{}{}
+		err := client.Query(ctx, &reqSlots, variables)
+		Expect(err).NotTo(HaveOccurred())
+
+		for idx := range reqSlots.Slots {
+			reqSlots.Slots[idx].Id = ""
+		}
+
+		Expect(reqSlots).To(Equal(expected))
+	})
+
+	It("check dealings", func() {
+		type Deal struct {
+			Id     graphql.String
+			Ticker graphql.String
+			Figi   graphql.String
+
+			StartPrice  graphql.Float
+			ChangePrice graphql.Float
+			BuyingPrice graphql.Float
+			TargetPrice graphql.Float
+			Profit      graphql.Float
+
+			SalePrice   graphql.Float
+			Qty         graphql.Int
+			AmountSpent graphql.Float
+
+			AmountIncome graphql.Float
+			TotalProfit  graphql.Float
+
+			BuyAt    graphql.String
+			Duration graphql.Int
+			SellAt   graphql.String
+		}
+		type Dealings struct {
+			Dealings []Deal
+		}
+
+		expected := Dealings{
+			Dealings: []Deal{
+				{
+					Id:          "",
+					Ticker:      "AAPL",
+					Figi:        "BBG000B9XRY4",
+					StartPrice:  94,
+					ChangePrice: 94,
+				},
+			},
+		}
+
+		reqDealings := Dealings{}
+		variables := map[string]interface{}{}
+		err := client.Query(ctx, &reqDealings, variables)
+		Expect(err).NotTo(HaveOccurred())
+
+		for idx := range reqDealings.Dealings {
+			reqDealings.Dealings[idx].Id = ""
+			reqDealings.Dealings[idx].BuyAt = ""
+			reqDealings.Dealings[idx].SellAt = ""
+		}
+
+		Expect(reqDealings).To(Equal(expected))
 	})
 })

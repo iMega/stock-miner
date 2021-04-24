@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/imega/stock-miner/contexkey"
 	"github.com/imega/stock-miner/domain"
@@ -231,6 +232,7 @@ func (s *Storage) Dealings(ctx context.Context) ([]domain.Transaction, error) {
 			t.Duration = int(duration.Int64)
 		}
 
+		t.SellAt = time.Date(0, 0, 0, 0, 0, 0, 0, &time.Location{})
 		if sellAt.Valid {
 			t.SellAt = sellAt.Time
 		}

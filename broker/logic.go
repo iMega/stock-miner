@@ -128,7 +128,7 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage) *workerpool.WorkerPo
 					return
 				}
 
-				if trend || len(byuing) > 0 && byuing[0] >= t.Price {
+				if trend || len(byuing) > 0 && byuing[0]-settings.Slot.ModificatorMinPrice >= t.Price {
 					return
 				}
 

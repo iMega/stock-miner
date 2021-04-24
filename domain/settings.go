@@ -15,7 +15,8 @@ type Settings struct {
 }
 
 type SlotSettings struct {
-	Volume int `json:"volume,omitempty"`
+	Volume              int     `json:"volume,omitempty"`
+	ModificatorMinPrice float64 `json:"modificator_min_price,omitempty"`
 }
 
 type MarketCredentials struct {

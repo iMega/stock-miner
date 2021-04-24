@@ -64,6 +64,7 @@ func (r *mutationResolver) Slot(ctx context.Context, global model.SlotSettingsIn
 	}
 
 	s.Slot.Volume = global.Volume
+	s.Slot.ModificatorMinPrice = *global.ModificatorMinPrice
 
 	if err := r.SettingsStorage.SaveSettings(ctx, s); err != nil {
 		return false, fmt.Errorf("failed to save slot, %s", err)
@@ -172,7 +173,10 @@ func (r *queryResolver) Settings(ctx context.Context) (*model.Settings, error) {
 	}
 
 	return &model.Settings{
-		Slot:              (*model.SlotSettings)(&s.Slot),
+		Slot: &model.SlotSettings{
+			Volume:              s.Slot.Volume,
+			ModificatorMinPrice: &s.Slot.ModificatorMinPrice,
+		},
 		MarketCredentials: cred,
 	}, nil
 }
@@ -214,8 +218,8 @@ func (r *queryResolver) Dealings(ctx context.Context) ([]*model.Deal, error) {
 	}
 
 	for _, deal := range dealings {
-		buyAt := deal.BuyAt.Format("RFC3339")
-		sellAt := deal.SellAt.Format("RFC3339")
+		buyAt := deal.BuyAt.Format(time.RFC3339)
+		sellAt := deal.SellAt.Format(time.RFC3339)
 		result = append(result, &model.Deal{
 			ID:           deal.ID,
 			Ticker:       deal.Ticker,

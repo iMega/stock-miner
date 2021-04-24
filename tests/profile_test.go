@@ -15,7 +15,7 @@ var _ = Describe("Profile", func() {
 		client = graphql.NewClient(GraphQLUrl, nil)
 	)
 
-	Context("cred is empty", func() {
+	It("cred is empty", func() {
 		defer GinkgoRecover()
 		var req struct {
 			Settings struct {
@@ -33,7 +33,7 @@ var _ = Describe("Profile", func() {
 		Expect(req.Settings.MarketCredentials).To(BeEmpty())
 	})
 
-	Context("set creds", func() {
+	It("set creds", func() {
 		defer GinkgoRecover()
 
 		res, err := helpers.AddCredentials(GraphQLUrl, "name", "apiUrl", "token")
@@ -41,7 +41,7 @@ var _ = Describe("Profile", func() {
 		Expect(res).To(BeTrue())
 	})
 
-	Context("getting creds", func() {
+	It("getting creds", func() {
 		defer GinkgoRecover()
 		var req struct {
 			Settings struct {

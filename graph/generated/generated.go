@@ -117,7 +117,8 @@ type ComplexityRoot struct {
 	}
 
 	SlotSettings struct {
-		Volume func(childComplexity int) int
+		ModificatorMinPrice func(childComplexity int) int
+		Volume              func(childComplexity int) int
 	}
 
 	StockItem struct {
@@ -544,6 +545,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Slot.TotalProfit(childComplexity), true
 
+	case "SlotSettings.modificatorMinPrice":
+		if e.complexity.SlotSettings.ModificatorMinPrice == nil {
+			break
+		}
+
+		return e.complexity.SlotSettings.ModificatorMinPrice(childComplexity), true
+
 	case "SlotSettings.volume":
 		if e.complexity.SlotSettings.Volume == nil {
 			break
@@ -792,6 +800,7 @@ type Settings {
 
 type SlotSettings {
     volume: Int!
+    modificatorMinPrice: Float
 }
 
 type MarketCredentials {
@@ -808,6 +817,7 @@ input MarketCredentialsInput {
 
 input SlotSettingsInput {
     volume: Int!
+    modificatorMinPrice: Float
 }
 
 type Slot {
@@ -2760,6 +2770,38 @@ func (ec *executionContext) _SlotSettings_volume(ctx context.Context, field grap
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _SlotSettings_modificatorMinPrice(ctx context.Context, field graphql.CollectedField, obj *model.SlotSettings) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "SlotSettings",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ModificatorMinPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _StockItem_ticker(ctx context.Context, field graphql.CollectedField, obj *model.StockItem) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4341,6 +4383,14 @@ func (ec *executionContext) unmarshalInputSlotSettingsInput(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
+		case "modificatorMinPrice":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("modificatorMinPrice"))
+			it.ModificatorMinPrice, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -4831,6 +4881,8 @@ func (ec *executionContext) _SlotSettings(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "modificatorMinPrice":
+			out.Values[i] = ec._SlotSettings_modificatorMinPrice(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

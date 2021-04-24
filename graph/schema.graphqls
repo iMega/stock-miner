@@ -67,6 +67,7 @@ type Settings {
 
 type SlotSettings {
     volume: Int!
+    modificatorMinPrice: Float
 }
 
 type MarketCredentials {
@@ -83,6 +84,7 @@ input MarketCredentialsInput {
 
 input SlotSettingsInput {
     volume: Int!
+    modificatorMinPrice: Float
 }
 
 type Slot {

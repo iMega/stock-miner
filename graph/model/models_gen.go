@@ -61,11 +61,13 @@ type Slot struct {
 }
 
 type SlotSettings struct {
-	Volume int `json:"volume"`
+	Volume              int      `json:"volume"`
+	ModificatorMinPrice *float64 `json:"modificatorMinPrice"`
 }
 
 type SlotSettingsInput struct {
-	Volume int `json:"volume"`
+	Volume              int      `json:"volume"`
+	ModificatorMinPrice *float64 `json:"modificatorMinPrice"`
 }
 
 type StockItem struct {

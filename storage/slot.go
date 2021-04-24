@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/imega/stock-miner/contexkey"
 	"github.com/imega/stock-miner/domain"
@@ -125,7 +126,10 @@ func (s *Storage) BuyStockItem(ctx context.Context, slot domain.Slot) error {
 			return err
 		}
 
-		t := domain.Transaction{Slot: slot}
+		t := domain.Transaction{
+			Slot:  slot,
+			BuyAt: time.Now(),
+		}
 		if err := s.buyTransaction(ctx, t); err != nil {
 			return err
 		}
