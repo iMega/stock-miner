@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -118,11 +119,14 @@ var _ = Describe("Automatically buy", func() {
 		var (
 			requestCount int
 			startPrice   = 100
+			orderID      = 235774468340
 		)
 
 		defer GinkgoRecover()
 
 		helpers.MockHTTPServer.AddHandler(func(w http.ResponseWriter, r *http.Request) {
+			defer GinkgoRecover()
+
 			requestCount++
 			data := map[string]interface{}{
 				"status": "OK",
@@ -152,7 +156,7 @@ var _ = Describe("Automatically buy", func() {
 			}
 
 			if "/orders/market-order" == r.URL.Path {
-				orderID := 235774468340 + requestCount
+				orderID = orderID + requestCount
 				var requestOrderAdd struct {
 					Lots      int    `json:"lots"`
 					Operation string `json:"operation"`
@@ -186,6 +190,67 @@ var _ = Describe("Automatically buy", func() {
 					}
 				}
 			}
+
+			if "/operations" == r.URL.Path {
+				v, err := url.ParseQuery(r.URL.RawQuery)
+				Expect(err).NotTo(HaveOccurred())
+
+				actual, err := time.Parse("2006-01-02T15:04:05-07:00", v.Get("from"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actual).Should(BeTemporally("~", time.Now(), 2*time.Second))
+
+				actual, err = time.Parse("2006-01-02T15:04:05-07:00", v.Get("to"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actual).Should(BeTemporally("~", time.Now(), 2*time.Minute))
+
+				data = map[string]interface{}{
+					"trackingId": "4f48d98e8040c23a",
+					"status":     "Ok",
+					"payload": map[string]interface{}{
+						"operations": []interface{}{
+							map[string]interface{}{
+								"operationType":    "Buy",
+								"date":             "2021-03-01T23:39:29.507+03:00",
+								"isMarginCall":     false,
+								"instrumentType":   sdk.InstrumentTypeStock,
+								"figi":             figi,
+								"quantity":         4,
+								"quantityExecuted": 4,
+								"price":            30.09,
+								"payment":          -120.36,
+								"currency":         sdk.USD,
+								"status":           sdk.OperationStatusDone,
+								"id":               strconv.Itoa(orderID),
+								"commission": map[string]interface{}{
+									"currency": "USD",
+									"value":    -0.36,
+								},
+								"trades": []interface{}{
+									map[string]interface{}{
+										"tradeId":  "3535068930",
+										"date":     "2021-03-01T23:39:29.507+03:00",
+										"quantity": 1,
+										"price":    30.09,
+									},
+									// map[string]interface{}{
+									// 	"tradeId":  "3535068940",
+									// 	"date":     "2021-03-01T23:39:29.507+03:00",
+									// 	"quantity": 1,
+									// 	"price":    30.09,
+									// },
+									// map[string]interface{}{
+									// 	"tradeId":  "3535068950",
+									// 	"date":     "2021-03-01T23:39:29.507+03:00",
+									// 	"quantity": 2,
+									// 	"price":    30.09,
+									// },
+								},
+							},
+						},
+					},
+				}
+			}
+
 			b, _ := json.Marshal(data)
 
 			w.Header().Add("Content-Type", "application/json")
@@ -296,6 +361,9 @@ var _ = Describe("Automatically buy", func() {
 					Figi:        "BBG000B9XRY4",
 					StartPrice:  94,
 					ChangePrice: 94,
+					BuyingPrice: 30.09,
+					Qty:         1,
+					AmountSpent: 120.72,
 				},
 			},
 		}

@@ -20,18 +20,18 @@ type requestOrderAdd struct {
 	Operation string `json:"operation"`
 }
 
-func (m *Market) OrderBuy(ctx context.Context, i domain.Slot) (domain.Slot, error) {
+func (m *Market) OrderBuy(ctx context.Context, i domain.Transaction) (domain.Transaction, error) {
 	tu, err := ExtractTokenURL(ctx)
 	if err != nil {
-		return domain.Slot{}, err
+		return domain.Transaction{}, err
 	}
 
 	if i.FIGI == "" {
-		return domain.Slot{}, fmt.Errorf("FIGI is empty")
+		return domain.Transaction{}, fmt.Errorf("FIGI is empty")
 	}
 
 	if i.Qty < 1 {
-		return domain.Slot{}, fmt.Errorf("quantity must be more zero")
+		return domain.Transaction{}, fmt.Errorf("quantity must be more zero")
 	}
 
 	dataSend := &requestOrderAdd{
@@ -50,25 +50,21 @@ func (m *Market) OrderBuy(ctx context.Context, i domain.Slot) (domain.Slot, erro
 	}
 
 	if err := httpwareclient.Send(ctx, req); err != nil {
-		return domain.Slot{}, err
+		return domain.Transaction{}, err
 	}
 
 	if data.Status != statusOk {
-		return domain.Slot{}, fmt.Errorf(
+		return domain.Transaction{}, fmt.Errorf(
 			"failed to buy, status is %s, %s",
 			data.Status,
 			data.Payload.Message,
 		)
 	}
 
-	return domain.Slot{
-		Email:       i.Email,
-		StockItem:   i.StockItem,
-		ID:          i.ID,
-		SlotID:      i.SlotID,
-		StartPrice:  i.StartPrice,
-		ChangePrice: i.ChangePrice,
-		BuyingPrice: 0,
-		Qty:         data.Payload.ExecutedLots,
-	}, nil
+	result := i
+
+	result.BuyOrderID = data.Payload.ID
+	result.Slot.Qty = data.Payload.ExecutedLots
+
+	return result, nil
 }

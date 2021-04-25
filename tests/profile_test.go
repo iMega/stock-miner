@@ -13,30 +13,27 @@ var _ = Describe("Profile", func() {
 	var (
 		ctx    = context.Background()
 		client = graphql.NewClient(GraphQLUrl, nil)
-	)
 
-	It("cred is empty", func() {
-		defer GinkgoRecover()
-		var req struct {
-			Settings struct {
-				MarketCredentials []struct {
-					Name   graphql.String
-					Token  graphql.String
-					ApiUrl graphql.String
-				} `graphql:"marketCredentials"`
-			}
+		expected = struct {
+			Name   graphql.String
+			Token  graphql.String
+			ApiUrl graphql.String
+		}{
+			Name:   "creds",
+			Token:  "token",
+			ApiUrl: "apiUrl",
 		}
-		variables := map[string]interface{}{}
-		err := client.Query(ctx, &req, variables)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(req.Settings.MarketCredentials).To(BeEmpty())
-	})
+	)
 
 	It("set creds", func() {
 		defer GinkgoRecover()
 
-		res, err := helpers.AddCredentials(GraphQLUrl, "name", "apiUrl", "token")
+		res, err := helpers.AddCredentials(
+			GraphQLUrl,
+			string(expected.Name),
+			string(expected.ApiUrl),
+			string(expected.Token),
+		)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(res).To(BeTrue())
 	})
@@ -56,9 +53,6 @@ var _ = Describe("Profile", func() {
 		err := client.Query(ctx, &req, variables)
 		Expect(err).NotTo(HaveOccurred())
 
-		cred := req.Settings.MarketCredentials[0]
-		Expect(cred.Token).To(Equal(graphql.String("token")))
-		Expect(cred.ApiUrl).To(Equal(graphql.String("apiUrl")))
-		Expect(cred.Name).To(Equal(graphql.String("name")))
+		Expect(req.Settings.MarketCredentials).Should(ContainElement(expected))
 	})
 })

@@ -18,14 +18,14 @@ import (
 func TestMarket_OrderBuy(t *testing.T) {
 	type args struct {
 		ctx func() context.Context
-		i   domain.Slot
+		i   domain.Transaction
 	}
 
 	tests := []struct {
 		name    string
 		args    args
 		f       func(req *http.Request) (*http.Response, error)
-		want    domain.Slot
+		want    domain.Transaction
 		wantErr bool
 	}{
 		{
@@ -36,7 +36,39 @@ func TestMarket_OrderBuy(t *testing.T) {
 					ctx = contexkey.WithToken(ctx, "token")
 					return ctx
 				},
-				i: domain.Slot{
+				i: domain.Transaction{
+					Slot: domain.Slot{
+						Email: "email@example.com",
+						StockItem: domain.StockItem{
+							FIGI: "figi",
+						},
+						ID:          "id",
+						SlotID:      10,
+						StartPrice:  2,
+						ChangePrice: 3,
+						BuyingPrice: 0,
+						Qty:         1,
+					},
+				},
+			},
+			f: func(req *http.Request) (*http.Response, error) {
+				r := responseOrderAdd{
+					Status: statusOk,
+					Payload: sdk.PlacedOrder{
+						ID:           "orderID",
+						Operation:    sdk.BUY,
+						ExecutedLots: 1,
+					},
+				}
+				b, _ := json.Marshal(&r)
+				buffer := bytes.NewBuffer(b)
+				return &http.Response{
+					Body: ioutil.NopCloser(buffer),
+				}, nil
+			},
+			want: domain.Transaction{
+				BuyOrderID: "orderID",
+				Slot: domain.Slot{
 					Email: "email@example.com",
 					StockItem: domain.StockItem{
 						FIGI: "figi",
@@ -48,32 +80,6 @@ func TestMarket_OrderBuy(t *testing.T) {
 					BuyingPrice: 0,
 					Qty:         1,
 				},
-			},
-			f: func(req *http.Request) (*http.Response, error) {
-				r := responseOrderAdd{
-					Status: statusOk,
-					Payload: sdk.PlacedOrder{
-						Operation:    sdk.BUY,
-						ExecutedLots: 1,
-					},
-				}
-				b, _ := json.Marshal(&r)
-				buffer := bytes.NewBuffer(b)
-				return &http.Response{
-					Body: ioutil.NopCloser(buffer),
-				}, nil
-			},
-			want: domain.Slot{
-				Email: "email@example.com",
-				StockItem: domain.StockItem{
-					FIGI: "figi",
-				},
-				ID:          "id",
-				SlotID:      10,
-				StartPrice:  2,
-				ChangePrice: 3,
-				BuyingPrice: 0,
-				Qty:         1,
 			},
 			wantErr: false,
 		},
@@ -99,9 +105,11 @@ func TestMarket_OrderBuy(t *testing.T) {
 			name: "quantity is less or equal zero",
 			args: args{
 				ctx: func() context.Context { return context.Background() },
-				i: domain.Slot{
-					StockItem: domain.StockItem{
-						FIGI: "figi",
+				i: domain.Transaction{
+					Slot: domain.Slot{
+						StockItem: domain.StockItem{
+							FIGI: "figi",
+						},
 					},
 				},
 			},
@@ -111,11 +119,13 @@ func TestMarket_OrderBuy(t *testing.T) {
 			name: "status is not ok",
 			args: args{
 				ctx: func() context.Context { return context.Background() },
-				i: domain.Slot{
-					StockItem: domain.StockItem{
-						FIGI: "figi",
+				i: domain.Transaction{
+					Slot: domain.Slot{
+						StockItem: domain.StockItem{
+							FIGI: "figi",
+						},
+						Qty: 1,
 					},
-					Qty: 1,
 				},
 			},
 			f: func(req *http.Request) (*http.Response, error) {
@@ -134,11 +144,13 @@ func TestMarket_OrderBuy(t *testing.T) {
 			name: "returns 500",
 			args: args{
 				ctx: func() context.Context { return context.Background() },
-				i: domain.Slot{
-					StockItem: domain.StockItem{
-						FIGI: "figi",
+				i: domain.Transaction{
+					Slot: domain.Slot{
+						StockItem: domain.StockItem{
+							FIGI: "figi",
+						},
+						Qty: 1,
 					},
-					Qty: 1,
 				},
 			},
 			f: func(req *http.Request) (*http.Response, error) {

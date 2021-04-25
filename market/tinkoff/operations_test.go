@@ -64,7 +64,7 @@ func Test_maxTradePrices(t *testing.T) {
 func TestMarket_Operations(t *testing.T) {
 	type args struct {
 		ctx func() context.Context
-		in  OperationInput
+		in  domain.OperationInput
 	}
 	tests := []struct {
 		name    string
@@ -115,7 +115,7 @@ func TestMarket_Operations(t *testing.T) {
 					ctx = contexkey.WithToken(ctx, "token")
 					return ctx
 				},
-				in: OperationInput{
+				in: domain.OperationInput{
 					OperationType: string(sdk.BUY),
 				},
 			},
@@ -129,6 +129,7 @@ func TestMarket_Operations(t *testing.T) {
 						Qty:         3,
 						AmountSpent: 4.5,
 					},
+					BuyOrderID: "12345678",
 				},
 			},
 			wantErr: false,

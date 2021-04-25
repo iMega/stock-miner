@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/imega/stock-miner/contexkey"
 	"github.com/imega/stock-miner/domain"
@@ -119,18 +118,14 @@ func (s *Storage) addSlot(ctx context.Context, t domain.Slot) error {
 	return nil
 }
 
-func (s *Storage) BuyStockItem(ctx context.Context, slot domain.Slot) error {
+func (s *Storage) BuyStockItem(ctx context.Context, tr domain.Transaction) error {
 	wrapper := tools.TxWrapper{s.db}
 	return wrapper.Transaction(ctx, nil, func(ctx context.Context, tx *sql.Tx) error {
-		if err := s.addSlot(ctx, slot); err != nil {
+		if err := s.addSlot(ctx, tr.Slot); err != nil {
 			return err
 		}
 
-		t := domain.Transaction{
-			Slot:  slot,
-			BuyAt: time.Now(),
-		}
-		if err := s.buyTransaction(ctx, t); err != nil {
+		if err := s.buyTransaction(ctx, tr); err != nil {
 			return err
 		}
 

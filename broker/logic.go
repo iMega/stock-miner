@@ -2,7 +2,9 @@ package broker
 
 import (
 	"context"
+	"fmt"
 	"sort"
+	"time"
 
 	"github.com/gammazero/workerpool"
 	"github.com/imega/stock-miner/contexkey"
@@ -136,35 +138,72 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage) *workerpool.WorkerPo
 				ctx = contexkey.WithToken(ctx, cred.Token)
 				ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
 
-				emptySlot := domain.Slot{
-					ID:          uuid.NewID().String(),
-					Email:       t.Email,
-					StockItem:   t.StockItem,
-					SlotID:      len(slots) + 1,
-					StartPrice:  frame.Prev(),
-					ChangePrice: frame.Last,
-					Qty:         1,
+				emptyTr := domain.Transaction{
+					Slot: domain.Slot{
+						ID:          uuid.NewID().String(),
+						Email:       t.Email,
+						StockItem:   t.StockItem,
+						SlotID:      len(slots) + 1,
+						StartPrice:  frame.Prev(),
+						ChangePrice: frame.Last,
+						Qty:         1,
+					},
+					BuyAt: time.Now(),
 				}
 
-				slot, err := b.Market.OrderBuy(ctx, emptySlot)
+				tr, err := b.Market.OrderBuy(ctx, emptyTr)
 				if err != nil {
 					b.logger.Errorf("failed to buy item, %s", err)
 					return
 				}
 
-				b.logger.Infof("===== %#v", slot)
-
-				if err := b.Stack.BuyStockItem(ctx, slot); err != nil {
+				if err := b.Stack.BuyStockItem(ctx, tr); err != nil {
 					b.logger.Errorf("failed to save item to stock, %s", err)
 					return
 				}
 
-				b.logger.Infof("Buy: %s, price: %f", t.Ticker, slot.BuyingPrice)
+				trs, err := b.Market.Operations(
+					ctx,
+					domain.OperationInput{
+						From:          tr.BuyAt,
+						To:            tr.BuyAt.Add(time.Minute),
+						OperationType: "Buy",
+					},
+				)
+				if err != nil {
+					b.logger.Error(err)
+					return
+				}
+
+				filteredTR, err := filterOperationByOrderID(trs, tr.BuyOrderID)
+				if err != nil {
+					b.logger.Error(err)
+					return
+				}
+
+				tr.BuyingPrice = filteredTR.BuyingPrice
+				tr.Slot.AmountSpent = filteredTR.Slot.AmountSpent
+				if err := b.Stack.ConfirmBuyTransaction(ctx, tr); err != nil {
+					b.logger.Errorf("failed to confirm transaction, %s", err)
+					return
+				}
+
+				b.logger.Infof("Buy: %s, price: %f", t.Ticker, tr.Slot.BuyingPrice)
 			})
 		}
 	}()
 
 	return wp
+}
+
+func filterOperationByOrderID(trs []domain.Transaction, orderID string) (domain.Transaction, error) {
+	for _, t := range trs {
+		if t.BuyOrderID == orderID {
+			return t, nil
+		}
+	}
+
+	return domain.Transaction{}, fmt.Errorf("operation does not exist")
 }
 
 func (b *Broker) getPrice(msg domain.PriceReceiptMessage) (domain.PriceReceiptMessage, error) {

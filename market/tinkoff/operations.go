@@ -7,20 +7,12 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
-	"time"
 
 	sdk "github.com/TinkoffCreditSystems/invest-openapi-go-sdk"
 	"github.com/imega/stock-miner/domain"
 	"github.com/imega/stock-miner/httpwareclient"
 	"github.com/imega/stock-miner/money"
 )
-
-type OperationInput struct {
-	From          time.Time `json:"from"`
-	To            time.Time `json:"to"`
-	FIGI          string    `json:"figi"`
-	OperationType string    `json:"operation_type"`
-}
 
 type Operations struct {
 	Operations []sdk.Operation `json:"operations"`
@@ -34,7 +26,7 @@ type responseOperations struct {
 
 const format = "2006-01-02T15:04:05-07:00"
 
-func (m *Market) Operations(ctx context.Context, in OperationInput) ([]domain.Transaction, error) {
+func (m *Market) Operations(ctx context.Context, in domain.OperationInput) ([]domain.Transaction, error) {
 	var result []domain.Transaction
 
 	tu, err := ExtractTokenURL(ctx)
@@ -90,6 +82,7 @@ func (m *Market) Operations(ctx context.Context, in OperationInput) ([]domain.Tr
 		}
 
 		if o.OperationType == sdk.BUY {
+			t.BuyOrderID = o.ID
 			t.BuyingPrice = maxTradePrices(o.Trades)
 			t.Slot.AmountSpent = money.Sum(
 				math.Abs(o.Payment),
@@ -98,6 +91,7 @@ func (m *Market) Operations(ctx context.Context, in OperationInput) ([]domain.Tr
 		}
 
 		if o.OperationType == sdk.SELL {
+			t.SellOrderID = o.ID
 			t.SalePrice = maxTradePrices(o.Trades)
 			t.AmountIncome = money.Sum(
 				math.Abs(o.Payment),
