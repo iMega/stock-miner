@@ -57,6 +57,26 @@ var _ = Describe("Automatically buy", func() {
 		Expect(req.Slot).To(BeTrue())
 	})
 
+	It("set settings commission and margin", func() {
+		defer GinkgoRecover()
+
+		var req struct {
+			RulePrice bool `graphql:"rulePrice(global: $in)"`
+		}
+		type RulePriceInput map[string]interface{}
+
+		variables := map[string]interface{}{
+			"in": RulePriceInput{
+				"marketCommission": 0.3,
+				"grossMargin":      0.2,
+			},
+		}
+		err := client.Mutate(ctx, &req, variables)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(req.RulePrice).To(BeTrue())
+	})
+
 	It("add approved stock items", func() {
 		defer GinkgoRecover()
 
@@ -362,6 +382,8 @@ var _ = Describe("Automatically buy", func() {
 					StartPrice:  94,
 					ChangePrice: 94,
 					BuyingPrice: 30.09,
+					TargetPrice: 30.33,
+					Profit:      0.24,
 					Qty:         1,
 					AmountSpent: 120.72,
 				},

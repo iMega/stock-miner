@@ -12,6 +12,9 @@ type Settings struct {
 
 	MarketCredentials map[string]MarketCredentials `json:"market_credentials,omitempty"`
 	MarketProvider    string                       `json:"market_provider,omitempty"`
+	MarketCommission  float64                      `json:"market_commission,omitempty"`
+
+	GrossMargin float64 `json:"gross_margin,omitempty"`
 }
 
 type SlotSettings struct {

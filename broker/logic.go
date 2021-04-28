@@ -11,6 +11,7 @@ import (
 	"github.com/imega/stock-miner/domain"
 	"github.com/imega/stock-miner/uuid"
 	"github.com/robfig/cron/v3"
+	"github.com/shopspring/decimal"
 )
 
 func (b *Broker) run() {
@@ -183,12 +184,21 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage) *workerpool.WorkerPo
 
 				tr.BuyingPrice = filteredTR.BuyingPrice
 				tr.Slot.AmountSpent = filteredTR.Slot.AmountSpent
+				tr.TargetPrice = calcTargetPrice(
+					settings.MarketCommission,
+					tr.BuyingPrice,
+					settings.GrossMargin,
+				)
+
+				profit, _ := decimal.NewFromFloat(tr.TargetPrice).Sub(decimal.NewFromFloat(tr.BuyingPrice)).Float64()
+				tr.Profit = profit
+
 				if err := b.Stack.ConfirmBuyTransaction(ctx, tr); err != nil {
 					b.logger.Errorf("failed to confirm transaction, %s", err)
 					return
 				}
 
-				b.logger.Infof("Buy: %s, price: %f", t.Ticker, tr.Slot.BuyingPrice)
+				// b.logger.Infof("Buy: %s", t.Ticker, tr.Slot.BuyingPrice)
 			})
 		}
 	}()
@@ -226,4 +236,22 @@ func (b *Broker) getPrice(msg domain.PriceReceiptMessage) (domain.PriceReceiptMe
 	result.Price = ob.LastPrice
 
 	return result, nil
+}
+
+// формула расчета целевой цены для продажи
+//
+// ценаПокупки+(ценаПокупки/100*комиссия) = затраты
+// затраты + (затраты / 100 * маржа%) = ЦенаПродажиБезКомиссии
+// ЦенаПродажиБезКомиссии+(ЦенаПродажиБезКомиссии/100*комиссия) = ЦенаПродажи
+func calcTargetPrice(commission, buyingPrice, margin float64) float64 {
+	c := decimal.NewFromFloat(commission)
+	bp := decimal.NewFromFloat(buyingPrice)
+	m := decimal.NewFromFloat(margin)
+
+	spent := bp.Add(bp.Div(decimal.NewFromInt(100)).Mul(c).Round(2))
+	gm := spent.Add(spent.Div(decimal.NewFromInt(100)).Mul(m).Round(2))
+
+	target, _ := gm.Add(gm.Div(decimal.NewFromInt(100)).Mul(c).Round(2)).Float64()
+
+	return target
 }

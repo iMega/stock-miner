@@ -81,6 +81,7 @@ type ComplexityRoot struct {
 		GlobalMiningStart    func(childComplexity int) int
 		GlobalMiningStop     func(childComplexity int) int
 		MarketCredentials    func(childComplexity int, creds model.MarketCredentialsInput) int
+		RulePrice            func(childComplexity int, global model.RulePriceInput) int
 		Slot                 func(childComplexity int, global model.SlotSettingsInput) int
 	}
 
@@ -96,6 +97,8 @@ type ComplexityRoot struct {
 	}
 
 	Settings struct {
+		GrossMargin       func(childComplexity int) int
+		MarketCommission  func(childComplexity int) int
 		MarketCredentials func(childComplexity int) int
 		MarketProvider    func(childComplexity int) int
 		Slot              func(childComplexity int) int
@@ -148,6 +151,7 @@ type MutationResolver interface {
 	AddStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error)
 	MarketCredentials(ctx context.Context, creds model.MarketCredentialsInput) (bool, error)
 	Slot(ctx context.Context, global model.SlotSettingsInput) (bool, error)
+	RulePrice(ctx context.Context, global model.RulePriceInput) (bool, error)
 	GlobalMiningStop(ctx context.Context) (bool, error)
 	GlobalMiningStart(ctx context.Context) (bool, error)
 }
@@ -372,6 +376,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.MarketCredentials(childComplexity, args["creds"].(model.MarketCredentialsInput)), true
 
+	case "Mutation.rulePrice":
+		if e.complexity.Mutation.RulePrice == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_rulePrice_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RulePrice(childComplexity, args["global"].(model.RulePriceInput)), true
+
 	case "Mutation.slot":
 		if e.complexity.Mutation.Slot == nil {
 			break
@@ -439,6 +455,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.User(childComplexity), true
+
+	case "Settings.grossMargin":
+		if e.complexity.Settings.GrossMargin == nil {
+			break
+		}
+
+		return e.complexity.Settings.GrossMargin(childComplexity), true
+
+	case "Settings.marketCommission":
+		if e.complexity.Settings.MarketCommission == nil {
+			break
+		}
+
+		return e.complexity.Settings.MarketCommission(childComplexity), true
 
 	case "Settings.marketCredentials":
 		if e.complexity.Settings.MarketCredentials == nil {
@@ -749,6 +779,7 @@ type Mutation {
     # settings
     marketCredentials(creds: MarketCredentialsInput!): Boolean!
     slot(global: SlotSettingsInput!): Boolean!
+    rulePrice(global: RulePriceInput!): Boolean!
 
     globalMiningStop: Boolean!
     globalMiningStart: Boolean!
@@ -796,6 +827,8 @@ type Settings {
     slot: SlotSettings
     marketCredentials: [MarketCredentials]
     marketProvider: String!
+    marketCommission: Float
+    grossMargin: Float
 }
 
 type SlotSettings {
@@ -818,6 +851,11 @@ input MarketCredentialsInput {
 input SlotSettingsInput {
     volume: Int!
     modificatorMinPrice: Float
+}
+
+input RulePriceInput {
+    marketCommission: Float
+    grossMargin: Float
 }
 
 type Slot {
@@ -894,6 +932,21 @@ func (ec *executionContext) field_Mutation_marketCredentials_args(ctx context.Co
 		}
 	}
 	args["creds"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_rulePrice_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.RulePriceInput
+	if tmp, ok := rawArgs["global"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("global"))
+		arg0, err = ec.unmarshalNRulePriceInput2githubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐRulePriceInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["global"] = arg0
 	return args, nil
 }
 
@@ -1828,6 +1881,48 @@ func (ec *executionContext) _Mutation_slot(ctx context.Context, field graphql.Co
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_rulePrice(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_rulePrice_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RulePrice(rctx, args["global"].(model.RulePriceInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_globalMiningStop(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2334,6 +2429,70 @@ func (ec *executionContext) _Settings_marketProvider(ctx context.Context, field 
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Settings_marketCommission(ctx context.Context, field graphql.CollectedField, obj *model.Settings) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Settings",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketCommission, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Settings_grossMargin(ctx context.Context, field graphql.CollectedField, obj *model.Settings) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Settings",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.GrossMargin, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Slot_id(ctx context.Context, field graphql.CollectedField, obj *model.Slot) (ret graphql.Marshaler) {
@@ -4369,6 +4528,34 @@ func (ec *executionContext) unmarshalInputMarketCredentialsInput(ctx context.Con
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputRulePriceInput(ctx context.Context, obj interface{}) (model.RulePriceInput, error) {
+	var it model.RulePriceInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "marketCommission":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketCommission"))
+			it.MarketCommission, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "grossMargin":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("grossMargin"))
+			it.GrossMargin, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSlotSettingsInput(ctx context.Context, obj interface{}) (model.SlotSettingsInput, error) {
 	var it model.SlotSettingsInput
 	var asMap = obj.(map[string]interface{})
@@ -4622,6 +4809,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "rulePrice":
+			out.Values[i] = ec._Mutation_rulePrice(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "globalMiningStop":
 			out.Values[i] = ec._Mutation_globalMiningStop(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -4793,6 +4985,10 @@ func (ec *executionContext) _Settings(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "marketCommission":
+			out.Values[i] = ec._Settings_marketCommission(ctx, field, obj)
+		case "grossMargin":
+			out.Values[i] = ec._Settings_grossMargin(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5319,6 +5515,11 @@ func (ec *executionContext) marshalNMemStats2ᚖgithubᚗcomᚋimegaᚋstockᚑm
 		return graphql.Null
 	}
 	return ec._MemStats(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNRulePriceInput2githubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐRulePriceInput(ctx context.Context, v interface{}) (model.RulePriceInput, error) {
+	res, err := ec.unmarshalInputRulePriceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNSettings2githubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐSettings(ctx context.Context, sel ast.SelectionSet, v model.Settings) graphql.Marshaler {

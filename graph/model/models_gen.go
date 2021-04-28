@@ -39,10 +39,17 @@ type MemStats struct {
 	Sys        string `json:"sys"`
 }
 
+type RulePriceInput struct {
+	MarketCommission *float64 `json:"marketCommission"`
+	GrossMargin      *float64 `json:"grossMargin"`
+}
+
 type Settings struct {
 	Slot              *SlotSettings        `json:"slot"`
 	MarketCredentials []*MarketCredentials `json:"marketCredentials"`
 	MarketProvider    string               `json:"marketProvider"`
+	MarketCommission  *float64             `json:"marketCommission"`
+	GrossMargin       *float64             `json:"grossMargin"`
 }
 
 type Slot struct {

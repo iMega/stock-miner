@@ -16,6 +16,7 @@ type Mutation {
     # settings
     marketCredentials(creds: MarketCredentialsInput!): Boolean!
     slot(global: SlotSettingsInput!): Boolean!
+    rulePrice(global: RulePriceInput!): Boolean!
 
     globalMiningStop: Boolean!
     globalMiningStart: Boolean!
@@ -63,6 +64,8 @@ type Settings {
     slot: SlotSettings
     marketCredentials: [MarketCredentials]
     marketProvider: String!
+    marketCommission: Float
+    grossMargin: Float
 }
 
 type SlotSettings {
@@ -85,6 +88,11 @@ input MarketCredentialsInput {
 input SlotSettingsInput {
     volume: Int!
     modificatorMinPrice: Float
+}
+
+input RulePriceInput {
+    marketCommission: Float
+    grossMargin: Float
 }
 
 type Slot {
