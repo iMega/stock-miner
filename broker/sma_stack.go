@@ -81,9 +81,9 @@ func (s *smaFrame) IsTrendUp() bool {
 }
 
 func (s *smaFrame) Prev() float64 {
-	prev := s.Cur - 1
-	if s.Cur == 0 {
-		prev = capacity - 1
+	prev := s.Cur - 2
+	if s.Cur <= 1 {
+		prev = capacity - 2 + s.Cur
 	}
 
 	return s.Fifo[prev]

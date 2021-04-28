@@ -80,3 +80,23 @@ func Test_Regression_1(t *testing.T) {
 		t.Fatalf("failed to calc outer trend frame")
 	}
 }
+
+func Test_PrevPrice(t *testing.T) {
+	st := make(smaStack)
+
+	st.Add("AAPL", 1)
+
+	for i := 2; i < 11; i++ {
+		st.Add("AAPL", float64(i))
+
+		frame, err := st.Get("AAPL")
+		if err != nil {
+			t.Fatalf("failed getting frame")
+		}
+
+		if frame.Prev() != float64(i-1) {
+			t.Fatalf("failed getting previous price, %f not equal %f", frame.Prev(), float64(i-1))
+		}
+	}
+
+}
