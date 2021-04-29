@@ -57,6 +57,9 @@ func TestDealings_AddTransaction(t *testing.T) {
 	tr.BuyAt = time.Now()
 	trs[0].BuyAt = tr.BuyAt
 
+	tr.SellAt = time.Now()
+	trs[0].SellAt = tr.SellAt
+
 	assert.Equal(t, trs[0], tr)
 }
 
@@ -114,6 +117,9 @@ func TestDealings_ConfirmTransaction(t *testing.T) {
 
 	tr.BuyAt = time.Now()
 	trs[0].BuyAt = tr.BuyAt
+
+	tr.SellAt = time.Now()
+	trs[0].SellAt = tr.SellAt
 
 	assert.Equal(t, trs[0], tr)
 }
