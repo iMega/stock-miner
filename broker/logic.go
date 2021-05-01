@@ -100,7 +100,7 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage, sellCh chan domain.S
 				}
 
 				if !frame.IsFull() {
-					b.logger.Error("frame is not full")
+					b.logger.Debug("frame is not full")
 					return
 				}
 
@@ -141,6 +141,7 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage, sellCh chan domain.S
 				if trend || len(byuing) > 0 && byuing[0]-settings.Slot.ModificatorMinPrice >= t.Price {
 					return
 				}
+
 				//buy
 				cred := settings.MarketCredentials[settings.MarketProvider]
 				ctx = contexkey.WithToken(ctx, cred.Token)
@@ -228,7 +229,33 @@ func (b *Broker) sellWorker(in chan domain.Slot) *workerpool.WorkerPool {
 		for task := range in {
 			t := task
 			wp.Submit(func() {
-				_ = t
+				ctx := contexkey.WithEmail(context.Background(), t.Email)
+				settings, err := b.SettingsStorage.Settings(ctx)
+				if err != nil {
+					b.logger.Errorf("failed getting settings, %s", err)
+					return
+				}
+
+				cred := settings.MarketCredentials[settings.MarketProvider]
+				ctx = contexkey.WithToken(ctx, cred.Token)
+				ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
+
+				tr, err := b.StockStorage.Transaction(ctx, t.ID)
+				if err != nil {
+					b.logger.Errorf("failed getting transaction, %s", err)
+					return
+				}
+
+				upTr, err := b.sell(ctx, tr)
+				if err != nil {
+					b.logger.Errorf("failed to sell items, %s", err)
+					return
+				}
+
+				if err := b.confirmSell(ctx, upTr); err != nil {
+					b.logger.Errorf("failed to confirm sell items, %s", err)
+					return
+				}
 			})
 		}
 	}()

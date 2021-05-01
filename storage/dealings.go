@@ -247,6 +247,128 @@ func (s *Storage) Dealings(ctx context.Context) ([]domain.Transaction, error) {
 	return result, nil
 }
 
+func (s *Storage) Transaction(ctx context.Context, ID string) (domain.Transaction, error) {
+	var result domain.Transaction
+	email, ok := contexkey.EmailFromContext(ctx)
+	if !ok {
+		return result, fmt.Errorf("failed to extract user from context")
+	}
+
+	q := `select email,
+	        id,
+	        ticker,
+            figi,
+	        start_price,
+	        change_price,
+	        buying_price,
+	        target_price,
+	        profit,
+	        sale_price,
+	        qty,
+	        amount_spent,
+	        amount_income,
+	        total_profit,
+            buy_order_id,
+            sell_order_id,
+	        buy_at,
+	        duration,
+	        sell_at
+	    from dealings
+	    where email = ?
+	      and id = ?`
+	row := s.db.QueryRowContext(ctx, q, email, ID)
+
+	var (
+		buyingPrice  sql.NullFloat64
+		targetPrice  sql.NullFloat64
+		profit       sql.NullFloat64
+		salePrice    sql.NullFloat64
+		qty          sql.NullInt64
+		amountSpent  sql.NullFloat64
+		amountIncome sql.NullFloat64
+		totalProfit  sql.NullFloat64
+		sellOrderID  sql.NullString
+		duration     sql.NullInt64
+		sellAt       sql.NullTime
+	)
+
+	err := row.Scan(
+		&result.Slot.Email,
+		&result.Slot.ID,
+		&result.StockItem.Ticker,
+		&result.StockItem.FIGI,
+		&result.Slot.StartPrice,
+		&result.Slot.ChangePrice,
+		&buyingPrice,
+		&targetPrice,
+		&profit,
+		//
+		&salePrice,
+		&qty,
+		&amountSpent,
+		//
+		&amountIncome,
+		&totalProfit,
+		//
+		&result.BuyOrderID,
+		&sellOrderID,
+		//
+		&result.BuyAt,
+		&duration,
+		&sellAt,
+	)
+	if err != nil {
+		return result, fmt.Errorf("failed getting transaction, %s", err)
+	}
+
+	if buyingPrice.Valid {
+		result.Slot.BuyingPrice = buyingPrice.Float64
+	}
+
+	if targetPrice.Valid {
+		result.Slot.TargetPrice = targetPrice.Float64
+	}
+
+	if profit.Valid {
+		result.Slot.Profit = profit.Float64
+	}
+
+	if salePrice.Valid {
+		result.SalePrice = salePrice.Float64
+	}
+
+	if qty.Valid {
+		result.Slot.Qty = int(qty.Int64)
+	}
+
+	if amountSpent.Valid {
+		result.Slot.AmountSpent = amountSpent.Float64
+	}
+
+	if amountIncome.Valid {
+		result.AmountIncome = amountIncome.Float64
+	}
+
+	if totalProfit.Valid {
+		result.Slot.TotalProfit = totalProfit.Float64
+	}
+
+	if sellOrderID.Valid {
+		result.SellOrderID = sellOrderID.String
+	}
+
+	if duration.Valid {
+		result.Duration = int(duration.Int64)
+	}
+
+	result.SellAt = time.Date(0, 0, 0, 0, 0, 0, 0, &time.Location{})
+	if sellAt.Valid {
+		result.SellAt = sellAt.Time
+	}
+
+	return result, nil
+}
+
 func dealingsTable(ctx context.Context, tx *sql.Tx) error {
 	q := `CREATE TABLE IF NOT EXISTS dealings (
         email VARCHAR(64) NOT NULL,

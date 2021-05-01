@@ -9,6 +9,7 @@ type Market interface {
 	ListStockItems(context.Context) ([]*StockItem, error)
 	OrderBook(ctx context.Context, i StockItem) (*OrderBook, error)
 	OrderBuy(ctx context.Context, i Transaction) (Transaction, error)
+	OrderSell(ctx context.Context, i Transaction) (Transaction, error)
 	Operations(context.Context, OperationInput) ([]Transaction, error)
 }
 

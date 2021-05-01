@@ -176,6 +176,20 @@ func (s *Storage) updateSlot(ctx context.Context, t domain.Slot) error {
 	return nil
 }
 
+func (s *Storage) deleteSlot(ctx context.Context, t domain.Slot) error {
+	q := `
+        delete from slot
+        where email = ?
+          and id = ?
+    `
+	_, err := s.db.ExecContext(ctx, q, t.Email, t.ID)
+	if err != nil {
+		return fmt.Errorf("failed to delete slot, %s", err)
+	}
+
+	return nil
+}
+
 func slotTable(ctx context.Context, tx *sql.Tx) error {
 	q := `CREATE TABLE IF NOT EXISTS slot (
         email VARCHAR(64) NOT NULL,
