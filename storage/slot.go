@@ -133,6 +133,49 @@ func (s *Storage) BuyStockItem(ctx context.Context, tr domain.Transaction) error
 	})
 }
 
+func (s *Storage) updateSlot(ctx context.Context, t domain.Slot) error {
+	q := `
+        update slot
+        set slot_id = ?,
+            ticker = ?,
+            figi = ?,
+            start_price = ?,
+            change_price = ?,
+            buying_price = ?,
+            target_price = ?,
+            profit = ?,
+            qty = ?,
+            amount_spent = ?,
+            target_amount = ?,
+            total_profit = ?
+        where email = ?
+          and id = ?
+    `
+	_, err := s.db.ExecContext(
+		ctx,
+		q,
+		t.SlotID,
+		t.Ticker,
+		t.FIGI,
+		t.StartPrice,
+		t.ChangePrice,
+		t.BuyingPrice,
+		t.TargetPrice,
+		t.Profit,
+		t.Qty,
+		t.AmountSpent,
+		t.TargetPrice,
+		t.TotalProfit,
+		t.Email,
+		t.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update slot, %s", err)
+	}
+
+	return nil
+}
+
 func slotTable(ctx context.Context, tx *sql.Tx) error {
 	q := `CREATE TABLE IF NOT EXISTS slot (
         email VARCHAR(64) NOT NULL,

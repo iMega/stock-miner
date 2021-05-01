@@ -12,6 +12,8 @@ type Query {
 
 type Mutation {
     addStockItemApproved(items: [StockItemInput!]!): Boolean!
+    removeStockItemApproved(items: [StockItemInput!]!): Boolean!
+    updateStockItemApproved(items: [StockItemInput!]!): Boolean!
 
     # settings
     marketCredentials(creds: MarketCredentialsInput!): Boolean!

@@ -108,6 +108,36 @@ func (s *Storage) AddStockItemApproved(ctx context.Context, item domain.StockIte
 	return nil
 }
 
+func (s *Storage) UpdateStockItemApproved(ctx context.Context, item domain.StockItem) error {
+	email, ok := contexkey.EmailFromContext(ctx)
+	if !ok {
+		return fmt.Errorf("failed to extract user from context")
+	}
+
+	q := `update stock_item_approved set amount_limit=?, transaction_limit=? where email=? and ticker=?`
+	_, err := s.db.ExecContext(ctx, q, item.AmountLimit, item.TransactionLimit, email, item.Ticker)
+	if err != nil {
+		return fmt.Errorf("failed to update approved stock item, %s", err)
+	}
+
+	return nil
+}
+
+func (s *Storage) RemoveStockItemApproved(ctx context.Context, item domain.StockItem) error {
+	email, ok := contexkey.EmailFromContext(ctx)
+	if !ok {
+		return fmt.Errorf("failed to extract user from context")
+	}
+
+	q := `delete from stock_item_approved where email=? and ticker=?`
+	_, err := s.db.ExecContext(ctx, q, email, item.Ticker)
+	if err != nil {
+		return fmt.Errorf("failed to delete approved stock item, %s", err)
+	}
+
+	return nil
+}
+
 func stockItemApprovedTable(ctx context.Context, tx *sql.Tx) error {
 	q := `CREATE TABLE IF NOT EXISTS stock_item_approved (
         email VARCHAR(64) NOT NULL,

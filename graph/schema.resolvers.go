@@ -31,6 +31,38 @@ func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*mo
 	return true, nil
 }
 
+func (r *mutationResolver) RemoveStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error) {
+	for _, item := range items {
+		in := domain.StockItem{
+			Ticker:           item.Ticker,
+			FIGI:             item.Figi,
+			AmountLimit:      item.AmountLimit,
+			TransactionLimit: item.TransactionLimit,
+		}
+		if err := r.StockStorage.RemoveStockItemApproved(ctx, in); err != nil {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func (r *mutationResolver) UpdateStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error) {
+	for _, item := range items {
+		in := domain.StockItem{
+			Ticker:           item.Ticker,
+			FIGI:             item.Figi,
+			AmountLimit:      item.AmountLimit,
+			TransactionLimit: item.TransactionLimit,
+		}
+		if err := r.StockStorage.UpdateStockItemApproved(ctx, in); err != nil {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
 func (r *mutationResolver) MarketCredentials(ctx context.Context, creds model.MarketCredentialsInput) (bool, error) {
 	s, err := r.SettingsStorage.Settings(ctx)
 	if err != nil {

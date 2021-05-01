@@ -18,9 +18,11 @@ func (b *Broker) run() {
 	inCh := make(chan domain.PriceReceiptMessage)
 	outCh := make(chan domain.PriceReceiptMessage)
 	psCh := make(chan domain.PriceReceiptMessage)
+	sellCh := make(chan domain.Slot)
 	w1 := b.makePricerChannel(inCh, outCh, psCh)
 	w2 := b.makePriceStorageChannel(psCh)
-	b.noName(outCh)
+	b.noName(outCh, sellCh)
+	b.sellWorker(sellCh)
 
 	delay := cron.DelayIfStillRunning(&logger{log: b.logger})
 	b.cron.AddJob("@every 2s", delay(cron.FuncJob(func() {
@@ -84,13 +86,24 @@ func (b *Broker) makePriceStorageChannel(in chan domain.PriceReceiptMessage) *wo
 	return wp
 }
 
-func (b *Broker) noName(in chan domain.PriceReceiptMessage) *workerpool.WorkerPool {
+func (b *Broker) noName(in chan domain.PriceReceiptMessage, sellCh chan domain.Slot) *workerpool.WorkerPool {
 	wp := workerpool.New(1)
 
 	go func() {
 		for task := range in {
 			t := task
 			wp.Submit(func() {
+				frame, err := b.SMAStack.Get(t.Ticker)
+				if err != nil {
+					b.logger.Errorf("failed getting frame from stack, %s", err)
+					return
+				}
+
+				if !frame.IsFull() {
+					b.logger.Error("frame is not full")
+					return
+				}
+
 				ctx := contexkey.WithEmail(context.Background(), t.Email)
 				settings, err := b.SettingsStorage.Settings(ctx)
 				if err != nil {
@@ -104,18 +117,12 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage) *workerpool.WorkerPo
 					return
 				}
 
+				sellSlots := getItemsForSale(slots, frame.Last)
+				for _, slot := range sellSlots {
+					sellCh <- slot
+				}
+
 				if settings.Slot.Volume <= len(slots) {
-					return
-				}
-
-				frame, err := b.SMAStack.Get(t.Ticker)
-				if err != nil {
-					b.logger.Errorf("failed getting frame from stack, %s", err)
-					return
-				}
-
-				if !frame.IsFull() {
-					b.logger.Error("frame is not full")
 					return
 				}
 
@@ -134,7 +141,7 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage) *workerpool.WorkerPo
 				if trend || len(byuing) > 0 && byuing[0]-settings.Slot.ModificatorMinPrice >= t.Price {
 					return
 				}
-
+				//buy
 				cred := settings.MarketCredentials[settings.MarketProvider]
 				ctx = contexkey.WithToken(ctx, cred.Token)
 				ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
@@ -152,14 +159,9 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage) *workerpool.WorkerPo
 					BuyAt: time.Now(),
 				}
 
-				tr, err := b.Market.OrderBuy(ctx, emptyTr)
+				tr, err := b.buy(ctx, emptyTr)
 				if err != nil {
 					b.logger.Errorf("failed to buy item, %s", err)
-					return
-				}
-
-				if err := b.Stack.BuyStockItem(ctx, tr); err != nil {
-					b.logger.Errorf("failed to save item to stock, %s", err)
 					return
 				}
 
@@ -193,12 +195,40 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage) *workerpool.WorkerPo
 				profit, _ := decimal.NewFromFloat(tr.TargetPrice).Sub(decimal.NewFromFloat(tr.BuyingPrice)).Float64()
 				tr.Profit = profit
 
-				if err := b.Stack.ConfirmBuyTransaction(ctx, tr); err != nil {
+				if err := b.confirmBuy(ctx, tr); err != nil {
 					b.logger.Errorf("failed to confirm transaction, %s", err)
 					return
 				}
+			})
+		}
+	}()
 
-				// b.logger.Infof("Buy: %s", t.Ticker, tr.Slot.BuyingPrice)
+	return wp
+}
+
+func (b *Broker) buyWorker(in chan domain.Slot) *workerpool.WorkerPool {
+	wp := workerpool.New(1)
+
+	go func() {
+		for task := range in {
+			t := task
+			wp.Submit(func() {
+				_ = t
+			})
+		}
+	}()
+
+	return wp
+}
+
+func (b *Broker) sellWorker(in chan domain.Slot) *workerpool.WorkerPool {
+	wp := workerpool.New(1)
+
+	go func() {
+		for task := range in {
+			t := task
+			wp.Submit(func() {
+				_ = t
 			})
 		}
 	}()
@@ -254,4 +284,17 @@ func calcTargetPrice(commission, buyingPrice, margin float64) float64 {
 	target, _ := gm.Add(gm.Div(decimal.NewFromInt(100)).Mul(c).Round(2)).Float64()
 
 	return target
+}
+
+func getItemsForSale(slots []domain.Slot, price float64) []domain.Slot {
+	result := []domain.Slot{}
+	p := decimal.NewFromFloat(price)
+
+	for _, slot := range slots {
+		if decimal.NewFromFloat(slot.TargetPrice).LessThanOrEqual(p) {
+			result = append(result, slot)
+		}
+	}
+
+	return result
 }

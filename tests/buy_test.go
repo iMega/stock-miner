@@ -130,9 +130,9 @@ var _ = Describe("Automatically buy", func() {
 			},
 		}
 		err = client.Mutate(ctx, &reqAddStockItemApproved, variables)
-		// Expect(err).NotTo(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 
-		// Expect(reqAddStockItemApproved.AddStockItemApproved).To(BeTrue())
+		Expect(reqAddStockItemApproved.AddStockItemApproved).To(BeTrue())
 	})
 
 	It("start mining", func() {
@@ -184,6 +184,8 @@ var _ = Describe("Automatically buy", func() {
 
 				b, _ := ioutil.ReadAll(r.Body)
 				json.Unmarshal(b, &requestOrderAdd)
+				err := r.Body.Close()
+				Expect(err).NotTo(HaveOccurred())
 
 				data = map[string]interface{}{
 					"status": "Fail",
@@ -323,12 +325,12 @@ var _ = Describe("Automatically buy", func() {
 					Figi:         "BBG000B9XRY4",
 					StartPrice:   95,
 					ChangePrice:  94,
-					BuyingPrice:  0,
-					TargetPrice:  0,
-					Profit:       0,
+					BuyingPrice:  30.09,
+					TargetPrice:  30.33,
+					Profit:       0.24,
 					Qty:          1,
-					AmountSpent:  0,
-					TargetAmount: 0,
+					AmountSpent:  120.72,
+					TargetAmount: 30.33,
 					TotalProfit:  0,
 				},
 			},

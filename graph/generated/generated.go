@@ -77,12 +77,14 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddStockItemApproved func(childComplexity int, items []*model.StockItemInput) int
-		GlobalMiningStart    func(childComplexity int) int
-		GlobalMiningStop     func(childComplexity int) int
-		MarketCredentials    func(childComplexity int, creds model.MarketCredentialsInput) int
-		RulePrice            func(childComplexity int, global model.RulePriceInput) int
-		Slot                 func(childComplexity int, global model.SlotSettingsInput) int
+		AddStockItemApproved    func(childComplexity int, items []*model.StockItemInput) int
+		GlobalMiningStart       func(childComplexity int) int
+		GlobalMiningStop        func(childComplexity int) int
+		MarketCredentials       func(childComplexity int, creds model.MarketCredentialsInput) int
+		RemoveStockItemApproved func(childComplexity int, items []*model.StockItemInput) int
+		RulePrice               func(childComplexity int, global model.RulePriceInput) int
+		Slot                    func(childComplexity int, global model.SlotSettingsInput) int
+		UpdateStockItemApproved func(childComplexity int, items []*model.StockItemInput) int
 	}
 
 	Query struct {
@@ -149,6 +151,8 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	AddStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error)
+	RemoveStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error)
+	UpdateStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error)
 	MarketCredentials(ctx context.Context, creds model.MarketCredentialsInput) (bool, error)
 	Slot(ctx context.Context, global model.SlotSettingsInput) (bool, error)
 	RulePrice(ctx context.Context, global model.RulePriceInput) (bool, error)
@@ -376,6 +380,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.MarketCredentials(childComplexity, args["creds"].(model.MarketCredentialsInput)), true
 
+	case "Mutation.removeStockItemApproved":
+		if e.complexity.Mutation.RemoveStockItemApproved == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_removeStockItemApproved_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RemoveStockItemApproved(childComplexity, args["items"].([]*model.StockItemInput)), true
+
 	case "Mutation.rulePrice":
 		if e.complexity.Mutation.RulePrice == nil {
 			break
@@ -399,6 +415,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Slot(childComplexity, args["global"].(model.SlotSettingsInput)), true
+
+	case "Mutation.updateStockItemApproved":
+		if e.complexity.Mutation.UpdateStockItemApproved == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateStockItemApproved_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateStockItemApproved(childComplexity, args["items"].([]*model.StockItemInput)), true
 
 	case "Query.dealings":
 		if e.complexity.Query.Dealings == nil {
@@ -775,6 +803,8 @@ type Query {
 
 type Mutation {
     addStockItemApproved(items: [StockItemInput!]!): Boolean!
+    removeStockItemApproved(items: [StockItemInput!]!): Boolean!
+    updateStockItemApproved(items: [StockItemInput!]!): Boolean!
 
     # settings
     marketCredentials(creds: MarketCredentialsInput!): Boolean!
@@ -935,6 +965,21 @@ func (ec *executionContext) field_Mutation_marketCredentials_args(ctx context.Co
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_removeStockItemApproved_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []*model.StockItemInput
+	if tmp, ok := rawArgs["items"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("items"))
+		arg0, err = ec.unmarshalNStockItemInput2ᚕᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐStockItemInputᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["items"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_rulePrice_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -962,6 +1007,21 @@ func (ec *executionContext) field_Mutation_slot_args(ctx context.Context, rawArg
 		}
 	}
 	args["global"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateStockItemApproved_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []*model.StockItemInput
+	if tmp, ok := rawArgs["items"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("items"))
+		arg0, err = ec.unmarshalNStockItemInput2ᚕᚖgithubᚗcomᚋimegaᚋstockᚑminerᚋgraphᚋmodelᚐStockItemInputᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["items"] = arg0
 	return args, nil
 }
 
@@ -1781,6 +1841,90 @@ func (ec *executionContext) _Mutation_addStockItemApproved(ctx context.Context, 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().AddStockItemApproved(rctx, args["items"].([]*model.StockItemInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_removeStockItemApproved(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_removeStockItemApproved_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RemoveStockItemApproved(rctx, args["items"].([]*model.StockItemInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateStockItemApproved(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateStockItemApproved_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateStockItemApproved(rctx, args["items"].([]*model.StockItemInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4796,6 +4940,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = graphql.MarshalString("Mutation")
 		case "addStockItemApproved":
 			out.Values[i] = ec._Mutation_addStockItemApproved(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "removeStockItemApproved":
+			out.Values[i] = ec._Mutation_removeStockItemApproved(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateStockItemApproved":
+			out.Values[i] = ec._Mutation_updateStockItemApproved(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
