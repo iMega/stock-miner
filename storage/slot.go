@@ -209,7 +209,7 @@ func slotTable(ctx context.Context, tx *sql.Tx) error {
         target_amount FLOAT NOT NULL,
         total_profit FLOAT NOT NULL,
 
-        CONSTRAINT pair PRIMARY KEY (email, slot_id)
+        CONSTRAINT pair PRIMARY KEY (email, ticker, slot_id)
     )`
 
 	_, err := tx.ExecContext(ctx, q)

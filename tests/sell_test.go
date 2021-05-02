@@ -100,7 +100,11 @@ var _ = Describe("Automatically buy and sell", func() {
 						"code":    "string",
 					},
 				}
-				if requestOrderAdd.Operation == string(sdk.BUY) && requestOrderAdd.Lots == 1 {
+
+				v, err := url.ParseQuery(r.URL.RawQuery)
+				Expect(err).NotTo(HaveOccurred())
+
+				if v.Get("figi") == figi && requestOrderAdd.Operation == string(sdk.BUY) && requestOrderAdd.Lots == 1 {
 					data = map[string]interface{}{
 						"trackingId": "dbb781ba4e984bd9",
 						"status":     "Ok",
@@ -337,7 +341,9 @@ var _ = Describe("Automatically buy and sell", func() {
 		err := client.Query(ctx, &reqSlots, variables)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(reqSlots.Slots).To(BeEmpty())
+		for _, slot := range reqSlots.Slots {
+			Expect(slot.Figi).NotTo(Equal(figi))
+		}
 	})
 
 	It("check dealings", func() {
@@ -367,24 +373,20 @@ var _ = Describe("Automatically buy and sell", func() {
 			Dealings []Deal
 		}
 
-		expected := Dealings{
-			Dealings: []Deal{
-				{
-					Id:           "",
-					Ticker:       graphql.String(ticker),
-					Figi:         graphql.String(figi),
-					StartPrice:   95,
-					ChangePrice:  94,
-					BuyingPrice:  95,
-					TargetPrice:  95.77,
-					Profit:       0.77,
-					Qty:          1,
-					AmountSpent:  95.5,
-					AmountIncome: 97,
-					TotalProfit:  1.5,
-					SalePrice:    96.5,
-				},
-			},
+		expected := Deal{
+			Id:           "",
+			Ticker:       graphql.String(ticker),
+			Figi:         graphql.String(figi),
+			StartPrice:   95,
+			ChangePrice:  94,
+			BuyingPrice:  95,
+			TargetPrice:  95.77,
+			Profit:       0.77,
+			Qty:          1,
+			AmountSpent:  95.5,
+			AmountIncome: 97,
+			TotalProfit:  1.5,
+			SalePrice:    96.5,
 		}
 
 		reqDealings := Dealings{}
@@ -399,6 +401,6 @@ var _ = Describe("Automatically buy and sell", func() {
 			reqDealings.Dealings[idx].Duration = 0
 		}
 
-		Expect(reqDealings).To(Equal(expected))
+		Expect(reqDealings.Dealings).Should(ContainElement(expected))
 	})
 })

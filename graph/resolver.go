@@ -1,6 +1,8 @@
 package graph
 
-import "github.com/imega/stock-miner/domain"
+import (
+	"github.com/imega/stock-miner/domain"
+)
 
 type Resolver struct {
 	UserStorage      domain.UserStorage

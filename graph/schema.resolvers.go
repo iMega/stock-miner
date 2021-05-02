@@ -265,9 +265,11 @@ func (r *queryResolver) Dealings(ctx context.Context) ([]*model.Deal, error) {
 		return nil, err
 	}
 
-	for _, deal := range dealings {
+	for _, v := range dealings {
+		deal := v
 		buyAt := deal.BuyAt.Format(time.RFC3339)
 		sellAt := deal.SellAt.Format(time.RFC3339)
+
 		result = append(result, &model.Deal{
 			ID:           deal.ID,
 			Ticker:       deal.Ticker,

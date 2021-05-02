@@ -11,6 +11,11 @@ import (
 )
 
 func (s *Storage) buyTransaction(ctx context.Context, t domain.Transaction) error {
+	email, ok := contexkey.EmailFromContext(ctx)
+	if !ok {
+		return fmt.Errorf("failed to extract user from context")
+	}
+
 	q := `insert into dealings (
             email,
             id,
@@ -25,7 +30,7 @@ func (s *Storage) buyTransaction(ctx context.Context, t domain.Transaction) erro
 	_, err := s.db.ExecContext(
 		ctx,
 		q,
-		t.Email,
+		email,
 		t.ID,
 		t.Ticker,
 		t.FIGI,

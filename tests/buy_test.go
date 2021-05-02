@@ -80,6 +80,11 @@ var _ = Describe("Automatically buy", func() {
 	It("add approved stock items", func() {
 		defer GinkgoRecover()
 
+		items := helpers.StockItemApproved(GraphQLUrl)
+		for _, item := range items {
+			helpers.RemoveStockItemApproved(GraphQLUrl, string(item.Ticker))
+		}
+
 		helpers.MockHTTPServer.AddHandler(func(w http.ResponseWriter, r *http.Request) {
 			data := map[string]interface{}{
 				"status": "OK",
@@ -194,7 +199,11 @@ var _ = Describe("Automatically buy", func() {
 						"code":    "string",
 					},
 				}
-				if requestOrderAdd.Operation == string(sdk.BUY) && requestOrderAdd.Lots == 1 {
+
+				v, err := url.ParseQuery(r.URL.RawQuery)
+				Expect(err).NotTo(HaveOccurred())
+
+				if v.Get("figi") == figi && requestOrderAdd.Operation == string(sdk.BUY) && requestOrderAdd.Lots == 1 {
 					data = map[string]interface{}{
 						"trackingId": "dbb781ba4e984bd9",
 						"status":     "Ok",
@@ -375,21 +384,17 @@ var _ = Describe("Automatically buy", func() {
 			Dealings []Deal
 		}
 
-		expected := Dealings{
-			Dealings: []Deal{
-				{
-					Id:          "",
-					Ticker:      "AAPL",
-					Figi:        "BBG000B9XRY4",
-					StartPrice:  95,
-					ChangePrice: 94,
-					BuyingPrice: 30.09,
-					TargetPrice: 30.33,
-					Profit:      0.24,
-					Qty:         1,
-					AmountSpent: 120.72,
-				},
-			},
+		expected := Deal{
+			Id:          "",
+			Ticker:      "AAPL",
+			Figi:        "BBG000B9XRY4",
+			StartPrice:  95,
+			ChangePrice: 94,
+			BuyingPrice: 30.09,
+			TargetPrice: 30.33,
+			Profit:      0.24,
+			Qty:         1,
+			AmountSpent: 120.72,
 		}
 
 		reqDealings := Dealings{}
@@ -403,6 +408,6 @@ var _ = Describe("Automatically buy", func() {
 			reqDealings.Dealings[idx].SellAt = ""
 		}
 
-		Expect(reqDealings).To(Equal(expected))
+		Expect(reqDealings.Dealings).Should(ContainElement(expected))
 	})
 })
