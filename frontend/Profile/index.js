@@ -13,6 +13,7 @@ import {
 import { useQuery, useMutation, gql } from "@apollo/client";
 
 import Message from "../Message";
+import RulePrice from "./RulePrice";
 
 const MarketCredentialsND = gql`
     mutation MarketCredentials($in: MarketCredentialsInput!) {
@@ -42,6 +43,8 @@ const ProfileAndSettingsND = gql`
                 token
                 apiUrl
             }
+            marketCommission
+            grossMargin
         }
     }
 `;
@@ -69,7 +72,6 @@ const Profile = () => {
     const [saveSlot] = useMutation(slotND);
     React.useEffect(() => {
         if (loading === false && data) {
-            console.log(data);
             setCreds({
                 provider: data.settings.marketCredentials[0].name,
                 url: data.settings.marketCredentials[0].apiUrl,
@@ -214,6 +216,8 @@ const Profile = () => {
                     </Button>
                 </Form.Item>
             </Form>
+            <Divider />
+            <RulePrice {...data} />
         </React.Fragment>
     );
 

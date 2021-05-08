@@ -226,6 +226,8 @@ func (r *queryResolver) Settings(ctx context.Context) (*model.Settings, error) {
 			ModificatorMinPrice: &s.Slot.ModificatorMinPrice,
 		},
 		MarketCredentials: cred,
+		MarketCommission:  &s.MarketCommission,
+		GrossMargin:       &s.GrossMargin,
 	}, nil
 }
 
