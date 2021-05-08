@@ -112,6 +112,8 @@ type Slot {
     amountSpent: Float
     targetAmount: Float
     totalProfit: Float
+
+    currency: String!
 }
 
 type Deal {
@@ -135,4 +137,6 @@ type Deal {
     buyAt: String
     duration: Int
     sellAt: String
+
+    currency: String!
 }

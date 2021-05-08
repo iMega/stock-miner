@@ -38,6 +38,8 @@ type Slot struct {
 	TargetAmount float64 `json:"target_amount"`
 	AmountSpent  float64 `json:"amount_spent"`
 	TotalProfit  float64 `json:"total_profit"`
+
+	Currency string `json:"currency"`
 }
 
 type OrderBook struct {

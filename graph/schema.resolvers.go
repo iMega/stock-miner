@@ -251,6 +251,7 @@ func (r *queryResolver) Slots(ctx context.Context) ([]*model.Slot, error) {
 			AmountSpent:  &slot.AmountSpent,
 			TargetAmount: &slot.TargetAmount,
 			TotalProfit:  &slot.TotalProfit,
+			Currency:     "USD",
 		})
 	}
 
@@ -287,6 +288,7 @@ func (r *queryResolver) Dealings(ctx context.Context) ([]*model.Deal, error) {
 			BuyAt:        &buyAt,
 			Duration:     &deal.Duration,
 			SellAt:       &sellAt,
+			Currency:     "USD",
 		})
 	}
 

@@ -24,8 +24,9 @@ func (s *Storage) buyTransaction(ctx context.Context, t domain.Transaction) erro
             start_price,
             change_price,
             buy_order_id,
-            buy_at
-        ) values (?,?,?,?,?,?,?,?)`
+            buy_at,
+            currency
+        ) values (?,?,?,?,?,?,?,?,?)`
 
 	_, err := s.db.ExecContext(
 		ctx,
@@ -38,6 +39,7 @@ func (s *Storage) buyTransaction(ctx context.Context, t domain.Transaction) erro
 		t.ChangePrice,
 		t.BuyOrderID,
 		t.BuyAt,
+		t.Currency,
 	)
 	if err != nil {
 		return err
@@ -57,7 +59,8 @@ func (s *Storage) ConfirmBuyTransaction(ctx context.Context, t domain.Transactio
             target_price = ?,
             profit = ?,
             qty = ?,
-            amount_spent = ?
+            amount_spent = ?,
+            currency = ?
         where email = ?
           and id = ?
     `
@@ -70,6 +73,7 @@ func (s *Storage) ConfirmBuyTransaction(ctx context.Context, t domain.Transactio
 		t.Slot.Profit,
 		t.Slot.Qty,
 		t.AmountSpent,
+		t.Currency,
 		email,
 		t.ID,
 	)
@@ -142,7 +146,8 @@ func (s *Storage) Dealings(ctx context.Context) ([]domain.Transaction, error) {
             sell_order_id,
 	        buy_at,
 	        duration,
-	        sell_at
+	        sell_at,
+            currency
 	    from dealings
 	    where email = ?
 	    order by buy_at`
@@ -195,6 +200,8 @@ func (s *Storage) Dealings(ctx context.Context) ([]domain.Transaction, error) {
 			&t.BuyAt,
 			&duration,
 			&sellAt,
+			//
+			&t.Slot.Currency,
 		)
 
 		if buyingPrice.Valid {
@@ -277,7 +284,8 @@ func (s *Storage) Transaction(ctx context.Context, ID string) (domain.Transactio
             sell_order_id,
 	        buy_at,
 	        duration,
-	        sell_at
+	        sell_at,
+            currency
 	    from dealings
 	    where email = ?
 	      and id = ?`
@@ -321,6 +329,8 @@ func (s *Storage) Transaction(ctx context.Context, ID string) (domain.Transactio
 		&result.BuyAt,
 		&duration,
 		&sellAt,
+		//
+		&result.Slot.Currency,
 	)
 	if err != nil {
 		return result, fmt.Errorf("failed getting transaction, %s", err)
@@ -400,6 +410,8 @@ func dealingsTable(ctx context.Context, tx *sql.Tx) error {
         buy_at DATETIME NOT NULL,
         duration INT,
         sell_at DATETIME,
+
+        currency VARCHAR(64) NOT NULL,
 
         CONSTRAINT pair PRIMARY KEY (email, id)
     )`

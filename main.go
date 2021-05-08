@@ -187,9 +187,7 @@ func main() {
 
 	d.RegisterShutdownFunc(
 		b.ShutdownFunc(),
-		func() {
-			db.Close()
-		},
+		func() { db.Close() },
 	)
 
 	logger.Info("stock-miner is started")

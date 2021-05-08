@@ -31,7 +31,8 @@ func (s *Storage) Slot(ctx context.Context, figi string) ([]domain.Slot, error) 
             qty,
             amount_spent,
             target_amount,
-            total_profit
+            total_profit,
+            currency
         from slot
         where email = ?
     `
@@ -64,6 +65,7 @@ func (s *Storage) Slot(ctx context.Context, figi string) ([]domain.Slot, error) 
 			&slot.AmountSpent,
 			&slot.TargetAmount,
 			&slot.TotalProfit,
+			&slot.Currency,
 		)
 		if err != nil {
 			return result, err
@@ -90,8 +92,9 @@ func (s *Storage) addSlot(ctx context.Context, t domain.Slot) error {
             qty,
             amount_spent,
             target_amount,
-            total_profit
-        ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+            total_profit,
+            currency
+        ) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
 
 	_, err := s.db.ExecContext(
 		ctx,
@@ -110,6 +113,7 @@ func (s *Storage) addSlot(ctx context.Context, t domain.Slot) error {
 		t.AmountSpent,
 		t.TargetPrice,
 		t.TotalProfit,
+		t.Currency,
 	)
 	if err != nil {
 		return err
@@ -147,7 +151,8 @@ func (s *Storage) updateSlot(ctx context.Context, t domain.Slot) error {
             qty = ?,
             amount_spent = ?,
             target_amount = ?,
-            total_profit = ?
+            total_profit = ?,
+            currency = ?
         where email = ?
           and id = ?
     `
@@ -166,6 +171,7 @@ func (s *Storage) updateSlot(ctx context.Context, t domain.Slot) error {
 		t.AmountSpent,
 		t.TargetPrice,
 		t.TotalProfit,
+		t.Currency,
 		t.Email,
 		t.ID,
 	)
@@ -208,6 +214,8 @@ func slotTable(ctx context.Context, tx *sql.Tx) error {
         amount_spent FLOAT NOT NULL,
         target_amount FLOAT NOT NULL,
         total_profit FLOAT NOT NULL,
+
+        currency VARCHAR(64) NOT NULL,
 
         CONSTRAINT pair PRIMARY KEY (email, ticker, slot_id)
     )`

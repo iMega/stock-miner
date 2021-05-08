@@ -9,7 +9,7 @@ import {
     Button,
     Table,
 } from "antd";
-import { useMutation, gql } from "@apollo/client";
+import { useQuery, useMutation, gql } from "@apollo/client";
 
 import StockItemLink from "../StockItemLink";
 
@@ -35,6 +35,29 @@ const GlobalMiningStartND = gql`
     }
 `;
 
+const SlotsND = gql`
+    query Slots {
+        slots {
+            id
+            ticker
+            figi
+
+            startPrice
+            changePrice
+            buyingPrice
+            targetPrice
+            profit
+
+            qty
+            amountSpent
+            targetAmount
+            totalProfit
+
+            currency
+        }
+    }
+`;
+
 const PageStat = () => {
     // const { loading, data } = useSubscription(MemStatsND, {
     //     shouldResubscribe: true,
@@ -45,6 +68,12 @@ const PageStat = () => {
     const [statusMining, setStatusMining] = React.useState(false);
     const [stopMining, a] = useMutation(GlobalMiningStopND);
     const [startMining, b] = useMutation(GlobalMiningStartND);
+
+    let ds = [];
+    const { loading, data } = useQuery(SlotsND);
+    if (loading === false) {
+        ds = data.slots;
+    }
 
     const switchMining = () => {
         if (statusMining) {
@@ -91,13 +120,21 @@ const PageStat = () => {
                 </Row>
             </PageHeader>
             <Row>
-                <Col span={22} offset={1} md={16} lg={12}>
+                <Col span={22} offset={1} md={16} lg={16}>
                     <Table columns={columns} dataSource={ds} />
                 </Col>
             </Row>
         </React.Fragment>
     );
 };
+
+const Locale = "ru-RU";
+
+const Currency = (locale, currency, amount) =>
+    new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: currency,
+    }).format(amount);
 
 const columns = [
     {
@@ -112,24 +149,28 @@ const columns = [
         key: "startPrice",
         responsive: ["xxl", "xl", "lg", "md"],
         align: "right",
+        render: (v, r) => Currency(Locale, r.currency, v),
     },
     {
         title: "Buy",
-        dataIndex: "buy",
-        key: "buy",
+        dataIndex: "buyingPrice",
+        key: "buyingPrice",
         align: "right",
+        render: (v, r) => Currency(Locale, r.currency, v),
     },
     {
         title: "Current",
         dataIndex: "current",
         key: "current",
         align: "right",
+        render: (v, r) => Currency(Locale, r.currency, v),
     },
     {
         title: "Target",
-        dataIndex: "target",
-        key: "target",
+        dataIndex: "targetPrice",
+        key: "targetPrice",
         align: "right",
+        render: (v, r) => Currency(Locale, r.currency, v),
     },
     {
         title: "Profit",
@@ -137,33 +178,38 @@ const columns = [
         key: "profit",
         responsive: ["xxl", "xl", "lg", "md"],
         align: "right",
-    },
-];
-
-const ds = [
-    {
-        ticker: "AAPL",
-        startPrice: 121.98,
-        buy: 121.7,
-        current: 120.25,
-        target: 121.9,
-        profit: 0.2,
+        render: (v, r) => Currency(Locale, r.currency, v),
     },
     {
-        ticker: "AAPL",
-        startPrice: 121.42,
-        buy: 121.39,
-        current: 121.39,
-        target: 121.43,
-        profit: 0.2,
+        title: "Qty",
+        dataIndex: "qty",
+        key: "qty",
+        responsive: ["xxl", "xl", "lg", "md"],
+        align: "right",
     },
     {
-        ticker: "PDCO",
-        startPrice: 30.98,
-        buy: 30.7,
-        current: 30.75,
-        target: 30.82,
-        profit: 0.12,
+        title: "Spent Amount",
+        dataIndex: "amountSpent",
+        key: "amountSpent",
+        responsive: ["xxl", "xl", "lg", "md"],
+        align: "right",
+        render: (v, r) => Currency(Locale, r.currency, v),
+    },
+    {
+        title: "Target Amount",
+        dataIndex: "targetAmount",
+        key: "targetAmount",
+        responsive: ["xxl", "xl", "lg", "md"],
+        align: "right",
+        render: (v, r) => Currency(Locale, r.currency, v),
+    },
+    {
+        title: "Total Profit",
+        dataIndex: "totalProfit",
+        key: "totalProfit",
+        responsive: ["xxl", "xl", "lg", "md"],
+        align: "right",
+        render: (v, r) => Currency(Locale, r.currency, v),
     },
 ];
 

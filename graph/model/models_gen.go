@@ -19,6 +19,7 @@ type Deal struct {
 	BuyAt        *string  `json:"buyAt"`
 	Duration     *int     `json:"duration"`
 	SellAt       *string  `json:"sellAt"`
+	Currency     string   `json:"currency"`
 }
 
 type MarketCredentials struct {
@@ -65,6 +66,7 @@ type Slot struct {
 	AmountSpent  *float64 `json:"amountSpent"`
 	TargetAmount *float64 `json:"targetAmount"`
 	TotalProfit  *float64 `json:"totalProfit"`
+	Currency     string   `json:"currency"`
 }
 
 type SlotSettings struct {
