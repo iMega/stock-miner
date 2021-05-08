@@ -89,9 +89,9 @@ const PageStat = () => {
             <PageHeader
                 className="site-page-header"
                 ghost={false}
-                title="Статистика работы"
-                subTitle="Статус бота:"
-                tags={<Tag color="green">Работает</Tag>}
+                title="Statistic"
+                subTitle="Status:"
+                tags={<Tag color="green">Running</Tag>}
                 extra={[
                     <Button
                         key="1"
@@ -120,7 +120,7 @@ const PageStat = () => {
                 </Row>
             </PageHeader>
             <Row>
-                <Col span={22} offset={1} md={16} lg={16}>
+                <Col span={22} offset={1} md={16} lg={20}>
                     <Table columns={columns} dataSource={ds} />
                 </Col>
             </Row>

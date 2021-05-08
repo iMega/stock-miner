@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
 
 import Connector from "./Connector";
 import PageStat from "./Stat";
+import PageDealings from "./Dealings";
 import { Add, List } from "./StockItem";
 import Profile from "./Profile";
 
@@ -11,6 +12,7 @@ const { Sider, Content } = Layout;
 
 const LinkStat = "/";
 const LinkProfile = "/profile";
+const LinkDealings = "/dealings";
 const LinkStockItemList = "/stock-item/list";
 const LinkStockItemAdd = "/stock-item/add";
 
@@ -38,6 +40,10 @@ const Main = () => (
                             <Route path={LinkStockItemAdd}>
                                 <Add />
                             </Route>
+                            <Route path={LinkDealings}>
+                                <PageDealings />
+                            </Route>
+                            {/* должен быть последним, иначе роут не пашет */}
                             <Route path={LinkStat}>
                                 <PageStat />
                             </Route>
@@ -50,18 +56,21 @@ const Main = () => (
 );
 
 const MainMenu = () => (
-    <Menu defaultSelectedKeys={["2"]} mode="inline" theme="dark">
-        <Menu.Item key="1">
+    <Menu defaultSelectedKeys={["statistic"]} mode="inline" theme="dark">
+        <Menu.Item key="profile">
             <Link to={LinkProfile}>Profile</Link>
         </Menu.Item>
-        <Menu.Item key="2">
+        <Menu.Item key="statistic">
             <Link to={LinkStat}>Statistic</Link>
         </Menu.Item>
-        <Menu.SubMenu key="sub1" title="Stock item">
-            <Menu.Item key="sub1-1">
+        <Menu.Item key="dealings">
+            <Link to={LinkDealings}>Dealings</Link>
+        </Menu.Item>
+        <Menu.SubMenu key="stock-item" title="Stock item">
+            <Menu.Item key="stock-item-list">
                 <Link to={LinkStockItemList}>List</Link>
             </Menu.Item>
-            <Menu.Item key="sub1-2">
+            <Menu.Item key="stock-item-add">
                 <Link to={LinkStockItemAdd}>Add</Link>
             </Menu.Item>
         </Menu.SubMenu>
