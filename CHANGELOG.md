@@ -1,3 +1,9 @@
+## [0.0.7]
+
+### Fixed
+
+-   window to globalThis
+
 ## [0.0.6]
 
 ### Fixed

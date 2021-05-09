@@ -14,9 +14,9 @@ import { WebSocketLink } from "@apollo/client/link/ws";
 const cache = new InMemoryCache();
 const graphqlHost =
     process.env.STORYBOOK_GRAPHQL_HOST ||
-    process.env.GRAPHQL_HOST ||
+    globalThis.GRAPHQL_HOST ||
     "127.0.0.1";
-const graphqlSchema = process.env.GRAPHQL_SCHEMA || "http";
+const graphqlSchema = globalThis.GRAPHQL_SCHEMA || "http";
 const wsLink =
     process.browser && process.env.NODE_ENV === "production"
         ? new WebSocketLink({

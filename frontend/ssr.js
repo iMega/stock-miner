@@ -38,6 +38,7 @@ const r = renderToStringWithData(
                     process.env.VERSION.split("/")[2]
                 }`}</title>
                 <link rel="stylesheet" href="main.css" />
+                <script>{`window.GRAPHQL_HOST='${process.env.GRAPHQL_HOST}';window.GRAPHQL_SCHEMA='${process.env.GRAPHQL_SCHEMA}'`}</script>
             </head>
             <body>
                 <div id="root" dangerouslySetInnerHTML={{ __html: html }} />
