@@ -1,3 +1,9 @@
+## [0.0.9]
+
+### Changed
+
+-   set url for ws
+
 ## [0.0.8]
 
 ### Fixed

@@ -20,7 +20,7 @@ const graphqlSchema = globalThis.GRAPHQL_SCHEMA || "http";
 const wsLink =
     process.browser && process.env.NODE_ENV === "production"
         ? new WebSocketLink({
-              uri: `ws://${graphqlHost}/query`,
+              uri: `ws://sm.imega.ru/query`,
               options: {
                   reconnect: false,
               },
