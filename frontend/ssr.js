@@ -53,9 +53,10 @@ const r = renderToStringWithData(
 r.then((res) => {
     fs.writeFile("./build/index.htm", `<!DOCTYPE html>${res}`, (err) => {
         if (err) {
-            return console.error(err);
+            console.error("Failed to write index.htm", err);
+            return console.error("============ Failed to write index.htm", err);
         }
-        console.log("The file was saved!");
+        console.log("The file index.htm was saved!");
 
         const purgeCSSResult = new PurgeCSS().purge({
             content: ["./build/index.htm"],
@@ -79,7 +80,10 @@ r.then((res) => {
                 console.log("purgeCSS: failed to purge, ", err);
             });
     });
-}).catch((err) => console.error(err));
+}).catch((err) => {
+    console.error("Failed to render Main page:", err);
+    process.exit(1);
+});
 
 const signinPage = renderToStringWithData(
     <CacheProvider value={cache}>
@@ -113,9 +117,12 @@ signinPage
     .then((res) => {
         fs.writeFile("./build/signin.htm", `<!DOCTYPE html>${res}`, (err) => {
             if (err) {
-                return console.error(err);
+                return console.error("Failed to write signin.htm", err);
             }
-            console.log("The file was saved!");
+            console.log("The file signin.htm was saved!");
         });
     })
-    .catch((err) => console.error(err));
+    .catch((err) => {
+        console.error("Failed to render Signin page:", err);
+        process.exit(1);
+    });

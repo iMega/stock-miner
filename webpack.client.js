@@ -74,4 +74,7 @@ module.exports = {
             }),
         ],
     },
+    stats: {
+        maxModules: Number.MAX_VALUE,
+    },
 };

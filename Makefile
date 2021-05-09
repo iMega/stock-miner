@@ -1,7 +1,7 @@
 REPO = github.com/imega/stock-miner
 CWD = /go/src/$(REPO)
 GO_IMG = golang:1.15.8-alpine3.13
-NODE_IMG = node:15.12.0-alpine3.13
+NODE_IMG = node:16.1.0-alpine3.13
 BUILDER=builder
 
 test: build unit acceptance

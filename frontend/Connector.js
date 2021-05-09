@@ -18,7 +18,7 @@ const wsLink =
         ? new WebSocketLink({
               uri: `ws://${graphqlHost}/query`,
               options: {
-                  reconnect: true,
+                  reconnect: false,
               },
           })
         : null;

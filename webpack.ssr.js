@@ -70,7 +70,7 @@ module.exports = {
         }),
     ],
     optimization: {
-        minimize: true,
+        minimize: false,
         minimizer: [
             new CssMinimizerPlugin({
                 minimizerOptions: {
@@ -95,5 +95,8 @@ module.exports = {
                 extractComments: false,
             }),
         ],
+    },
+    stats: {
+        maxModules: Number.MAX_VALUE,
     },
 };

@@ -72,7 +72,7 @@ const PageStat = () => {
     let ds = [];
     const { loading, data } = useQuery(SlotsND);
     if (loading === false) {
-        ds = data.slots;
+        ds = data?.slots;
     }
 
     const switchMining = () => {

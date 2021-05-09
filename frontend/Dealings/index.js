@@ -34,8 +34,8 @@ const DealingsND = gql`
 const Page = () => {
     let ds = [];
     const { loading, data } = useQuery(DealingsND);
-    if (loading === false) {
-        ds = data.dealings;
+    if (loading === false && data) {
+        ds = data?.dealings;
     }
 
     return (

@@ -1,6 +1,8 @@
 import React from "react";
 import { Menu, Layout } from "antd";
-import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
+import { CAN_USE_DOM } from "./CanUseDom";
+import { Switch, Route, Link } from "react-router-dom";
+import { BrowserRouter, StaticRouter } from "react-router-dom";
 
 import Connector from "./Connector";
 import PageStat from "./Stat";
@@ -19,40 +21,52 @@ const LinkStockItemAdd = "/stock-item/add";
 const Main = () => (
     <Connector>
         <Layout>
-            <Router basename="/">
-                <Sider breakpoint="lg" collapsedWidth="0">
-                    <MainMenu />
-                </Sider>
-                <Layout>
-                    <Content
-                        style={{
-                            minHeight: "100vh",
-                            background: "#fff",
-                        }}
-                    >
-                        <Switch>
-                            <Route path={LinkProfile}>
-                                <Profile />
-                            </Route>
-                            <Route path={LinkStockItemList}>
-                                <List />
-                            </Route>
-                            <Route path={LinkStockItemAdd}>
-                                <Add />
-                            </Route>
-                            <Route path={LinkDealings}>
-                                <PageDealings />
-                            </Route>
-                            {/* должен быть последним, иначе роут не пашет */}
-                            <Route path={LinkStat}>
-                                <PageStat />
-                            </Route>
-                        </Switch>
-                    </Content>
-                </Layout>
-            </Router>
+            {CAN_USE_DOM ? (
+                <BrowserRouter>
+                    <Routing />
+                </BrowserRouter>
+            ) : (
+                <StaticRouter>
+                    <Routing />
+                </StaticRouter>
+            )}
         </Layout>
     </Connector>
+);
+
+const Routing = () => (
+    <React.Fragment>
+        <Sider breakpoint="lg" collapsedWidth="0">
+            <MainMenu />
+        </Sider>
+        <Layout>
+            <Content
+                style={{
+                    minHeight: "100vh",
+                    background: "#fff",
+                }}
+            >
+                <Switch>
+                    <Route path={LinkProfile}>
+                        <Profile />
+                    </Route>
+                    <Route path={LinkStockItemList}>
+                        <List />
+                    </Route>
+                    <Route path={LinkStockItemAdd}>
+                        <Add />
+                    </Route>
+                    <Route path={LinkDealings}>
+                        <PageDealings />
+                    </Route>
+                    {/* должен быть последним, иначе роут не пашет */}
+                    <Route path={LinkStat}>
+                        <PageStat />
+                    </Route>
+                </Switch>
+            </Content>
+        </Layout>
+    </React.Fragment>
 );
 
 const MainMenu = () => (
