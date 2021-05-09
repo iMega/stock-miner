@@ -15,6 +15,8 @@ build: node_modules
 	@docker run --rm -v $(CURDIR):/data -w /data \
 		-e TAG=$(TAG) \
 		-e VERSION=$(GITHUB_REF) \
+		-e GRAPHQL_HOST=$(GRAPHQL_HOST) \
+		-e GRAPHQL_SCHEMA=$(GRAPHQL_SCHEMA) \
 		$(NODE_IMG) \
 		sh -c "npm run build"
 

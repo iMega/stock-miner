@@ -23,6 +23,9 @@ jobs:
 
       - name: Release
         run: make release
+        env:
+          GRAPHQL_HOST: ${{ secrets.GRAPHQL_HOST }}
+          GRAPHQL_SCHEMA: "https"
 
       - name: Go Release Binaries
         uses: wangyoucao577/go-release-action@v1.14

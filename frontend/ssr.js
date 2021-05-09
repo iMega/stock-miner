@@ -34,7 +34,9 @@ const r = renderToStringWithData(
                     data-emotion-css={ids.join(" ")}
                     dangerouslySetInnerHTML={{ __html: css }}
                 />
-                <title>{`Stock miner - ${process.env.VERSION}`}</title>
+                <title>{`Stock miner - ${
+                    process.env.VERSION.split("/")[2]
+                }`}</title>
                 <link rel="stylesheet" href="main.css" />
             </head>
             <body>
@@ -54,7 +56,7 @@ r.then((res) => {
     fs.writeFile("./build/index.htm", `<!DOCTYPE html>${res}`, (err) => {
         if (err) {
             console.error("Failed to write index.htm", err);
-            return console.error("============ Failed to write index.htm", err);
+            return;
         }
         console.log("The file index.htm was saved!");
 

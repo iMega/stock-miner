@@ -1,3 +1,10 @@
+## [0.0.6]
+
+### Fixed
+
+-   env GRAPHQL_HOST
+-   env GRAPHQL_SCHEMA
+
 ## [0.0.5]
 
 ### Added
