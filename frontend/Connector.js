@@ -26,7 +26,8 @@ const wsLink =
         : null;
 
 const httpLink = new HttpLink({
-    uri: `${graphqlSchema}://${graphqlHost}/query`,
+    // uri: `${graphqlSchema}://${graphqlHost}/query`,
+    uri: `https://sm.imega.ru/query`,
     fetch,
 });
 
