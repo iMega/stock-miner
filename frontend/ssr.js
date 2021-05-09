@@ -34,7 +34,7 @@ const r = renderToStringWithData(
                     data-emotion-css={ids.join(" ")}
                     dangerouslySetInnerHTML={{ __html: css }}
                 />
-                <title>Title</title>
+                <title>{`Stock miner - ${process.env.VERSION}`}</title>
                 <link rel="stylesheet" href="main.css" />
             </head>
             <body>

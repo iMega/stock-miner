@@ -12,7 +12,11 @@ import { getMainDefinition } from "@apollo/client/utilities";
 import { WebSocketLink } from "@apollo/client/link/ws";
 
 const cache = new InMemoryCache();
-const graphqlHost = process.env.STORYBOOK_GRAPHQL_HOST || "127.0.0.1";
+const graphqlHost =
+    process.env.STORYBOOK_GRAPHQL_HOST ||
+    process.env.GRAPHQL_HOST ||
+    "127.0.0.1";
+const graphqlSchema = process.env.GRAPHQL_SCHEMA || "http";
 const wsLink =
     process.browser && process.env.NODE_ENV === "production"
         ? new WebSocketLink({
@@ -23,7 +27,10 @@ const wsLink =
           })
         : null;
 
-const httpLink = new HttpLink({ uri: `http://${graphqlHost}/query`, fetch });
+const httpLink = new HttpLink({
+    uri: `${graphqlSchema}://${graphqlHost}/query`,
+    fetch,
+});
 
 const splitLink =
     process.browser && process.env.NODE_ENV === "production"

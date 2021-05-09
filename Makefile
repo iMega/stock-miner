@@ -14,6 +14,7 @@ builder:
 build: node_modules
 	@docker run --rm -v $(CURDIR):/data -w /data \
 		-e TAG=$(TAG) \
+		-e VERSION=$(GITHUB_REF) \
 		$(NODE_IMG) \
 		sh -c "npm run build"
 

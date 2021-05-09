@@ -1,3 +1,11 @@
+## [0.0.5]
+
+### Added
+
+-   Add version to title
+-   Add env GRAPHQL_HOST - graphql host, default is 127.0.0.1
+-   Add env GRAPHQL_SCHEMA - graphql schema, default is http
+
 ## [0.0.4]
 
 ### Added
