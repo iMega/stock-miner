@@ -12,43 +12,33 @@ import { getMainDefinition } from "@apollo/client/utilities";
 import { WebSocketLink } from "@apollo/client/link/ws";
 
 const cache = new InMemoryCache();
-const graphqlHost =
-    process.env.STORYBOOK_GRAPHQL_HOST ||
-    globalThis.GRAPHQL_HOST ||
-    "127.0.0.1";
-const graphqlSchema = globalThis.GRAPHQL_SCHEMA || "http";
-const wsLink =
-    process.browser && process.env.NODE_ENV === "production"
-        ? new WebSocketLink({
-              uri: "wss://sm.imega.ru/query",
-              options: { reconnect: false },
-          })
-        : null;
 
-const httpLink = new HttpLink({
-    // uri: `${graphqlSchema}://${graphqlHost}/query`,
-    uri: `https://sm.imega.ru/query`,
-    fetch,
-});
+// const wsLink = process.browser
+//     ? new WebSocketLink({
+//           uri: WS_HOST,
+//           options: { reconnect: false },
+//       })
+//     : null;
 
-const splitLink =
-    process.browser && process.env.NODE_ENV === "production"
-        ? split(
-              ({ query }) => {
-                  const definition = getMainDefinition(query);
-                  return (
-                      definition.kind === "OperationDefinition" &&
-                      definition.operation === "subscription"
-                  );
-              },
-              wsLink,
-              httpLink
-          )
-        : httpLink;
+const httpLink = new HttpLink({ uri: GRAPHQL_HOST, fetch });
+
+const splitLink = process.browser
+    ? split(
+          ({ query }) => {
+              const definition = getMainDefinition(query);
+              return (
+                  definition.kind === "OperationDefinition" &&
+                  definition.operation === "subscription"
+              );
+          },
+          //   wsLink,
+          httpLink
+      )
+    : httpLink;
 
 const client = new ApolloClient({
     ssrMode: false,
-    link: ApolloLink.from([splitLink]),
+    link: ApolloLink.from([httpLink]),
     cache,
     credentials: "same-origin",
 });

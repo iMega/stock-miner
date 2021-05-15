@@ -96,7 +96,9 @@ func (r *mutationResolver) Slot(ctx context.Context, global model.SlotSettingsIn
 	}
 
 	s.Slot.Volume = global.Volume
-	s.Slot.ModificatorMinPrice = *global.ModificatorMinPrice
+	if global.ModificatorMinPrice != nil {
+		s.Slot.ModificatorMinPrice = *global.ModificatorMinPrice
+	}
 
 	if err := r.SettingsStorage.SaveSettings(ctx, s); err != nil {
 		return false, fmt.Errorf("failed to save slot, %s", err)

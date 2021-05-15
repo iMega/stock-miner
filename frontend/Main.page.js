@@ -23,12 +23,10 @@ const Main = () => (
         <Layout>
             {CAN_USE_DOM ? (
                 <BrowserRouter>
-                    <div>BrowserRouter</div>
                     <Routing />
                 </BrowserRouter>
             ) : (
                 <StaticRouter>
-                    <div>StaticRouter</div>
                     <Routing />
                 </StaticRouter>
             )}

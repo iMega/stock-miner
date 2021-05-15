@@ -43,7 +43,6 @@ func main() {
 	})
 
 	// httpwareclient.WithLogger(logger.(*logrus.Entry))
-
 	if err := storage.CreateDatabase(dbFilename); err != nil {
 		logger.Fatalf("failed to create database, ", err)
 	}
@@ -57,6 +56,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	rootEmail, _ := env.Read("ROOT_EMAIL")
 	clientID, _ := env.Read("GOOGLE_CLIENTID")
 	clientSecret, _ := env.Read("GOOGLE_CLIENT_SECRET")
 	callbackURL, _ := env.Read("GOOGLE_CALLBACK_URL")
@@ -66,6 +66,7 @@ func main() {
 		session.WithCallbackURL(callbackURL),
 		session.WithDevMode(isDevMode),
 		session.WithUserStorage(s),
+		session.WithRootEmail(rootEmail),
 	)
 	session.AppendHandlers(mux)
 

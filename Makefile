@@ -16,7 +16,7 @@ build: node_modules
 		-e TAG=$(TAG) \
 		-e VERSION=$(GITHUB_REF) \
 		-e GRAPHQL_HOST=$(GRAPHQL_HOST) \
-		-e GRAPHQL_SCHEMA=$(GRAPHQL_SCHEMA) \
+		-e WS_HOST=$(WS_HOST) \
 		$(NODE_IMG) \
 		sh -c "npm run build"
 

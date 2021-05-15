@@ -72,11 +72,13 @@ const Profile = () => {
     const [saveSlot] = useMutation(slotND);
     React.useEffect(() => {
         if (loading === false && data) {
-            setCreds({
-                provider: data.settings.marketCredentials[0].name,
-                url: data.settings.marketCredentials[0].apiUrl,
-                token: data.settings.marketCredentials[0].token,
-            });
+            if (data.settings.marketCredentials !== null) {
+                setCreds({
+                    provider: data.settings.marketCredentials[0].name,
+                    url: data.settings.marketCredentials[0].apiUrl,
+                    token: data.settings.marketCredentials[0].token,
+                });
+            }
             setSlot({
                 volume: data.settings.slot.volume,
             });
@@ -126,6 +128,10 @@ const Profile = () => {
     const [credForm] = Form.useForm();
     const selectProvider = (e) => {
         const creds = data.settings.marketCredentials;
+        if (creds === null) {
+            return;
+        }
+
         const idx = creds.findIndex((i) => i.name === e.target.value);
         credForm.setFieldsValue({
             provider: creds[idx].name,

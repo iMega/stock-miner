@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"time"
@@ -25,6 +26,7 @@ type SessionStore struct {
 	db           *sessions.CookieStore
 	userDB       domain.UserStorage
 	isDevMode    bool
+	RootEmail    string
 }
 
 func New(opts ...Option) *SessionStore {
@@ -32,6 +34,15 @@ func New(opts ...Option) *SessionStore {
 
 	for _, opt := range opts {
 		opt(s)
+	}
+
+	if s.isDevMode {
+		ctx := contexkey.WithEmail(context.Background(), s.RootEmail)
+		s.userDB.CreateUser(ctx, domain.User{
+			ID:    "1",
+			Email: s.RootEmail,
+			Role:  "root",
+		})
 	}
 
 	s.db = sessions.NewCookieStore([]byte(s.ClientSecret), nil)
@@ -70,6 +81,12 @@ func WithDevMode(s string) Option {
 		if s == "true" {
 			p.isDevMode = true
 		}
+	}
+}
+
+func WithRootEmail(s string) Option {
+	return func(p *SessionStore) {
+		p.RootEmail = s
 	}
 }
 
@@ -152,7 +169,7 @@ func (s *SessionStore) issueSession() http.Handler {
 		ctx := req.Context()
 		user, err := google.UserFromContext(ctx)
 		if err != nil {
-			log.GetLogger(ctx).Errorf("failed to extract user from context11, %s", err)
+			log.GetLogger(ctx).Errorf("failed to extract user from context, %s", err)
 			http.Error(w, ":(", http.StatusInternalServerError)
 			return
 		}
@@ -173,7 +190,7 @@ func (s *SessionStore) issueSession() http.Handler {
 		ctxNew := contexkey.WithEmail(ctx, user.Email)
 		if _, err = s.userDB.GetUser(ctxNew); err != nil {
 			user.Role = "user"
-			if user.Email == "irvis@imega.ru" {
+			if user.Email == s.RootEmail {
 				user.Role = "root"
 			}
 			if err := s.userDB.CreateUser(ctxNew, user); err != nil {

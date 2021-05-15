@@ -67,6 +67,12 @@ module.exports = {
         // new webpack.IgnorePlugin(/canvas/), // jsdom
         new webpack.DefinePlugin({
             "process.env.SERVER": JSON.stringify(true),
+            GRAPHQL_HOST: JSON.stringify(
+                process.env.GRAPHQL_HOST || "http://localhost/query"
+            ),
+            WS_HOST: JSON.stringify(
+                process.env.WS_HOST || "ws://localhost/query"
+            ),
         }),
     ],
     optimization: {
