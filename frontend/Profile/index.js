@@ -238,7 +238,7 @@ const Profile = () => {
                 src: data?.user.avatar,
             }}
             extra={[
-                <Button key="1" type={"danger"} href="/google/logout">
+                <Button key="1" type={"danger"} href="/logout">
                     Logout
                 </Button>,
             ]}
