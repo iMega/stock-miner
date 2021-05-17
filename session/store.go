@@ -123,7 +123,7 @@ func (s *SessionStore) AppendHandlers(mux *http.ServeMux) {
 
 func (s *SessionStore) DefenceHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		s, err := s.db.Get(r, sessionName)
+		session, err := s.db.Get(r, sessionName)
 		if err != nil {
 			r.URL.Path = "/signin.htm"
 			next.ServeHTTP(w, r)
@@ -135,8 +135,7 @@ func (s *SessionStore) DefenceHandler(next http.Handler) http.Handler {
 			r.URL.Path = "/index.htm"
 		}
 
-		email, _ := s.Values["email"].(string)
-		// email := "irvis@imega.ru"
+		email, _ := session.Values["email"].(string)
 		ctx := contexkey.WithEmail(r.Context(), email)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

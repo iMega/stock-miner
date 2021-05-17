@@ -20,6 +20,7 @@ import (
 	"github.com/imega/stock-miner/graph"
 	"github.com/imega/stock-miner/graph/generated"
 	health_http "github.com/imega/stock-miner/health/http"
+	"github.com/imega/stock-miner/httpwareclient"
 	"github.com/imega/stock-miner/market"
 	"github.com/imega/stock-miner/session"
 	"github.com/imega/stock-miner/storage"
@@ -42,7 +43,7 @@ func main() {
 		Level:   "debug",
 	})
 
-	// httpwareclient.WithLogger(logger.(*logrus.Entry))
+	httpwareclient.WithLogger(logger.(*logrus.Entry))
 	if err := storage.CreateDatabase(dbFilename); err != nil {
 		logger.Fatalf("failed to create database, ", err)
 	}
@@ -55,6 +56,8 @@ func main() {
 	s := storage.New(storage.WithSqllite(db))
 
 	mux := http.NewServeMux()
+
+	// teacher.New(mux)
 
 	rootEmail, _ := env.Read("ROOT_EMAIL")
 	clientID, _ := env.Read("GOOGLE_CLIENTID")
