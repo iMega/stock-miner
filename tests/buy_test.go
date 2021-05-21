@@ -16,7 +16,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = FDescribe("Automatically buy", func() {
+var _ = Describe("Automatically buy", func() {
 	var (
 		ctx    = context.Background()
 		client = graphql.NewClient(GraphQLUrl, helpers.GetHTTPClient())

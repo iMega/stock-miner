@@ -44,7 +44,7 @@ func (m *Market) Operations(ctx context.Context, in domain.OperationInput) ([]do
 
 	data := &responseOperations{}
 	req := &httpwareclient.SendIn{
-		Method:   http.MethodPost,
+		Method:   http.MethodGet,
 		Headers:  map[string]string{"Authorization": "Bearer " + tu.Token},
 		URL:      tu.URL + "/operations?" + q.Encode(),
 		BodyRecv: data,
