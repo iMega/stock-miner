@@ -13,7 +13,7 @@ func SetSlot(graphQLUrl string) {
 			Slot bool `graphql:"slot(global: $in)"`
 		}
 		ctx    = context.Background()
-		client = graphql.NewClient(graphQLUrl, nil)
+		client = graphql.NewClient(graphQLUrl, GetHTTPClient())
 	)
 	type SlotSettingsInput map[string]interface{}
 
@@ -35,7 +35,7 @@ func SetRulePrice(graphQLUrl string) {
 			RulePrice bool `graphql:"rulePrice(global: $in)"`
 		}
 		ctx    = context.Background()
-		client = graphql.NewClient(graphQLUrl, nil)
+		client = graphql.NewClient(graphQLUrl, GetHTTPClient())
 	)
 	type RulePriceInput map[string]interface{}
 

@@ -14,7 +14,7 @@ func AddStockItemApproved(graphQLUrl, ticker, figi string) {
 			AddStockItemApproved bool `graphql:"addStockItemApproved(items: $in)"`
 		}
 		ctx    = context.Background()
-		client = graphql.NewClient(graphQLUrl, nil)
+		client = graphql.NewClient(graphQLUrl, GetHTTPClient())
 	)
 	variables := map[string]interface{}{
 		"in": []StockItemInput{
@@ -39,7 +39,7 @@ func RemoveStockItemApproved(graphQLUrl, ticker string) {
 			RemoveStockItemApproved bool `graphql:"removeStockItemApproved(items: $in)"`
 		}
 		ctx    = context.Background()
-		client = graphql.NewClient(graphQLUrl, nil)
+		client = graphql.NewClient(graphQLUrl, GetHTTPClient())
 	)
 	variables := map[string]interface{}{
 		"in": []StockItemInput{
@@ -66,8 +66,9 @@ type StockItem struct {
 
 func StockItemApproved(graphQLUrl string) []StockItem {
 	var (
-		ctx                  = context.Background()
-		client               = graphql.NewClient(graphQLUrl, nil)
+		ctx    = context.Background()
+		client = graphql.NewClient(graphQLUrl, GetHTTPClient())
+
 		reqStockItemApproved struct {
 			StockItemApproved []StockItem
 		}

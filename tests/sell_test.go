@@ -21,7 +21,7 @@ var _ = Describe("Automatically buy and sell", func() {
 		figi   = "BBG000BQY289"
 		ticker = "PDCO"
 		ctx    = context.Background()
-		client = graphql.NewClient(GraphQLUrl, nil)
+		client = graphql.NewClient(GraphQLUrl, helpers.GetHTTPClient())
 	)
 	It("set environment", func() {
 		defer GinkgoRecover()

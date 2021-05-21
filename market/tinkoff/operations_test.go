@@ -145,9 +145,6 @@ func TestMarket_Operations(t *testing.T) {
 				return
 			}
 			assert.Equal(t, got, tt.want)
-			// if !reflect.DeepEqual(got, tt.want) {
-			// 	t.Errorf("Market.Operations() = %v, want %v", got, tt.want)
-			// }
 		})
 	}
 }

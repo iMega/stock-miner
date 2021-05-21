@@ -16,10 +16,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Automatically buy", func() {
+var _ = FDescribe("Automatically buy", func() {
 	var (
 		ctx    = context.Background()
-		client = graphql.NewClient(GraphQLUrl, nil)
+		client = graphql.NewClient(GraphQLUrl, helpers.GetHTTPClient())
 		figi   = "BBG000B9XRY4"
 		ticker = "AAPL"
 	)

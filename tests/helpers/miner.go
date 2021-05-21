@@ -13,7 +13,7 @@ func GlobalMiningStart(graphQLUrl string) {
 			GlobalMiningStart bool `graphql:"globalMiningStart"`
 		}
 		ctx    = context.Background()
-		client = graphql.NewClient(graphQLUrl, nil)
+		client = graphql.NewClient(graphQLUrl, GetHTTPClient())
 	)
 	variables := map[string]interface{}{}
 	err := client.Mutate(ctx, &reqGlobalMiningStart, variables)
@@ -26,7 +26,7 @@ func GlobalMiningStop(graphQLUrl string) {
 			GlobalMiningStop bool `graphql:"globalMiningStop"`
 		}
 		ctx    = context.Background()
-		client = graphql.NewClient(graphQLUrl, nil)
+		client = graphql.NewClient(graphQLUrl, GetHTTPClient())
 	)
 	variables := map[string]interface{}{}
 	err := client.Mutate(ctx, &reqGlobalMiningStop, variables)

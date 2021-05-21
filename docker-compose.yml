@@ -10,6 +10,7 @@ services:
     working_dir: ${CWD}
     environment:
       - STOCK_MINER_HTTP_SERVER_HOST=0.0.0.0:80
+      - ROOT_EMAIL=info@example.com
     ports:
       - 8080:80
 

@@ -12,7 +12,7 @@ func AddCredentials(graphQLUrl, name, apiUrl, token string) (bool, error) {
 			MarketCredentials bool `graphql:"marketCredentials(creds: $in)"`
 		}
 		ctx    = context.Background()
-		client = graphql.NewClient(graphQLUrl, nil)
+		client = graphql.NewClient(graphQLUrl, GetHTTPClient())
 	)
 
 	type MarketCredentialsInput map[string]interface{}

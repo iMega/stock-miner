@@ -12,7 +12,7 @@ import (
 var _ = Describe("Profile", func() {
 	var (
 		ctx    = context.Background()
-		client = graphql.NewClient(GraphQLUrl, nil)
+		client = graphql.NewClient(GraphQLUrl, helpers.GetHTTPClient())
 
 		expected = struct {
 			Name   graphql.String
