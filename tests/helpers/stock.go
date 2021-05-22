@@ -23,6 +23,7 @@ func AddStockItemApproved(graphQLUrl, ticker, figi string) {
 				"figi":             figi,
 				"amountLimit":      0,
 				"transactionLimit": 0,
+				"currency":         "USD",
 			},
 		},
 	}
