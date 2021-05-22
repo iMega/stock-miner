@@ -53,6 +53,7 @@ input StockItemInput {
     figi: String!
     amountLimit: Float!
     transactionLimit: Int!
+    currency: String!
 }
 
 type MemStats {

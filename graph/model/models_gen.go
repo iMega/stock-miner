@@ -97,6 +97,7 @@ type StockItemInput struct {
 	Figi             string  `json:"figi"`
 	AmountLimit      float64 `json:"amountLimit"`
 	TransactionLimit int     `json:"transactionLimit"`
+	Currency         string  `json:"currency"`
 }
 
 type User struct {

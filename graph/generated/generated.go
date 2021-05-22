@@ -868,6 +868,7 @@ input StockItemInput {
     figi: String!
     amountLimit: Float!
     transactionLimit: Int!
+    currency: String!
 }
 
 type MemStats {
@@ -4897,6 +4898,14 @@ func (ec *executionContext) unmarshalInputStockItemInput(ctx context.Context, ob
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("transactionLimit"))
 			it.TransactionLimit, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "currency":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("currency"))
+			it.Currency, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

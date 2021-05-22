@@ -23,6 +23,7 @@ func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*mo
 			FIGI:             item.Figi,
 			AmountLimit:      item.AmountLimit,
 			TransactionLimit: item.TransactionLimit,
+			Currency:         item.Currency,
 		}
 		if err := r.StockStorage.AddStockItemApproved(ctx, in); err != nil {
 			return false, err
@@ -39,6 +40,7 @@ func (r *mutationResolver) RemoveStockItemApproved(ctx context.Context, items []
 			FIGI:             item.Figi,
 			AmountLimit:      item.AmountLimit,
 			TransactionLimit: item.TransactionLimit,
+			Currency:         item.Currency,
 		}
 		if err := r.StockStorage.RemoveStockItemApproved(ctx, in); err != nil {
 			return false, err
@@ -55,6 +57,7 @@ func (r *mutationResolver) UpdateStockItemApproved(ctx context.Context, items []
 			FIGI:             item.Figi,
 			AmountLimit:      item.AmountLimit,
 			TransactionLimit: item.TransactionLimit,
+			Currency:         item.Currency,
 		}
 		if err := r.StockStorage.UpdateStockItemApproved(ctx, in); err != nil {
 			return false, err

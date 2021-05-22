@@ -27,7 +27,9 @@ func TestSlot_AddSlot(t *testing.T) {
 	slot := domain.Slot{
 		Email: "test@example.com",
 		StockItem: domain.StockItem{
-			FIGI: "figi",
+			FIGI:     "figi",
+			Ticker:   "Ticker",
+			Currency: "USD",
 		},
 	}
 

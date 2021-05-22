@@ -53,6 +53,7 @@ const Add = () => {
             figi: i.figi,
             amountLimit: 0,
             transactionLimit: 0,
+            currency: i.currency,
         }));
 
         try {

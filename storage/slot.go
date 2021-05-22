@@ -54,8 +54,8 @@ func (s *Storage) Slot(ctx context.Context, figi string) ([]domain.Slot, error) 
 		err := rows.Scan(
 			&slot.SlotID,
 			&slot.ID,
-			&slot.Ticker,
-			&slot.FIGI,
+			&slot.StockItem.Ticker,
+			&slot.StockItem.FIGI,
 			&slot.StartPrice,
 			&slot.ChangePrice,
 			&slot.BuyingPrice,
@@ -65,7 +65,7 @@ func (s *Storage) Slot(ctx context.Context, figi string) ([]domain.Slot, error) 
 			&slot.AmountSpent,
 			&slot.TargetAmount,
 			&slot.TotalProfit,
-			&slot.Currency,
+			&slot.StockItem.Currency,
 		)
 		if err != nil {
 			return result, err
@@ -102,8 +102,8 @@ func (s *Storage) addSlot(ctx context.Context, t domain.Slot) error {
 		t.Email,
 		t.SlotID,
 		t.ID,
-		t.Ticker,
-		t.FIGI,
+		t.StockItem.Ticker,
+		t.StockItem.FIGI,
 		t.StartPrice,
 		t.ChangePrice,
 		t.BuyingPrice,
@@ -113,7 +113,7 @@ func (s *Storage) addSlot(ctx context.Context, t domain.Slot) error {
 		t.AmountSpent,
 		t.TargetPrice,
 		t.TotalProfit,
-		t.Currency,
+		t.StockItem.Currency,
 	)
 	if err != nil {
 		return err
