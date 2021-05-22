@@ -255,8 +255,8 @@ func (r *queryResolver) Slots(ctx context.Context) ([]*model.Slot, error) {
 		if frame, err := r.SMAStack.Get(slot.Ticker); err == nil {
 			currentPrice = frame.Last()
 		}
-		if len(slot.Currency) > 0 {
-			currency = slot.Currency
+		if len(slot.StockItem.Currency) > 0 {
+			currency = slot.StockItem.Currency
 		}
 
 		profit, _ := decimal.NewFromFloat(slot.TargetAmount).Sub(decimal.NewFromFloat(slot.AmountSpent)).Float64()

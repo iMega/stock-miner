@@ -151,8 +151,7 @@ func (s *Storage) updateSlot(ctx context.Context, t domain.Slot) error {
             qty = ?,
             amount_spent = ?,
             target_amount = ?,
-            total_profit = ?,
-            currency = ?
+            total_profit = ?
         where email = ?
           and id = ?
     `
@@ -160,8 +159,8 @@ func (s *Storage) updateSlot(ctx context.Context, t domain.Slot) error {
 		ctx,
 		q,
 		t.SlotID,
-		t.Ticker,
-		t.FIGI,
+		t.StockItem.Ticker,
+		t.StockItem.FIGI,
 		t.StartPrice,
 		t.ChangePrice,
 		t.BuyingPrice,
@@ -171,7 +170,6 @@ func (s *Storage) updateSlot(ctx context.Context, t domain.Slot) error {
 		t.AmountSpent,
 		t.TargetPrice,
 		t.TotalProfit,
-		t.Currency,
 		t.Email,
 		t.ID,
 	)
