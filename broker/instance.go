@@ -12,7 +12,7 @@ type Broker struct {
 	StockStorage    domain.StockStorage
 	Pricer          domain.Pricer
 	Market          domain.Market
-	SMAStack        smaStack
+	SMAStack        domain.SMAStack
 	SettingsStorage domain.SettingsStorage
 	Stack           domain.Stack
 
@@ -79,5 +79,11 @@ func WithSettingsStorage(d domain.SettingsStorage) Option {
 func WithStack(d domain.Stack) Option {
 	return func(b *Broker) {
 		b.Stack = d
+	}
+}
+
+func WithSMAStack(d domain.SMAStack) Option {
+	return func(b *Broker) {
+		b.SMAStack = d
 	}
 }

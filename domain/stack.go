@@ -8,3 +8,19 @@ type Stack interface {
 	ConfirmBuyTransaction(context.Context, Transaction) error
 	SellTransaction(context.Context, Transaction) error
 }
+
+type SMAStack interface {
+	Add(stack string, v float64) bool
+	IsTrendUp(stack string) (bool, error)
+	Get(stack string) (SMAFrame, error)
+}
+
+type SMAFrame interface {
+	Add(v float64)
+	NextCur()
+	CalcAvg()
+	IsTrendUp() bool
+	Prev() float64
+	IsFull() bool
+	Last() float64
+}

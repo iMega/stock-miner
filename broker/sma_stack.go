@@ -3,6 +3,7 @@ package broker
 import (
 	"fmt"
 
+	"github.com/imega/stock-miner/domain"
 	"github.com/shopspring/decimal"
 )
 
@@ -10,12 +11,16 @@ type smaStack map[string]*smaFrame
 
 const capacity = 5
 
+func NewSMAStack() domain.SMAStack {
+	return make(smaStack)
+}
+
 func (s smaStack) Add(stack string, v float64) bool {
 	if _, ok := s[stack]; !ok {
 		s[stack] = &smaFrame{}
 	}
 
-	if v == s[stack].Last {
+	if v == s[stack].Lastt {
 		return false
 	}
 
@@ -32,7 +37,7 @@ func (s smaStack) IsTrendUp(stack string) (bool, error) {
 	return false, fmt.Errorf("stack does not exist")
 }
 
-func (s smaStack) Get(stack string) (*smaFrame, error) {
+func (s smaStack) Get(stack string) (domain.SMAFrame, error) {
 	if f, ok := s[stack]; ok {
 		return f, nil
 	}
@@ -41,16 +46,16 @@ func (s smaStack) Get(stack string) (*smaFrame, error) {
 }
 
 type smaFrame struct {
-	Avg  [2]float64
-	Last float64
-	Fifo [capacity]float64
-	Cur  int
+	Avg   [2]float64
+	Lastt float64
+	Fifo  [capacity]float64
+	Cur   int
 }
 
 func (s *smaFrame) Add(v float64) {
 	f, _ := decimal.NewFromFloat(v).Truncate(2).Float64()
 	s.Fifo[s.Cur] = f
-	s.Last = f
+	s.Lastt = f
 	s.CalcAvg()
 	s.NextCur()
 }
@@ -87,6 +92,10 @@ func (s *smaFrame) Prev() float64 {
 	}
 
 	return s.Fifo[prev]
+}
+
+func (s *smaFrame) Last() float64 {
+	return s.Lastt
 }
 
 func (s *smaFrame) IsFull() bool {

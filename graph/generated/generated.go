@@ -112,6 +112,7 @@ type ComplexityRoot struct {
 		BuyingPrice  func(childComplexity int) int
 		ChangePrice  func(childComplexity int) int
 		Currency     func(childComplexity int) int
+		CurrentPrice func(childComplexity int) int
 		Figi         func(childComplexity int) int
 		ID           func(childComplexity int) int
 		Profit       func(childComplexity int) int
@@ -556,6 +557,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Slot.Currency(childComplexity), true
 
+	case "Slot.currentPrice":
+		if e.complexity.Slot.CurrentPrice == nil {
+			break
+		}
+
+		return e.complexity.Slot.CurrentPrice(childComplexity), true
+
 	case "Slot.figi":
 		if e.complexity.Slot.Figi == nil {
 			break
@@ -921,6 +929,7 @@ type Slot {
     totalProfit: Float
 
     currency: String!
+    currentPrice: Float!
 }
 
 type Deal {
@@ -3128,6 +3137,41 @@ func (ec *executionContext) _Slot_currency(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Slot_currentPrice(ctx context.Context, field graphql.CollectedField, obj *model.Slot) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Slot",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CurrentPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _SlotSettings_volume(ctx context.Context, field graphql.CollectedField, obj *model.SlotSettings) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5301,6 +5345,11 @@ func (ec *executionContext) _Slot(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Slot_totalProfit(ctx, field, obj)
 		case "currency":
 			out.Values[i] = ec._Slot_currency(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "currentPrice":
+			out.Values[i] = ec._Slot_currentPrice(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

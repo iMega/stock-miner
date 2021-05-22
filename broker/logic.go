@@ -117,7 +117,7 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage, sellCh chan domain.S
 					return
 				}
 
-				sellSlots := getItemsForSale(slots, frame.Last)
+				sellSlots := getItemsForSale(slots, frame.Last())
 				for _, slot := range sellSlots {
 					sellCh <- slot
 				}
@@ -154,7 +154,7 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage, sellCh chan domain.S
 						StockItem:   t.StockItem,
 						SlotID:      len(slots) + 1,
 						StartPrice:  frame.Prev(),
-						ChangePrice: frame.Last,
+						ChangePrice: frame.Last(),
 						Qty:         1,
 					},
 					BuyAt: time.Now(),
@@ -172,6 +172,7 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage, sellCh chan domain.S
 						From:          tr.BuyAt,
 						To:            tr.BuyAt.Add(time.Minute),
 						OperationType: "Buy",
+						FIGI:          tr.Slot.FIGI,
 					},
 				)
 				if err != nil {

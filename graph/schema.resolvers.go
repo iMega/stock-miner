@@ -13,6 +13,7 @@ import (
 	"github.com/imega/stock-miner/graph/generated"
 	"github.com/imega/stock-miner/graph/model"
 	"github.com/imega/stock-miner/stats"
+	"github.com/shopspring/decimal"
 )
 
 func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error) {
@@ -241,7 +242,21 @@ func (r *queryResolver) Slots(ctx context.Context) ([]*model.Slot, error) {
 		return nil, err
 	}
 
-	for _, slot := range slots {
+	for _, v := range slots {
+		slot := v
+
+		var (
+			currentPrice float64
+			currency     = "USD"
+		)
+		if frame, err := r.SMAStack.Get(slot.Ticker); err == nil {
+			currentPrice = frame.Last()
+		}
+		if len(slot.Currency) > 0 {
+			currency = slot.Currency
+		}
+
+		profit, _ := decimal.NewFromFloat(slot.TargetAmount).Sub(decimal.NewFromFloat(slot.AmountSpent)).Float64()
 		result = append(result, &model.Slot{
 			ID:           slot.ID,
 			Ticker:       slot.Ticker,
@@ -254,8 +269,9 @@ func (r *queryResolver) Slots(ctx context.Context) ([]*model.Slot, error) {
 			Qty:          &slot.Qty,
 			AmountSpent:  &slot.AmountSpent,
 			TargetAmount: &slot.TargetAmount,
-			TotalProfit:  &slot.TotalProfit,
-			Currency:     "USD",
+			TotalProfit:  &profit,
+			Currency:     currency,
+			CurrentPrice: currentPrice,
 		})
 	}
 

@@ -55,6 +55,6 @@ func UserFromContext(ctx context.Context) (domain.User, error) {
 
 func WithFakeUser(ctx context.Context) context.Context {
 	return google.WithUser(ctx, &googleApi.Userinfo{
-		Email: "irvis@imega.ru",
+		Email: "info@example.com",
 	})
 }

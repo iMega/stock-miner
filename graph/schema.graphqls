@@ -114,6 +114,7 @@ type Slot {
     totalProfit: Float
 
     currency: String!
+    currentPrice: Float!
 }
 
 type Deal {

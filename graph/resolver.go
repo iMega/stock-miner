@@ -10,4 +10,5 @@ type Resolver struct {
 	MainerController domain.MainerController
 	Market           domain.Market
 	SettingsStorage  domain.SettingsStorage
+	SMAStack         domain.SMAStack
 }

@@ -54,6 +54,7 @@ const SlotsND = gql`
             totalProfit
 
             currency
+            currentPrice
         }
     }
 `;
@@ -160,8 +161,8 @@ const columns = [
     },
     {
         title: "Current",
-        dataIndex: "current",
-        key: "current",
+        dataIndex: "currentPrice",
+        key: "currentPrice",
         align: "right",
         render: (v, r) => Currency(Locale, r.currency, v),
     },

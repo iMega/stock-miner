@@ -67,6 +67,7 @@ type Slot struct {
 	TargetAmount *float64 `json:"targetAmount"`
 	TotalProfit  *float64 `json:"totalProfit"`
 	Currency     string   `json:"currency"`
+	CurrentPrice float64  `json:"currentPrice"`
 }
 
 type SlotSettings struct {

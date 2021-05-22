@@ -24,6 +24,7 @@ import (
 	"github.com/imega/stock-miner/market"
 	"github.com/imega/stock-miner/session"
 	"github.com/imega/stock-miner/storage"
+	"github.com/imega/stock-miner/teacher"
 	"github.com/imega/stock-miner/yahooprovider"
 	"github.com/improbable-eng/go-httpwares"
 	http_logrus "github.com/improbable-eng/go-httpwares/logging/logrus"
@@ -57,7 +58,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// teacher.New(mux)
+	teacher.New(mux)
 
 	rootEmail, _ := env.Read("ROOT_EMAIL")
 	clientID, _ := env.Read("GOOGLE_CLIENTID")
@@ -117,6 +118,9 @@ func main() {
 	marketToken, _ := env.Read("MARKET_TINKOFF_TOKEN")
 	marketInstance := market.New(marketURL, marketToken)
 
+	// SMAStack
+	smastack := broker.NewSMAStack()
+
 	// Broker
 	yfURL, _ := env.Read("YAHOO_FINANCE_URL")
 	b := broker.New(
@@ -126,6 +130,7 @@ func main() {
 		broker.WithMarket(marketInstance),
 		broker.WithSettingsStorage(s),
 		broker.WithStack(s),
+		broker.WithSMAStack(smastack),
 	)
 
 	// handler.WebsocketUpgrader(websocket.Upgrader{
@@ -144,6 +149,7 @@ func main() {
 					MainerController: b,
 					Market:           marketInstance,
 					SettingsStorage:  s,
+					SMAStack:         smastack,
 				}},
 		),
 	)

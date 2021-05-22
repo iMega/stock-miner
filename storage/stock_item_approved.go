@@ -50,7 +50,7 @@ func (s *Storage) StockItemApprovedAll(
 	ctx context.Context,
 	out chan domain.PriceReceiptMessage,
 ) {
-	query := `select email, ticker, figi, amount_limit, transaction_limit from stock_item_approved`
+	query := `select email, ticker, figi, amount_limit, transaction_limit, currency from stock_item_approved`
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		out <- domain.PriceReceiptMessage{
@@ -63,11 +63,12 @@ func (s *Storage) StockItemApprovedAll(
 	for rows.Next() {
 		var (
 			email, ticker, figi string
+			currency            string
 			amountLimit         float64
 			transactionLimit    int
 		)
 
-		if err := rows.Scan(&email, &ticker, &figi, &amountLimit, &transactionLimit); err != nil {
+		if err := rows.Scan(&email, &ticker, &figi, &amountLimit, &transactionLimit, &currency); err != nil {
 			out <- domain.PriceReceiptMessage{
 				Error: fmt.Errorf("failed to scan approved stock item, %s", err),
 			}
@@ -82,6 +83,7 @@ func (s *Storage) StockItemApprovedAll(
 				FIGI:             figi,
 				AmountLimit:      amountLimit,
 				TransactionLimit: transactionLimit,
+				Currency:         currency,
 			},
 		}
 	}
@@ -99,8 +101,8 @@ func (s *Storage) AddStockItemApproved(ctx context.Context, item domain.StockIte
 		return fmt.Errorf("failed to extract user from context")
 	}
 
-	q := `insert into stock_item_approved (email, ticker, figi, amount_limit, transaction_limit) values (?,?,?,?,?)`
-	_, err := s.db.ExecContext(ctx, q, email, item.Ticker, item.FIGI, item.AmountLimit, item.TransactionLimit)
+	q := `insert into stock_item_approved (email, ticker, figi, amount_limit, transaction_limit, currency) values (?,?,?,?,?,?)`
+	_, err := s.db.ExecContext(ctx, q, email, item.Ticker, item.FIGI, item.AmountLimit, item.TransactionLimit, item.Currency)
 	if err != nil {
 		return fmt.Errorf("failed to add approved stock item, %s", err)
 	}
@@ -145,6 +147,7 @@ func stockItemApprovedTable(ctx context.Context, tx *sql.Tx) error {
         figi VARCHAR(200) NOT NULL,
         amount_limit FLOAT NOT NULL,
         transaction_limit INTEGER NOT NULL,
+        currency VARCHAR(64) NOT NULL,
         CONSTRAINT pair PRIMARY KEY (email, ticker)
     )`
 
