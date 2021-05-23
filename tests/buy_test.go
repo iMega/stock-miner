@@ -120,24 +120,11 @@ var _ = Describe("Automatically buy", func() {
 		err := client.Query(ctx, &reqMarketStockItems, variables)
 		Expect(err).NotTo(HaveOccurred())
 
-		type StockItemInput map[string]interface{}
-		var reqAddStockItemApproved struct {
-			AddStockItemApproved bool `graphql:"addStockItemApproved(items: $in)"`
-		}
-		variables = map[string]interface{}{
-			"in": []StockItemInput{
-				{
-					"ticker":           reqMarketStockItems.MarketStockItems[0].Ticker,
-					"figi":             reqMarketStockItems.MarketStockItems[0].Figi,
-					"amountLimit":      0,
-					"transactionLimit": 0,
-				},
-			},
-		}
-		err = client.Mutate(ctx, &reqAddStockItemApproved, variables)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(reqAddStockItemApproved.AddStockItemApproved).To(BeTrue())
+		helpers.AddStockItemApproved(
+			GraphQLUrl,
+			string(reqMarketStockItems.MarketStockItems[0].Ticker),
+			string(reqMarketStockItems.MarketStockItems[0].Figi),
+		)
 	})
 
 	It("start mining", func() {

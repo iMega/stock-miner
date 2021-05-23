@@ -49,6 +49,7 @@ func RemoveStockItemApproved(graphQLUrl, ticker string) {
 				"figi":             "",
 				"amountLimit":      0,
 				"transactionLimit": 0,
+				"currency":         "USD",
 			},
 		},
 	}
