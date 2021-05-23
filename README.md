@@ -2,6 +2,13 @@
 
 [![codecov](https://codecov.io/gh/iMega/stock-miner/branch/master/graph/badge.svg?token=JFHLSRY9NS)](https://codecov.io/gh/iMega/stock-miner)
 
+## Start
+
+```bash
+go build -ldflags "-X main.isDevMode=true" -o app && \
+STOCK_MINER_HTTP_SERVER_HOST=0.0.0.0:80 ROOT_EMAIL="info@example.com" FIXTURE_PATH=tests/fixtures/ ./app
+```
+
 ## SDK
 
 https://tinkoffcreditsystems.github.io/invest-openapi/

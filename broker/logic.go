@@ -138,7 +138,7 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage, sellCh chan domain.S
 					return
 				}
 
-				if trend || len(byuing) > 0 && byuing[0]-settings.Slot.ModificatorMinPrice >= t.Price {
+				if trend || len(byuing) > 0 && byuing[0] == 0 || len(byuing) > 0 && byuing[0]-settings.Slot.ModificatorMinPrice >= t.Price {
 					return
 				}
 
@@ -319,6 +319,10 @@ func getItemsForSale(slots []domain.Slot, price float64) []domain.Slot {
 	p := decimal.NewFromFloat(price)
 
 	for _, slot := range slots {
+		if slot.BuyingPrice == 0 {
+			continue
+		}
+
 		if decimal.NewFromFloat(slot.TargetPrice).LessThanOrEqual(p) {
 			result = append(result, slot)
 		}
