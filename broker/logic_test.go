@@ -54,6 +54,7 @@ func Test_getItemsForSale(t *testing.T) {
 					{
 						ID:          "1",
 						TargetPrice: 100.01,
+						BuyingPrice: 1,
 					},
 				},
 				price: 100.01,
@@ -62,6 +63,7 @@ func Test_getItemsForSale(t *testing.T) {
 				{
 					ID:          "1",
 					TargetPrice: 100.01,
+					BuyingPrice: 1,
 				},
 			},
 		},
@@ -72,14 +74,17 @@ func Test_getItemsForSale(t *testing.T) {
 					{
 						ID:          "0",
 						TargetPrice: 100,
+						BuyingPrice: 1,
 					},
 					{
 						ID:          "1",
 						TargetPrice: 100.01,
+						BuyingPrice: 1,
 					},
 					{
 						ID:          "2",
 						TargetPrice: 100.02,
+						BuyingPrice: 1,
 					},
 				},
 				price: 100.01,
@@ -88,10 +93,12 @@ func Test_getItemsForSale(t *testing.T) {
 				{
 					ID:          "0",
 					TargetPrice: 100,
+					BuyingPrice: 1,
 				},
 				{
 					ID:          "1",
 					TargetPrice: 100.01,
+					BuyingPrice: 1,
 				},
 			},
 		},
@@ -102,10 +109,12 @@ func Test_getItemsForSale(t *testing.T) {
 					{
 						ID:          "0",
 						TargetPrice: 100,
+						BuyingPrice: 1,
 					},
 					{
 						ID:          "1",
 						TargetPrice: 101,
+						BuyingPrice: 1,
 					},
 				},
 				price: 99,
