@@ -27,9 +27,9 @@ func (b *Broker) run() {
 	delay := cron.DelayIfStillRunning(&logger{log: b.logger})
 	b.cron.AddJob("@every 2s", delay(cron.FuncJob(func() {
 		if w1.WaitingQueueSize()+w2.WaitingQueueSize() > 20 {
-			b.logger.Info("STOPPED")
-			return
+			b.logger.Debugf("WaitingQueueSize = %d", w1.WaitingQueueSize()+w2.WaitingQueueSize())
 		}
+
 		b.StockStorage.StockItemApprovedAll(context.Background(), inCh)
 	})))
 }
@@ -87,7 +87,7 @@ func (b *Broker) makePriceStorageChannel(in chan domain.PriceReceiptMessage) *wo
 }
 
 func (b *Broker) noName(in chan domain.PriceReceiptMessage, sellCh chan domain.Slot) *workerpool.WorkerPool {
-	wp := workerpool.New(1)
+	wp := workerpool.New(5)
 
 	go func() {
 		for task := range in {
@@ -162,7 +162,7 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage, sellCh chan domain.S
 
 				tr, err := b.buy(ctx, emptyTr)
 				if err != nil {
-					b.logger.Errorf("failed to buy item, %s", err)
+					b.logger.Errorf("noName, %s", err)
 					return
 				}
 

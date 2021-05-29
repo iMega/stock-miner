@@ -2,47 +2,63 @@ package broker
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/imega/stock-miner/domain"
 	"github.com/shopspring/decimal"
 )
 
-type smaStack map[string]*smaFrame
+type smaStack struct {
+	Stack      map[string]*smaFrame
+	stackMutex sync.RWMutex
+}
 
 const capacity = 5
 
 func NewSMAStack() domain.SMAStack {
-	return make(smaStack)
+	return &smaStack{
+		Stack:      make(map[string]*smaFrame),
+		stackMutex: sync.RWMutex{},
+	}
 }
 
-func (s smaStack) Add(stack string, v float64) bool {
-	if _, ok := s[stack]; !ok {
-		s[stack] = &smaFrame{}
+func (s smaStack) Add(key string, v float64) bool {
+	s.stackMutex.Lock()
+	defer s.stackMutex.Unlock()
+
+	if _, ok := s.Stack[key]; !ok {
+		s.Stack[key] = &smaFrame{}
 	}
 
-	if v == s[stack].Lastt {
+	if v == s.Stack[key].Lastt {
 		return false
 	}
 
-	s[stack].Add(v)
+	s.Stack[key].Add(v)
 
 	return true
 }
 
-func (s smaStack) IsTrendUp(stack string) (bool, error) {
-	if f, ok := s[stack]; ok {
+func (s smaStack) IsTrendUp(key string) (bool, error) {
+	s.stackMutex.RLock()
+	defer s.stackMutex.RUnlock()
+
+	if f, ok := s.Stack[key]; ok {
 		return f.IsTrendUp(), nil
 	}
 
-	return false, fmt.Errorf("stack does not exist")
+	return false, fmt.Errorf("key does not exist")
 }
 
-func (s smaStack) Get(stack string) (domain.SMAFrame, error) {
-	if f, ok := s[stack]; ok {
+func (s smaStack) Get(key string) (domain.SMAFrame, error) {
+	s.stackMutex.RLock()
+	defer s.stackMutex.RUnlock()
+
+	if f, ok := s.Stack[key]; ok {
 		return f, nil
 	}
 
-	return nil, fmt.Errorf("stack does not exist")
+	return nil, fmt.Errorf("key does not exist")
 }
 
 type smaFrame struct {

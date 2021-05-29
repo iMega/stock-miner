@@ -14,7 +14,7 @@ func (b *Broker) buy(ctx context.Context, t domain.Transaction) (domain.Transact
 	}
 
 	if err := b.StockStorage.Buy(ctx, tr); err != nil {
-		return domain.Transaction{}, err
+		return domain.Transaction{}, fmt.Errorf("failed to buy item, %#v, %w", tr, err)
 	}
 
 	return tr, nil

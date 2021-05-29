@@ -215,7 +215,7 @@ func slotTable(ctx context.Context, tx *sql.Tx) error {
 
         currency VARCHAR(64) NOT NULL,
 
-        CONSTRAINT pair PRIMARY KEY (email, ticker, slot_id)
+        CONSTRAINT pair PRIMARY KEY (email, ticker, id)
     )`
 
 	_, err := tx.ExecContext(ctx, q)

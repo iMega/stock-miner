@@ -26,7 +26,7 @@ type Broker struct {
 func New(opts ...Option) *Broker {
 	b := &Broker{
 		cron:     cron.New(),
-		SMAStack: make(smaStack),
+		SMAStack: NewSMAStack(),
 	}
 
 	for _, opt := range opts {

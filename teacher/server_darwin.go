@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -64,9 +65,20 @@ func New(mux *http.ServeMux) {
 	}
 
 	mux.HandleFunc("/sandbox/market/stocks", t.marketStocks)
-	mux.HandleFunc("/sandbox/market/orderbook", t.marketOrderBook)
-	mux.HandleFunc("/sandbox/orders/market-order", t.marketOrder)
-	mux.HandleFunc("/sandbox/operations", t.operations)
+	mux.HandleFunc("/sandbox/market/orderbook", trottlehandler(t.marketOrderBook))
+	mux.HandleFunc("/sandbox/orders/market-order", trottlehandler(t.marketOrder))
+	mux.HandleFunc("/sandbox/operations", trottlehandler(t.operations))
+}
+
+func trottlehandler(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rand.Seed(time.Now().UnixNano())
+		min := 100
+		max := 1000
+		<-time.After(time.Duration(rand.Intn(max-min+1)+min) * time.Millisecond)
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func filesInDir(dir string) ([]string, error) {
@@ -230,7 +242,7 @@ func (t *teacher) marketOrderBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dataMutex.RLock()
-	if cursor > len(t.Data[figi]) {
+	if cursor >= len(t.Data[figi]) {
 		http.Error(w, "end list", http.StatusInternalServerError)
 		return
 	}

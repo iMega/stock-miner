@@ -1,11 +1,15 @@
 package broker
 
 import (
+	"sync"
 	"testing"
 )
 
 func Test_smaStack(t *testing.T) {
-	st := make(smaStack)
+	st := &smaStack{
+		Stack:      make(map[string]*smaFrame),
+		stackMutex: sync.RWMutex{},
+	}
 
 	st.Add("AAPL", 1)
 	st.Add("AAPL", 2)
@@ -14,15 +18,15 @@ func Test_smaStack(t *testing.T) {
 	st.Add("AAPL", 5)
 	st.Add("AAPL", 6)
 
-	if st["AAPL"].Avg[0] != 3 {
+	if st.Stack["AAPL"].Avg[0] != 3 {
 		t.Fatalf("failed to calc avg frame")
 	}
 
-	if st["AAPL"].Avg[1] != 4 {
+	if st.Stack["AAPL"].Avg[1] != 4 {
 		t.Fatalf("failed to calc avg frame")
 	}
 
-	if !st["AAPL"].IsTrendUp() {
+	if !st.Stack["AAPL"].IsTrendUp() {
 		t.Fatalf("failed to calc trend frame")
 	}
 
@@ -34,14 +38,20 @@ func Test_smaStack(t *testing.T) {
 func BenchmarkRingAdd(b *testing.B) {
 	b.ReportAllocs()
 
-	st := make(smaStack)
+	st := &smaStack{
+		Stack:      make(map[string]*smaFrame),
+		stackMutex: sync.RWMutex{},
+	}
 	for i := 0; i < b.N; i++ {
 		st.Add("AAPL", float64(i))
 	}
 }
 
 func Test_Regression_1(t *testing.T) {
-	st := make(smaStack)
+	st := &smaStack{
+		Stack:      make(map[string]*smaFrame),
+		stackMutex: sync.RWMutex{},
+	}
 
 	st.Add("AAPL", 125.38)
 	st.Add("AAPL", 125.39)
@@ -82,7 +92,10 @@ func Test_Regression_1(t *testing.T) {
 }
 
 func Test_PrevPrice(t *testing.T) {
-	st := make(smaStack)
+	st := &smaStack{
+		Stack:      make(map[string]*smaFrame),
+		stackMutex: sync.RWMutex{},
+	}
 
 	st.Add("AAPL", 1)
 
