@@ -54,3 +54,16 @@ type PriceQty struct {
 	Price float64
 	Qty   float64
 }
+
+type OperationType string
+
+const (
+	BUY  OperationType = "Buy"
+	SELL OperationType = "Sell"
+)
+
+type TaskOperation struct {
+	Attempt     int
+	Transaction Transaction
+	Operation   OperationType
+}

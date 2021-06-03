@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -19,10 +20,13 @@ func (b *Broker) run() {
 	outCh := make(chan domain.PriceReceiptMessage)
 	psCh := make(chan domain.PriceReceiptMessage)
 	sellCh := make(chan domain.Slot)
+	operationCh := make(chan domain.TaskOperation)
+
 	w1 := b.makePricerChannel(inCh, outCh, psCh)
 	w2 := b.makePriceStorageChannel(psCh)
-	b.noName(outCh, sellCh)
-	b.sellWorker(sellCh)
+	b.noName(outCh, sellCh, operationCh)
+	b.sellWorker(sellCh, operationCh)
+	b.queueOperation(operationCh)
 
 	delay := cron.DelayIfStillRunning(&logger{log: b.logger})
 	b.cron.AddJob("@every 2s", delay(cron.FuncJob(func() {
@@ -86,7 +90,11 @@ func (b *Broker) makePriceStorageChannel(in chan domain.PriceReceiptMessage) *wo
 	return wp
 }
 
-func (b *Broker) noName(in chan domain.PriceReceiptMessage, sellCh chan domain.Slot) *workerpool.WorkerPool {
+func (b *Broker) noName(
+	in chan domain.PriceReceiptMessage,
+	sellCh chan domain.Slot,
+	operationCh chan domain.TaskOperation,
+) *workerpool.WorkerPool {
 	wp := workerpool.New(5)
 
 	go func() {
@@ -199,6 +207,12 @@ func (b *Broker) noName(in chan domain.PriceReceiptMessage, sellCh chan domain.S
 
 				if err := b.confirmBuy(ctx, tr); err != nil {
 					b.logger.Errorf("failed to confirm transaction, %s", err)
+
+					operationCh <- domain.TaskOperation{
+						Transaction: tr,
+						Operation:   domain.SELL,
+					}
+
 					return
 				}
 			})
@@ -223,7 +237,10 @@ func (b *Broker) buyWorker(in chan domain.Slot) *workerpool.WorkerPool {
 	return wp
 }
 
-func (b *Broker) sellWorker(in chan domain.Slot) *workerpool.WorkerPool {
+func (b *Broker) sellWorker(
+	in chan domain.Slot,
+	operationCh chan domain.TaskOperation,
+) *workerpool.WorkerPool {
 	wp := workerpool.New(1)
 
 	go func() {
@@ -255,6 +272,12 @@ func (b *Broker) sellWorker(in chan domain.Slot) *workerpool.WorkerPool {
 
 				if err := b.confirmSell(ctx, upTr); err != nil {
 					b.logger.Errorf("failed to confirm sell items, %s", err)
+
+					operationCh <- domain.TaskOperation{
+						Transaction: upTr,
+						Operation:   domain.SELL,
+					}
+
 					return
 				}
 			})
@@ -329,4 +352,64 @@ func getItemsForSale(slots []domain.Slot, price float64) []domain.Slot {
 	}
 
 	return result
+}
+
+func (b *Broker) queueOperation(in chan domain.TaskOperation) *workerpool.WorkerPool {
+	wp := workerpool.New(1)
+
+	go func() {
+		for t := range in {
+			task := t
+
+			wp.Submit(func() {
+				if newTask, err := b.processOperation(task); err == nil {
+					in <- newTask
+				}
+			})
+
+			<-time.After(time.Minute)
+		}
+	}()
+
+	return wp
+}
+
+func (b *Broker) processOperation(task domain.TaskOperation) (domain.TaskOperation, error) {
+	ctx := contexkey.WithEmail(context.Background(), task.Transaction.Email)
+
+	settings, err := b.SettingsStorage.Settings(ctx)
+	if err != nil {
+		b.logger.Errorf("failed getting settings, %s", err)
+
+		return task, nil
+	}
+
+	cred := settings.MarketCredentials[settings.MarketProvider]
+	ctx = contexkey.WithToken(ctx, cred.Token)
+	ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
+
+	var errOperation error
+	if task.Operation == domain.BUY {
+		errOperation = b.confirmBuy(ctx, task.Transaction)
+	}
+
+	if task.Operation == domain.SELL {
+		errOperation = b.confirmSell(ctx, task.Transaction)
+	}
+
+	// handler error
+	b.logger.Errorf("failed to retry getting operation, %s", errOperation)
+
+	if task.Attempt > 20 {
+		b.logger.Errorf(
+			"the maximum number of attempts to receive the operation has been reached, id:%s",
+			task.Transaction.ID,
+		)
+
+		return task, errors.New("the maximum number of attempts")
+	}
+
+	task.Attempt++
+
+	return task, nil
 }
