@@ -16,14 +16,15 @@ import (
 )
 
 func (b *Broker) run() {
-	inCh := make(chan domain.PriceReceiptMessage)
+	pricerCh := make(chan domain.Message)
+
 	outCh := make(chan domain.PriceReceiptMessage)
 	psCh := make(chan domain.PriceReceiptMessage)
 	sellCh := make(chan domain.Slot)
 	operationCh := make(chan domain.TaskOperation)
 	confirmBuyCh := make(chan domain.Transaction)
 
-	w1 := b.makePricerChannel(inCh, outCh, psCh)
+	w1 := b.pricerWorker(pricerCh, outCh, psCh)
 	w2 := b.makePriceStorageChannel(psCh)
 	b.noName(outCh, sellCh, confirmBuyCh)
 	b.sellWorker(sellCh)
@@ -36,29 +37,40 @@ func (b *Broker) run() {
 			b.logger.Debugf("WaitingQueueSize = %d", w1.WaitingQueueSize()+w2.WaitingQueueSize())
 		}
 
-		b.StockStorage.StockItemApprovedAll(context.Background(), inCh)
+		b.StockStorage.StockItemApprovedAll(context.Background(), pricerCh)
 	})))
 }
 
-func (b *Broker) makePricerChannel(in, out, out2 chan domain.PriceReceiptMessage) *workerpool.WorkerPool {
+func (b *Broker) pricerWorker(in chan domain.Message, out, out2 chan domain.PriceReceiptMessage) *workerpool.WorkerPool {
 	wp := workerpool.New(5)
 
 	go func() {
-		for task := range in {
-			t := task
+		for m := range in {
+			msg := m
 			wp.Submit(func() {
-				res, err := b.getPrice(t)
+				if msg.Error != nil {
+					b.logger.Errorf("message has error, %W", msg.Error)
+					return
+				}
+
+				res, err := b.getPrice(msg)
 				if err != nil {
 					b.logger.Errorf("failed getting price, %s", err)
 					return
 				}
 
-				if !b.SMAStack.Add(res.Ticker, res.Price) {
+				if !b.SMAStack.Add(res.Transaction.Slot.Ticker, res.Price) {
 					return
 				}
 
-				out <- res
-				out2 <- res
+				r := domain.PriceReceiptMessage{
+					Email:     res.Transaction.Slot.Email,
+					Price:     res.Price,
+					StockItem: res.Transaction.Slot.StockItem,
+				}
+
+				out <- r
+				out2 <- r
 			})
 		}
 	}()
@@ -240,19 +252,18 @@ func (b *Broker) sellWorker(
 	return wp
 }
 
-func (b *Broker) getPrice(msg domain.PriceReceiptMessage) (domain.PriceReceiptMessage, error) {
+func (b *Broker) getPrice(msg domain.Message) (domain.Message, error) {
 	result := msg
 
-	ctx := contexkey.WithEmail(context.Background(), msg.Email)
-	settings, err := b.SettingsStorage.Settings(ctx)
+	ctx, err := b.contextWithCreds(
+		context.Background(),
+		msg.Transaction.Slot.Email,
+	)
 	if err != nil {
-		return result, err
+		return result, fmt.Errorf("failed getting creds, %W", err)
 	}
 
-	cred := settings.MarketCredentials[settings.MarketProvider]
-	ctx = contexkey.WithToken(ctx, cred.Token)
-	ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
-	ob, err := b.Market.OrderBook(ctx, msg.StockItem)
+	ob, err := b.Market.OrderBook(ctx, msg.Transaction.Slot.StockItem)
 	if err != nil {
 		return result, err
 	}

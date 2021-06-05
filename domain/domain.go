@@ -67,3 +67,10 @@ type TaskOperation struct {
 	Transaction Transaction
 	Operation   OperationType
 }
+
+type Message struct {
+	RetryCount  int
+	Error       error
+	Price       float64
+	Transaction Transaction
+}

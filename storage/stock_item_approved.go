@@ -48,12 +48,12 @@ func (s *Storage) StockItemApproved(ctx context.Context) ([]domain.StockItem, er
 
 func (s *Storage) StockItemApprovedAll(
 	ctx context.Context,
-	out chan domain.PriceReceiptMessage,
+	out chan domain.Message,
 ) {
 	query := `select email, ticker, figi, amount_limit, transaction_limit, currency from stock_item_approved`
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
-		out <- domain.PriceReceiptMessage{
+		out <- domain.Message{
 			Error: fmt.Errorf("failed getting approved stock items, %s", err),
 		}
 
@@ -69,27 +69,31 @@ func (s *Storage) StockItemApprovedAll(
 		)
 
 		if err := rows.Scan(&email, &ticker, &figi, &amountLimit, &transactionLimit, &currency); err != nil {
-			out <- domain.PriceReceiptMessage{
+			out <- domain.Message{
 				Error: fmt.Errorf("failed to scan approved stock item, %s", err),
 			}
 
 			return
 		}
 
-		out <- domain.PriceReceiptMessage{
-			Email: email,
-			StockItem: domain.StockItem{
-				Ticker:           ticker,
-				FIGI:             figi,
-				AmountLimit:      amountLimit,
-				TransactionLimit: transactionLimit,
-				Currency:         currency,
+		out <- domain.Message{
+			Transaction: domain.Transaction{
+				Slot: domain.Slot{
+					Email: email,
+					StockItem: domain.StockItem{
+						Ticker:           ticker,
+						FIGI:             figi,
+						AmountLimit:      amountLimit,
+						TransactionLimit: transactionLimit,
+						Currency:         currency,
+					},
+				},
 			},
 		}
 	}
 
 	if err := rows.Close(); err != nil {
-		out <- domain.PriceReceiptMessage{
+		out <- domain.Message{
 			Error: fmt.Errorf("failed to close rows approved stock item, %s", err),
 		}
 	}
