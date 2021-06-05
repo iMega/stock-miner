@@ -33,6 +33,7 @@ var (
 )
 
 func New(mux *http.ServeMux) {
+	rand.Seed(time.Now().UnixNano())
 	dir, _ := env.Read("FIXTURE_PATH")
 	files, err := filesInDir(dir)
 	if err != nil {
@@ -72,7 +73,6 @@ func New(mux *http.ServeMux) {
 
 func trottlehandler(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rand.Seed(time.Now().UnixNano())
 		min := 100
 		max := 1000
 		<-time.After(time.Duration(rand.Intn(max-min+1)+min) * time.Millisecond)
@@ -375,6 +375,21 @@ func (t *teacher) operations(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unsupported method", http.StatusInternalServerError)
 		return
 	}
+
+	// if rand.Intn(2) > 0 {
+	// 	data := map[string]interface{}{
+	// 		"status": "Ok",
+	// 		"payload": map[string]interface{}{
+	// 			"operations": result,
+	// 		},
+	// 	}
+	// 	b, _ := json.Marshal(data)
+
+	// 	w.Header().Add("Content-Type", "application/json")
+	// 	w.Write(b)
+
+	// 	return
+	// }
 
 	v, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {

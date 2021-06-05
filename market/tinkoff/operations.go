@@ -52,7 +52,7 @@ func (m *Market) Operations(ctx context.Context, in domain.OperationInput) ([]do
 	}
 
 	if err := httpwareclient.Send(ctx, req); err != nil {
-		return result, err
+		return result, fmt.Errorf("failed to send request, %w", err)
 	}
 
 	if data.Status != statusOk {
