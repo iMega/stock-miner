@@ -23,7 +23,6 @@ func (b *Broker) run() {
 	sellCh := make(chan domain.Slot)
 
 	operationCh := make(chan domain.Message)
-	b.queueOperation(operationCh)
 
 	confirmBuyCh := make(chan domain.Message)
 	b.confirmBuyWorker(confirmBuyCh, operationCh)
@@ -31,10 +30,12 @@ func (b *Broker) run() {
 	confirmSellCh := make(chan domain.Message)
 	b.confirmSellWorker(confirmSellCh, operationCh)
 
+	b.queueOperation(operationCh, confirmBuyCh, confirmSellCh)
+
 	w1 := b.pricerWorker(pricerCh, outCh, psCh)
 	w2 := b.makePriceStorageChannel(psCh)
 	b.noName(outCh, sellCh, confirmBuyCh)
-	b.sellWorker(sellCh)
+	b.sellWorker(sellCh, confirmSellCh)
 
 	delay := cron.DelayIfStillRunning(&logger{log: b.logger})
 	b.cron.AddJob("@every 2s", delay(cron.FuncJob(func() {
@@ -213,6 +214,7 @@ func (b *Broker) buyWorker(in chan domain.Slot) *workerpool.WorkerPool {
 
 func (b *Broker) sellWorker(
 	in chan domain.Slot,
+	confirmSellCh chan domain.Message,
 ) *workerpool.WorkerPool {
 	wp := workerpool.New(1)
 
@@ -238,15 +240,8 @@ func (b *Broker) sellWorker(
 					return
 				}
 
-				if err := b.confirmSell(ctx, upTr); err != nil {
-					b.logger.Errorf("failed to confirm sell items, %s", err)
-
-					// operationCh <- domain.TaskOperation{
-					// 	Transaction: upTr,
-					// 	Operation:   domain.SELL,
-					// }
-
-					return
+				confirmSellCh <- domain.Message{
+					Transaction: upTr,
 				}
 			})
 		}
@@ -296,24 +291,6 @@ func (b *Broker) getPrice(msg domain.Message) (domain.Message, error) {
 	return result, nil
 }
 
-// формула расчета целевой цены для продажи
-//
-// ценаПокупки+(ценаПокупки/100*комиссия) = затраты
-// затраты + (затраты / 100 * маржа%) = ЦенаПродажиБезКомиссии
-// ЦенаПродажиБезКомиссии+(ЦенаПродажиБезКомиссии/100*комиссия) = ЦенаПродажи
-func calcTargetPrice(commission, buyingPrice, margin float64) float64 {
-	c := decimal.NewFromFloat(commission)
-	bp := decimal.NewFromFloat(buyingPrice)
-	m := decimal.NewFromFloat(margin)
-
-	spent := bp.Add(bp.Div(decimal.NewFromInt(100)).Mul(c).Round(2))
-	gm := spent.Add(spent.Div(decimal.NewFromInt(100)).Mul(m).Round(2))
-
-	target, _ := gm.Add(gm.Div(decimal.NewFromInt(100)).Mul(c).Round(2)).Float64()
-
-	return target
-}
-
 func getItemsForSale(slots []domain.Slot, price float64) []domain.Slot {
 	result := []domain.Slot{}
 	p := decimal.NewFromFloat(price)
@@ -332,45 +309,58 @@ func getItemsForSale(slots []domain.Slot, price float64) []domain.Slot {
 }
 
 func (b *Broker) queueOperation(
-	in chan domain.Message,
+	in, confirmBuyCh, confirmSellCh chan domain.Message,
 ) *workerpool.WorkerPool {
 	wp := workerpool.New(1)
 
 	go func() {
-		for t := range in {
-			task := t
-			_ = task
+		for m := range in {
+			msg := m
+			<-time.After(2 * time.Second)
+
 			wp.Submit(func() {
-				// if newTask, err := b.processOperation(task); err == nil {
-				// 	in <- newTask
-				// }
+				newMsg, op, err := processOperation(msg)
+				if err != nil {
+					b.logger.Errorf("failed to process operation, %w", err)
+
+					return
+				}
+
+				if op == domain.BUY {
+					confirmBuyCh <- newMsg
+				}
+
+				if op == domain.SELL {
+					confirmSellCh <- newMsg
+				}
 			})
 
-			<-time.After(10 * time.Second)
 		}
 	}()
 
 	return wp
 }
 
-func (b *Broker) processOperation(
-	task domain.TaskOperation,
-) (domain.TaskOperation, error) {
-	task.Attempt++
-	if task.Attempt > 20 {
-		b.logger.Errorf(
+func processOperation(msg domain.Message) (domain.Message, domain.OperationType, error) {
+	msg.RetryCount++
+	if msg.RetryCount > 20 {
+		fmt.Errorf(
 			"the maximum number of attempts to receive the operation has been reached, id:%s",
-			task.Transaction.ID,
+			msg.Transaction.ID,
 		)
 
-		return task, errors.New("the maximum number of attempts")
+		return msg, "", errors.New("the maximum number of attempts")
 	}
 
-	if task.Operation == domain.BUY {
-		// confirmBuyCh <- task.Transaction
+	if msg.Transaction.BuyingPrice == 0 {
+		return msg, domain.BUY, nil
 	}
 
-	return task, nil
+	if msg.Transaction.SalePrice == 0 {
+		return msg, domain.SELL, nil
+	}
+
+	return msg, "", errors.New("unknown transaction type")
 }
 
 func (b *Broker) confirmBuyWorker(

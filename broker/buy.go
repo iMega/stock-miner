@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/imega/stock-miner/domain"
-	"github.com/shopspring/decimal"
 )
 
 func (b *Broker) buy(ctx context.Context, t domain.Transaction) (domain.Transaction, error) {
@@ -62,10 +61,7 @@ func (b *Broker) confirmBuyJob(tr domain.Transaction) error {
 		tr.BuyingPrice,
 		settings.GrossMargin,
 	)
-
-	profit, _ := decimal.NewFromFloat(tr.TargetPrice).
-		Sub(decimal.NewFromFloat(tr.BuyingPrice)).Float64()
-	tr.Profit = profit
+	tr.Profit = calcSub(tr.TargetPrice, tr.BuyingPrice)
 
 	if err := b.confirmBuy(ctx, tr); err != nil {
 		return fmt.Errorf("failed to confirm transaction, %s", err)

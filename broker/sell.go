@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/imega/stock-miner/domain"
-	"github.com/shopspring/decimal"
 )
 
 func (b *Broker) sell(ctx context.Context, t domain.Transaction) (domain.Transaction, error) {
@@ -43,9 +42,7 @@ func (b *Broker) confirmSell(ctx context.Context, t domain.Transaction) error {
 	t.SalePrice = filteredTR.SalePrice
 	t.AmountIncome = filteredTR.AmountIncome
 	t.Duration = int(t.SellAt.Unix() - t.BuyAt.Unix())
-
-	profit, _ := decimal.NewFromFloat(t.AmountIncome).Sub(decimal.NewFromFloat(t.AmountSpent)).Float64()
-	t.TotalProfit = profit
+	t.TotalProfit = calcSub(t.AmountIncome, t.AmountSpent)
 
 	if t.Slot.Qty == filteredTR.Qty {
 		return b.StockStorage.ConfirmSell(ctx, t)

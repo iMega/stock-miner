@@ -24,6 +24,7 @@ type teacher struct {
 	Data       map[string][][]string
 	Cursor     map[string]int
 	Operations map[string][]sdk.Operation
+	IsFail     bool
 }
 
 var (
@@ -113,6 +114,10 @@ func filesInDir(dir string) ([]string, error) {
 func instrument(FIGI string) sdk.Instrument {
 	var ticker string
 	switch FIGI {
+	case "DOWN0000000":
+		ticker = "DOWN"
+	case "DOWNUP00000":
+		ticker = "DOWNUP"
 	case "BBG000B9XRY4":
 		ticker = "AAPL"
 	case "BBG000BVPV84":
@@ -145,6 +150,14 @@ func instrumentByTicker(ticker string) sdk.Instrument {
 	}
 
 	switch ticker {
+	case "DOWN":
+		def.FIGI = "DOWN0000000"
+		def.Ticker = "DOWN"
+		def.Name = "DOWN"
+	case "DOWNUP":
+		def.FIGI = "DOWNUP00000"
+		def.Ticker = "DOWNUP"
+		def.Name = "DOWNUP"
 	case "AAPL":
 		def.FIGI = "BBG000B9XRY4"
 		def.Ticker = "AAPL"
@@ -376,20 +389,24 @@ func (t *teacher) operations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if rand.Intn(2) > 0 {
-	// 	data := map[string]interface{}{
-	// 		"status": "Ok",
-	// 		"payload": map[string]interface{}{
-	// 			"operations": result,
-	// 		},
-	// 	}
-	// 	b, _ := json.Marshal(data)
+	if !t.IsFail {
+		data := map[string]interface{}{
+			"status": "Ok",
+			"payload": map[string]interface{}{
+				"operations": result,
+			},
+		}
+		b, _ := json.Marshal(data)
 
-	// 	w.Header().Add("Content-Type", "application/json")
-	// 	w.Write(b)
+		w.Header().Add("Content-Type", "application/json")
+		w.Write(b)
 
-	// 	return
-	// }
+		t.IsFail = true
+
+		return
+	}
+
+	t.IsFail = false
 
 	v, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
