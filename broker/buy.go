@@ -31,11 +31,6 @@ func (b *Broker) confirmBuyJob(tr domain.Transaction) error {
 		return fmt.Errorf("failed getting settings, %w", err)
 	}
 
-	settings, err := b.SettingsStorage.Settings(ctx)
-	if err != nil {
-		return fmt.Errorf("failed getting settings, %w", err)
-	}
-
 	trs, err := b.Market.Operations(
 		ctx,
 		domain.OperationInput{
@@ -54,18 +49,29 @@ func (b *Broker) confirmBuyJob(tr domain.Transaction) error {
 		return fmt.Errorf("failed to filter operations, %w", err)
 	}
 
-	tr.BuyingPrice = filteredTR.BuyingPrice
-	tr.Slot.AmountSpent = filteredTR.Slot.AmountSpent
-	tr.TargetPrice = calcTargetPrice(
-		settings.MarketCommission,
-		tr.BuyingPrice,
-		settings.GrossMargin,
-	)
-	tr.Profit = calcSub(tr.TargetPrice, tr.BuyingPrice)
+	settings, err := b.SettingsStorage.Settings(ctx)
+	if err != nil {
+		return fmt.Errorf("failed getting settings, %w", err)
+	}
 
-	if err := b.confirmBuy(ctx, tr); err != nil {
+	newTr := fillBuyTransaction(tr, filteredTR, settings)
+
+	if err := b.confirmBuy(ctx, newTr); err != nil {
 		return fmt.Errorf("failed to confirm transaction, %s", err)
 	}
 
 	return nil
+}
+
+func fillBuyTransaction(dst, src domain.Transaction, s domain.Settings) domain.Transaction {
+	dst.Slot.BuyingPrice = src.Slot.BuyingPrice
+	dst.Slot.AmountSpent = src.Slot.AmountSpent
+	dst.TargetPrice = calcTargetPrice(
+		s.MarketCommission,
+		dst.Slot.BuyingPrice,
+		s.GrossMargin,
+	)
+	dst.Profit = calcSub(dst.TargetPrice, dst.BuyingPrice)
+
+	return dst
 }
