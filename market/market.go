@@ -5,9 +5,9 @@ import (
 	"github.com/imega/stock-miner/market/tinkoff"
 )
 
-func New(URL, token string) domain.Market {
+func New(url, token string) domain.Market {
 	return &tinkoff.Market{
-		URL:   URL,
+		URL:   url,
 		Token: token,
 	}
 }

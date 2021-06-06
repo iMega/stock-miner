@@ -56,12 +56,14 @@ func (b *Broker) pricerWorker(in chan domain.Message, out, out2 chan domain.Pric
 			wp.Submit(func() {
 				if msg.Error != nil {
 					b.logger.Errorf("message has error, %W", msg.Error)
+
 					return
 				}
 
 				res, err := b.getPrice(msg)
 				if err != nil {
 					b.logger.Errorf("failed getting price, %s", err)
+
 					return
 				}
 
@@ -116,29 +118,34 @@ func (b *Broker) noName(
 				frame, err := b.SMAStack.Get(t.Ticker)
 				if err != nil {
 					b.logger.Errorf("failed getting frame from stack, %s", err)
+
 					return
 				}
 
 				if !frame.IsFull() {
 					b.logger.Debug("frame is not full")
+
 					return
 				}
 
 				ctx, err := b.contextWithCreds(context.Background(), t.Email)
 				if err != nil {
 					b.logger.Errorf("failed getting creds, %w", err)
+
 					return
 				}
 
 				settings, err := b.SettingsStorage.Settings(ctx)
 				if err != nil {
 					b.logger.Errorf("failed getting settings, %s", err)
+
 					return
 				}
 
 				slots, err := b.Stack.Slot(ctx, t.FIGI)
 				if err != nil {
 					b.logger.Errorf("failed getting slot, %s", err)
+
 					return
 				}
 
@@ -160,6 +167,7 @@ func (b *Broker) noName(
 				trend, err := b.SMAStack.IsTrendUp(t.Ticker)
 				if err != nil {
 					b.logger.Errorf("failed getting trend, %s", err)
+
 					return
 				}
 
@@ -167,7 +175,7 @@ func (b *Broker) noName(
 					return
 				}
 
-				//buy
+				// buy
 				emptyTr := domain.Transaction{
 					Slot: domain.Slot{
 						ID:          uuid.NewID().String(),
@@ -184,6 +192,7 @@ func (b *Broker) noName(
 				tr, err := b.buy(ctx, emptyTr)
 				if err != nil {
 					b.logger.Errorf("noName, %s", err)
+
 					return
 				}
 
@@ -225,18 +234,21 @@ func (b *Broker) sellWorker(
 				ctx, err := b.contextWithCreds(context.Background(), t.Email)
 				if err != nil {
 					b.logger.Errorf("failed getting creds, %s", err)
+
 					return
 				}
 
 				tr, err := b.StockStorage.Transaction(ctx, t.ID)
 				if err != nil {
 					b.logger.Errorf("failed getting transaction, %s", err)
+
 					return
 				}
 
 				upTr, err := b.sell(ctx, tr)
 				if err != nil {
 					b.logger.Errorf("failed to sell items, %s", err)
+
 					return
 				}
 

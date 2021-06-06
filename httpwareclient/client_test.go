@@ -9,7 +9,7 @@ import (
 )
 
 func helperHTTPClient(in RequestFunc, fixture []byte) {
-	httpClient = &HttpClientMock{
+	httpClient = &HTTPClientMock{
 		Func: func(req *http.Request) (*http.Response, error) {
 			if in != nil {
 				in(req)
@@ -25,7 +25,7 @@ func helperHTTPClient(in RequestFunc, fixture []byte) {
 func TestSend_ReturnsValidBody(t *testing.T) {
 	senddata := &sendData{}
 	recvdata := &recvData{}
-	httpClient = &HttpClientMock{
+	httpClient = &HTTPClientMock{
 		Func: func(*http.Request) (*http.Response, error) {
 			buffer := bytes.NewBuffer([]byte(`{"value":"test"}`))
 
@@ -64,7 +64,7 @@ func TestSend_WithHeaders_ReturnsValidHeader(t *testing.T) {
 
 	senddata := &sendData{}
 	recvdata := &recvData{}
-	httpClient = &HttpClientMock{
+	httpClient = &HTTPClientMock{
 		Func: func(req *http.Request) (*http.Response, error) {
 			value := req.Header.Get("header")
 			if value != "myheader" {

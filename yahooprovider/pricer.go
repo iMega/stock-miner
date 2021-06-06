@@ -15,8 +15,8 @@ type pricer struct {
 	URL string
 }
 
-func New(URL string) domain.Pricer {
-	p := &pricer{URL: URL}
+func New(url string) domain.Pricer {
+	p := &pricer{URL: url}
 
 	return p
 }

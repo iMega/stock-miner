@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	statusError = "Error"
-	statusOk    = "Ok"
+	statusOk = "Ok"
 )
 
 type Market struct {

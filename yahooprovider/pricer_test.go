@@ -22,7 +22,7 @@ func Test_pricer_GetPrice(t *testing.T) {
 		in  domain.PriceReceiptMessage
 	}
 
-	httpwareclient.WithClient(&httpwareclient.HttpClientMock{
+	httpwareclient.WithClient(&httpwareclient.HTTPClientMock{
 		Func: func(req *http.Request) (*http.Response, error) {
 			r := response{
 				QuoteSummary: quoteSummary{

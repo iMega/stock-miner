@@ -52,9 +52,9 @@ func New(opts ...Option) *SessionStore {
 
 type Option func(p *SessionStore)
 
-func WithClintID(ID string) Option {
+func WithClintID(id string) Option {
 	return func(p *SessionStore) {
-		p.ClientID = ID
+		p.ClientID = id
 	}
 }
 

@@ -149,10 +149,10 @@ func Send(ctx context.Context, in *SendIn) error {
 	return nil
 }
 
-type HttpClientMock struct {
+type HTTPClientMock struct {
 	Func func(req *http.Request) (*http.Response, error)
 }
 
-func (c *HttpClientMock) Do(req *http.Request) (*http.Response, error) {
+func (c *HTTPClientMock) Do(req *http.Request) (*http.Response, error) {
 	return c.Func(req)
 }

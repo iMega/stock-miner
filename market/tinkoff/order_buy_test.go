@@ -130,7 +130,7 @@ func TestMarket_OrderBuy(t *testing.T) {
 			},
 			f: func(req *http.Request) (*http.Response, error) {
 				r := responseOrderAdd{
-					Status: statusError,
+					Status: "Error",
 				}
 				b, _ := json.Marshal(&r)
 				buffer := bytes.NewBuffer(b)
@@ -166,7 +166,7 @@ func TestMarket_OrderBuy(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Market{}
-			httpwareclient.WithClient(&httpwareclient.HttpClientMock{Func: tt.f})
+			httpwareclient.WithClient(&httpwareclient.HTTPClientMock{Func: tt.f})
 			got, err := m.OrderBuy(tt.args.ctx(), tt.args.i)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Market.OrderBuy() error = %v, wantErr %v", err, tt.wantErr)

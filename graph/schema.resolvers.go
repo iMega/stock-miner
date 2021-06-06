@@ -325,8 +325,8 @@ func (r *subscriptionResolver) MemStats(ctx context.Context) (<-chan *model.MemS
 		for {
 			select {
 			case <-ctx.Done():
-				fmt.Println("========= MemStats:ctx.Don")
 				close(ch)
+
 				return
 
 			case <-time.After(1 * time.Second):
@@ -337,8 +337,6 @@ func (r *subscriptionResolver) MemStats(ctx context.Context) (<-chan *model.MemS
 					TotalAlloc: m.TotalAlloc,
 					Sys:        m.Sys,
 				}
-
-				fmt.Println("=========")
 			}
 		}
 	}()

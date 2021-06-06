@@ -8,10 +8,10 @@ import (
 	"io/ioutil"
 )
 
-// Coder is a json coder
+// Coder is a json coder.
 type Coder struct{}
 
-// Encode encode to json
+// Encode encode to json.
 func (Coder) Encode(data interface{}) (io.Reader, error) {
 	var bodyReader io.Reader
 	if data != nil {
@@ -24,7 +24,7 @@ func (Coder) Encode(data interface{}) (io.Reader, error) {
 	return bodyReader, nil
 }
 
-// Decode from json
+// Decode from json.
 func (Coder) Decode(reader io.Reader, data interface{}) error {
 	respData, err := ioutil.ReadAll(reader)
 	if err != nil {
