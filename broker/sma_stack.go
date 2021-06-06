@@ -22,7 +22,7 @@ func NewSMAStack() domain.SMAStack {
 	}
 }
 
-func (s smaStack) Add(key string, v float64) bool {
+func (s *smaStack) Add(key string, v float64) bool {
 	s.stackMutex.Lock()
 	defer s.stackMutex.Unlock()
 
@@ -39,7 +39,7 @@ func (s smaStack) Add(key string, v float64) bool {
 	return true
 }
 
-func (s smaStack) IsTrendUp(key string) (bool, error) {
+func (s *smaStack) IsTrendUp(key string) (bool, error) {
 	s.stackMutex.RLock()
 	defer s.stackMutex.RUnlock()
 
@@ -50,7 +50,7 @@ func (s smaStack) IsTrendUp(key string) (bool, error) {
 	return false, fmt.Errorf("key does not exist")
 }
 
-func (s smaStack) Get(key string) (domain.SMAFrame, error) {
+func (s *smaStack) Get(key string) (domain.SMAFrame, error) {
 	s.stackMutex.RLock()
 	defer s.stackMutex.RUnlock()
 

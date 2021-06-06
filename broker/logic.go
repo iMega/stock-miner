@@ -344,12 +344,10 @@ func (b *Broker) queueOperation(
 func processOperation(msg domain.Message) (domain.Message, domain.OperationType, error) {
 	msg.RetryCount++
 	if msg.RetryCount > 20 {
-		fmt.Errorf(
+		return msg, "", fmt.Errorf(
 			"the maximum number of attempts to receive the operation has been reached, id:%s",
 			msg.Transaction.ID,
 		)
-
-		return msg, "", errors.New("the maximum number of attempts")
 	}
 
 	if msg.Transaction.BuyingPrice == 0 {
