@@ -63,3 +63,19 @@ func filterSellOperationByOrderID(trs []domain.Transaction, orderID string) (dom
 
 	return domain.Transaction{}, fmt.Errorf("operation does not exist")
 }
+
+func (b *Broker) confirmSellJob(msg domain.Message) error {
+	ctx, err := b.contextWithCreds(
+		context.Background(),
+		msg.Transaction.Slot.Email,
+	)
+	if err != nil {
+		return fmt.Errorf("failed getting creds, %w", err)
+	}
+
+	if err := b.confirmSell(ctx, msg.Transaction); err != nil {
+		return fmt.Errorf("failed to confirm sell, %w", err)
+	}
+
+	return nil
+}

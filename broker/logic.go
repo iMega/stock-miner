@@ -21,15 +21,20 @@ func (b *Broker) run() {
 	outCh := make(chan domain.PriceReceiptMessage)
 	psCh := make(chan domain.PriceReceiptMessage)
 	sellCh := make(chan domain.Slot)
-	operationCh := make(chan domain.TaskOperation)
-	confirmBuyCh := make(chan domain.Transaction)
+
+	operationCh := make(chan domain.Message)
+	b.queueOperation(operationCh)
+
+	confirmBuyCh := make(chan domain.Message)
+	b.confirmBuyWorker(confirmBuyCh, operationCh)
+
+	confirmSellCh := make(chan domain.Message)
+	b.confirmSellWorker(confirmSellCh, operationCh)
 
 	w1 := b.pricerWorker(pricerCh, outCh, psCh)
 	w2 := b.makePriceStorageChannel(psCh)
 	b.noName(outCh, sellCh, confirmBuyCh)
 	b.sellWorker(sellCh)
-	b.queueOperation(operationCh)
-	b.confirmBuyQueue(confirmBuyCh)
 
 	delay := cron.DelayIfStillRunning(&logger{log: b.logger})
 	b.cron.AddJob("@every 2s", delay(cron.FuncJob(func() {
@@ -99,7 +104,7 @@ func (b *Broker) makePriceStorageChannel(in chan domain.PriceReceiptMessage) *wo
 func (b *Broker) noName(
 	in chan domain.PriceReceiptMessage,
 	sellCh chan domain.Slot,
-	confirmBuyCh chan domain.Transaction,
+	confirmBuyCh chan domain.Message,
 ) *workerpool.WorkerPool {
 	wp := workerpool.New(5)
 
@@ -118,7 +123,12 @@ func (b *Broker) noName(
 					return
 				}
 
-				ctx := contexkey.WithEmail(context.Background(), t.Email)
+				ctx, err := b.contextWithCreds(context.Background(), t.Email)
+				if err != nil {
+					b.logger.Errorf("failed getting creds, %w", err)
+					return
+				}
+
 				settings, err := b.SettingsStorage.Settings(ctx)
 				if err != nil {
 					b.logger.Errorf("failed getting settings, %s", err)
@@ -157,10 +167,6 @@ func (b *Broker) noName(
 				}
 
 				//buy
-				cred := settings.MarketCredentials[settings.MarketProvider]
-				ctx = contexkey.WithToken(ctx, cred.Token)
-				ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
-
 				emptyTr := domain.Transaction{
 					Slot: domain.Slot{
 						ID:          uuid.NewID().String(),
@@ -180,7 +186,9 @@ func (b *Broker) noName(
 					return
 				}
 
-				confirmBuyCh <- tr
+				confirmBuyCh <- domain.Message{
+					Transaction: tr,
+				}
 			})
 		}
 	}()
@@ -212,16 +220,11 @@ func (b *Broker) sellWorker(
 		for task := range in {
 			t := task
 			wp.Submit(func() {
-				ctx := contexkey.WithEmail(context.Background(), t.Email)
-				settings, err := b.SettingsStorage.Settings(ctx)
+				ctx, err := b.contextWithCreds(context.Background(), t.Email)
 				if err != nil {
-					b.logger.Errorf("failed getting settings, %s", err)
+					b.logger.Errorf("failed getting creds, %s", err)
 					return
 				}
-
-				cred := settings.MarketCredentials[settings.MarketProvider]
-				ctx = contexkey.WithToken(ctx, cred.Token)
-				ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
 
 				tr, err := b.StockStorage.Transaction(ctx, t.ID)
 				if err != nil {
@@ -244,6 +247,26 @@ func (b *Broker) sellWorker(
 					// }
 
 					return
+				}
+			})
+		}
+	}()
+
+	return wp
+}
+
+func (b *Broker) confirmSellWorker(confirmSellCh, operationCh chan domain.Message) *workerpool.WorkerPool {
+	wp := workerpool.New(100)
+
+	go func() {
+		for m := range confirmSellCh {
+			msg := m
+
+			wp.Submit(func() {
+				if err := b.confirmSellJob(msg); err != nil {
+					b.logger.Errorf("failed to confirm sell, %s", err)
+					msg.RetryCount++
+					operationCh <- msg
 				}
 			})
 		}
@@ -309,19 +332,18 @@ func getItemsForSale(slots []domain.Slot, price float64) []domain.Slot {
 }
 
 func (b *Broker) queueOperation(
-	in chan domain.TaskOperation,
-	// confirmBuyCh chan domain.Transaction,
+	in chan domain.Message,
 ) *workerpool.WorkerPool {
 	wp := workerpool.New(1)
 
 	go func() {
 		for t := range in {
 			task := t
-
+			_ = task
 			wp.Submit(func() {
-				if newTask, err := b.processOperation(task); err == nil {
-					in <- newTask
-				}
+				// if newTask, err := b.processOperation(task); err == nil {
+				// 	in <- newTask
+				// }
 			})
 
 			<-time.After(10 * time.Second)
@@ -334,19 +356,6 @@ func (b *Broker) queueOperation(
 func (b *Broker) processOperation(
 	task domain.TaskOperation,
 ) (domain.TaskOperation, error) {
-	ctx := contexkey.WithEmail(context.Background(), task.Transaction.Email)
-
-	settings, err := b.SettingsStorage.Settings(ctx)
-	if err != nil {
-		b.logger.Errorf("failed getting settings, %s", err)
-
-		return task, nil
-	}
-
-	cred := settings.MarketCredentials[settings.MarketProvider]
-	ctx = contexkey.WithToken(ctx, cred.Token)
-	ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
-
 	task.Attempt++
 	if task.Attempt > 20 {
 		b.logger.Errorf(
@@ -364,72 +373,27 @@ func (b *Broker) processOperation(
 	return task, nil
 }
 
-func (b *Broker) confirmBuyQueue(
-	in chan domain.Transaction,
+func (b *Broker) confirmBuyWorker(
+	confirmBuyCh chan domain.Message,
+	operationCh chan domain.Message,
 ) *workerpool.WorkerPool {
 	wp := workerpool.New(100)
 
 	go func() {
-		for t := range in {
-			task := t
+		for m := range confirmBuyCh {
+			msg := m
 
 			wp.Submit(func() {
-				if err := b.confirmBuyWorker(task); err != nil {
-					b.logger.Error(err)
+				if err := b.confirmBuyJob(msg.Transaction); err != nil {
+					b.logger.Errorf("failed to confirm buy, %s", err)
+					msg.RetryCount++
+					operationCh <- msg
 				}
 			})
 		}
 	}()
 
 	return wp
-}
-
-func (b *Broker) confirmBuyWorker(tr domain.Transaction) error {
-	ctx := contexkey.WithEmail(context.Background(), tr.Slot.Email)
-	settings, err := b.SettingsStorage.Settings(ctx)
-	if err != nil {
-		return fmt.Errorf("failed getting settings, %w", err)
-	}
-
-	cred := settings.MarketCredentials[settings.MarketProvider]
-	ctx = contexkey.WithToken(ctx, cred.Token)
-	ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
-
-	trs, err := b.Market.Operations(
-		ctx,
-		domain.OperationInput{
-			From:          tr.BuyAt,
-			To:            tr.BuyAt.Add(time.Minute),
-			OperationType: "Buy",
-			FIGI:          tr.Slot.FIGI,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("failed getting operations, %w", err)
-	}
-
-	filteredTR, err := filterOperationByOrderID(trs, tr.BuyOrderID)
-	if err != nil {
-		return fmt.Errorf("failed to filter operations, %w", err)
-	}
-
-	tr.BuyingPrice = filteredTR.BuyingPrice
-	tr.Slot.AmountSpent = filteredTR.Slot.AmountSpent
-	tr.TargetPrice = calcTargetPrice(
-		settings.MarketCommission,
-		tr.BuyingPrice,
-		settings.GrossMargin,
-	)
-
-	profit, _ := decimal.NewFromFloat(tr.TargetPrice).
-		Sub(decimal.NewFromFloat(tr.BuyingPrice)).Float64()
-	tr.Profit = profit
-
-	if err := b.confirmBuy(ctx, tr); err != nil {
-		return fmt.Errorf("failed to confirm transaction, %s", err)
-	}
-
-	return nil
 }
 
 func filterOperationByOrderID(trs []domain.Transaction, orderID string) (domain.Transaction, error) {
