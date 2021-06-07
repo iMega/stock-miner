@@ -328,7 +328,7 @@ func (b *Broker) queueOperation(
 	go func() {
 		for m := range in {
 			msg := m
-			<-time.After(2 * time.Second)
+			<-time.After(4 * time.Second)
 
 			wp.Submit(func() {
 				newMsg, op, err := processOperation(msg)
@@ -355,7 +355,7 @@ func (b *Broker) queueOperation(
 
 func processOperation(msg domain.Message) (domain.Message, domain.OperationType, error) {
 	msg.RetryCount++
-	if msg.RetryCount > 20 {
+	if msg.RetryCount > 60 {
 		return msg, "", fmt.Errorf(
 			"the maximum number of attempts to receive the operation has been reached, id:%s",
 			msg.Transaction.ID,
