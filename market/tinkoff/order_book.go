@@ -2,6 +2,7 @@ package tinkoff
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	sdk "github.com/TinkoffCreditSystems/invest-openapi-go-sdk"
@@ -33,6 +34,10 @@ func (m *Market) OrderBook(ctx context.Context, i domain.StockItem) (*domain.Ord
 
 	if err := httpwareclient.Send(ctx, req); err != nil {
 		return nil, err
+	}
+
+	if data.Payload.TradeStatus != sdk.NormalTrading {
+		return nil, fmt.Errorf("trade status isn't normal trading")
 	}
 
 	var bids []domain.PriceQty
