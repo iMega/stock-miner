@@ -115,105 +115,18 @@ func (b *Broker) solveWorker(
 		for task := range in {
 			t := task
 			wp.Submit(func() {
-				// msg := domain.Message{
-				// 	Price: t.Price,
-				// 	Transaction: domain.Transaction{
-				// 		Slot: domain.Slot{
-				//             Email: t.Email,
-				// 			StockItem: t.StockItem,
-				// 		},
-				// 	},
-				// }
-				// err := b.solver(msg, sellCh, confirmBuyCh)
-				// if err != nil {
-				// 	b.logger.Errorf("failed to solve, %s", err)
-				// }
-				frame, err := b.SMAStack.Get(t.Ticker)
-				if err != nil {
-					b.logger.Errorf("failed getting frame from stack, %s", err)
-
-					return
-				}
-
-				if !frame.IsFull() {
-					b.logger.Debug("frame is not full")
-
-					return
-				}
-
-				ctx, err := b.contextWithCreds(context.Background(), t.Email)
-				if err != nil {
-					b.logger.Errorf("failed getting creds, %w", err)
-
-					return
-				}
-
-				settings, err := b.SettingsStorage.Settings(ctx)
-				if err != nil {
-					b.logger.Errorf("failed getting settings, %s", err)
-
-					return
-				}
-
-				slots, err := b.Stack.Slot(ctx, t.FIGI)
-				if err != nil {
-					b.logger.Errorf("failed getting slot, %s", err)
-
-					return
-				}
-
-				sellSlots := getItemsForSale(slots, frame.Last())
-				for _, slot := range sellSlots {
-					sellCh <- slot
-				}
-
-				if settings.Slot.Volume <= len(slots) {
-					return
-				}
-
-				minPrice := minBuyingPrice(slots)
-				if minPrice == 0 {
-					return
-				}
-
-				if minPrice-settings.Slot.ModificatorMinPrice >= t.Price {
-					return
-				}
-
-				trend, err := b.SMAStack.IsTrendUp(t.Ticker)
-				if err != nil {
-					b.logger.Errorf("failed getting trend, %s", err)
-
-					return
-				}
-
-				if trend {
-					return
-				}
-
-				// buy
-				emptyTr := domain.Transaction{
-					Slot: domain.Slot{
-						ID:          uuid.NewID().String(),
-						Email:       t.Email,
-						StockItem:   t.StockItem,
-						SlotID:      len(slots) + 1,
-						StartPrice:  frame.Prev(),
-						ChangePrice: frame.Last(),
-						Qty:         1,
+				msg := domain.Message{
+					Price: t.Price,
+					Transaction: domain.Transaction{
+						Slot: domain.Slot{
+							Email:     t.Email,
+							StockItem: t.StockItem,
+						},
 					},
-					BuyAt: time.Now(),
 				}
-
-				tr, err := b.buy(ctx, emptyTr)
+				err := b.solver(msg, sellCh, confirmBuyCh)
 				if err != nil {
-					b.logger.Errorf("noName, %s", err)
-
-					return
-				}
-
-				confirmBuyCh <- domain.Message{
-					Transaction: tr,
+					b.logger.Errorf("failed to solve, %s", err)
 				}
 			})
 		}
