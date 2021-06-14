@@ -34,7 +34,7 @@ func (b *Broker) run() {
 
 	w1 := b.pricerWorker(pricerCh, outCh, psCh)
 	w2 := b.makePriceStorageChannel(psCh)
-	b.noName(outCh, sellCh, confirmBuyCh)
+	b.solveWorker(outCh, sellCh, confirmBuyCh)
 	b.sellWorker(sellCh, confirmSellCh)
 
 	delay := cron.DelayIfStillRunning(&logger{log: b.logger})
@@ -104,7 +104,7 @@ func (b *Broker) makePriceStorageChannel(in chan domain.PriceReceiptMessage) *wo
 	return wp
 }
 
-func (b *Broker) noName(
+func (b *Broker) solveWorker(
 	in chan domain.PriceReceiptMessage,
 	sellCh chan domain.Slot,
 	confirmBuyCh chan domain.Message,
@@ -115,6 +115,19 @@ func (b *Broker) noName(
 		for task := range in {
 			t := task
 			wp.Submit(func() {
+				// msg := domain.Message{
+				// 	Price: t.Price,
+				// 	Transaction: domain.Transaction{
+				// 		Slot: domain.Slot{
+				//             Email: t.Email,
+				// 			StockItem: t.StockItem,
+				// 		},
+				// 	},
+				// }
+				// err := b.solver(msg, sellCh, confirmBuyCh)
+				// if err != nil {
+				// 	b.logger.Errorf("failed to solve, %s", err)
+				// }
 				frame, err := b.SMAStack.Get(t.Ticker)
 				if err != nil {
 					b.logger.Errorf("failed getting frame from stack, %s", err)
@@ -158,11 +171,14 @@ func (b *Broker) noName(
 					return
 				}
 
-				var byuing []float64
-				for _, slot := range slots {
-					byuing = append(byuing, slot.BuyingPrice)
+				minPrice := minBuyingPrice(slots)
+				if minPrice == 0 {
+					return
 				}
-				sort.Float64s(byuing)
+
+				if minPrice-settings.Slot.ModificatorMinPrice >= t.Price {
+					return
+				}
 
 				trend, err := b.SMAStack.IsTrendUp(t.Ticker)
 				if err != nil {
@@ -171,7 +187,7 @@ func (b *Broker) noName(
 					return
 				}
 
-				if trend || len(byuing) > 0 && byuing[0] == 0 || len(byuing) > 0 && byuing[0]-settings.Slot.ModificatorMinPrice >= t.Price {
+				if trend {
 					return
 				}
 
@@ -204,6 +220,87 @@ func (b *Broker) noName(
 	}()
 
 	return wp
+}
+
+func (b *Broker) solver(
+	msg domain.Message,
+	sellCh chan domain.Slot,
+	confirmBuyCh chan domain.Message,
+) error {
+	frame, err := b.SMAStack.Get(msg.Transaction.Slot.StockItem.Ticker)
+	if err != nil {
+		return fmt.Errorf("failed getting frame from stack, %s", err)
+	}
+
+	if !frame.IsFull() {
+		return fmt.Errorf("frame is not full") //nil
+	}
+
+	ctx, err := b.contextWithCreds(context.Background(), msg.Transaction.Slot.Email)
+	if err != nil {
+		return fmt.Errorf("failed getting creds, %w", err)
+	}
+
+	settings, err := b.SettingsStorage.Settings(ctx)
+	if err != nil {
+		return fmt.Errorf("failed getting settings, %w", err)
+	}
+
+	slots, err := b.Stack.Slot(ctx, msg.Transaction.Slot.StockItem.FIGI)
+	if err != nil {
+		return fmt.Errorf("failed getting slot, %s", err)
+
+	}
+
+	sellSlots := getItemsForSale(slots, frame.Last())
+	for _, slot := range sellSlots {
+		sellCh <- slot
+	}
+
+	if settings.Slot.Volume <= len(slots) {
+		return nil
+	}
+
+	minPrice := minBuyingPrice(slots)
+	if minPrice == 0 {
+		return nil
+	}
+
+	if minPrice-settings.Slot.ModificatorMinPrice >= msg.Price {
+		return nil
+	}
+
+	isTrendUp, err := b.SMAStack.IsTrendUp(msg.Transaction.Slot.StockItem.Ticker)
+	if err != nil {
+		return fmt.Errorf("failed getting trend, %s", err)
+	}
+
+	if isTrendUp {
+		return nil
+	}
+
+	// buy
+	emptyTr := domain.Transaction{
+		Slot: domain.Slot{
+			ID:          uuid.NewID().String(),
+			Email:       msg.Transaction.Email,
+			StockItem:   msg.Transaction.Slot.StockItem,
+			SlotID:      len(slots) + 1,
+			StartPrice:  frame.Prev(),
+			ChangePrice: frame.Last(),
+			Qty:         1,
+		},
+		BuyAt: time.Now(),
+	}
+
+	tr, err := b.buy(ctx, emptyTr)
+	if err != nil {
+		return fmt.Errorf("failed to buy stock item, %s", err)
+	}
+
+	confirmBuyCh <- domain.Message{Transaction: tr}
+
+	return nil
 }
 
 func (b *Broker) buyWorker(in chan domain.Slot) *workerpool.WorkerPool {
@@ -421,4 +518,19 @@ func (b *Broker) contextWithCreds(ctxIn context.Context, email string) (context.
 	ctx = contexkey.WithAPIURL(ctx, cred.APIURL)
 
 	return ctx, nil
+}
+
+func minBuyingPrice(slots []domain.Slot) float64 {
+	if len(slots) == 0 {
+		return -1
+	}
+
+	var byuing []float64
+	for _, slot := range slots {
+		byuing = append(byuing, slot.BuyingPrice)
+	}
+
+	sort.Float64s(byuing)
+
+	return byuing[0]
 }

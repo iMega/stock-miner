@@ -99,3 +99,50 @@ func Test_getItemsForSale(t *testing.T) {
 		})
 	}
 }
+
+func Test_minBuyingPrice(t *testing.T) {
+	type args struct {
+		slots []domain.Slot
+	}
+	tests := []struct {
+		name string
+		args args
+		want float64
+	}{
+		{
+			name: "optimistic",
+			args: args{
+				slots: []domain.Slot{
+					{BuyingPrice: 3},
+					{BuyingPrice: 2},
+					{BuyingPrice: 1},
+				},
+			},
+			want: 1,
+		},
+		{
+			name: "empty slots",
+			args: args{
+				slots: []domain.Slot{},
+			},
+			want: -1,
+		},
+		{
+			name: "slots with zero price",
+			args: args{
+				slots: []domain.Slot{
+					{BuyingPrice: 0},
+					{BuyingPrice: 1},
+				},
+			},
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := minBuyingPrice(tt.args.slots); got != tt.want {
+				t.Errorf("minBuyingPrice() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

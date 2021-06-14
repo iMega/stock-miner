@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/99designs/gqlgen v0.13.0
 	github.com/Microsoft/hcsshim v0.8.17 // indirect
-	github.com/TinkoffCreditSystems/invest-openapi-go-sdk v0.6.2-0.20210215184022-8c1ddb4654d9 // indirect
+	github.com/TinkoffCreditSystems/invest-openapi-go-sdk v0.6.2-0.20210215184022-8c1ddb4654d9
 	github.com/containerd/containerd v1.5.2
 	github.com/containerd/fifo v1.0.0 // indirect
 	github.com/dghubble/gologin/v2 v2.3.0
@@ -31,7 +31,7 @@ require (
 	github.com/shurcooL/vfsgen v0.0.0-20200824052919-0d455de96546
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
-	github.com/vektah/gqlparser/v2 v2.2.0
+	github.com/vektah/gqlparser/v2 v2.1.0
 	golang.org/x/net v0.0.0-20210610132358-84b48f89b13b // indirect
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	golang.org/x/sys v0.0.0-20210611083646-a4fc73990273 // indirect
