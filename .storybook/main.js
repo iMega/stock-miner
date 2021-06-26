@@ -1,12 +1,6 @@
-// const webpack = require("webpack");
-
 module.exports = {
     stories: ["../frontend/**/*.stories.js"],
-    addons: [
-        // "@storybook/addon-docs",
-        // "@storybook/addon-a11y",
-        "@storybook/addon-viewport/register",
-    ],
+    addons: ["@storybook/addon-viewport/register"],
     webpackFinal: (config) => {
         config.module.rules = config.module.rules.map((data) => {
             if (/svg\|/.test(String(data.test)))
