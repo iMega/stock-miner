@@ -20,7 +20,10 @@ const cache = new InMemoryCache();
 //       })
 //     : null;
 
-const httpLink = new HttpLink({ uri: GRAPHQL_HOST, fetch });
+const httpLink = new HttpLink({
+    uri: process.env.STORYBOOK_GRAPHQL_HOST,
+    fetch,
+});
 
 const splitLink = process.browser
     ? split(

@@ -1,12 +1,10 @@
+// const webpack = require("webpack");
+
 module.exports = {
-    stories: [
-        "../frontend/Intro.stories.mdx",
-        "../frontend/**/*.stories.mdx",
-        "../frontend/**/*.stories.js",
-    ],
+    stories: ["../frontend/**/*.stories.js"],
     addons: [
-        "@storybook/addon-docs",
-        "@storybook/addon-a11y",
+        // "@storybook/addon-docs",
+        // "@storybook/addon-a11y",
         "@storybook/addon-viewport/register",
     ],
     webpackFinal: (config) => {

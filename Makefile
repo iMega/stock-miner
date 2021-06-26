@@ -3,6 +3,7 @@ CWD = /go/src/$(REPO)
 GO_IMG = golang:1.15.8-alpine3.13
 NODE_IMG = node:16.1.0-alpine3.13
 BUILDER=builder
+GITHUB_REF = version//dev
 
 test: lint unit build acceptance
 
@@ -15,7 +16,7 @@ build: node_modules
 	@docker run --rm -v $(CURDIR):/data -w /data \
 		-e TAG=$(TAG) \
 		-e VERSION=$(GITHUB_REF) \
-		-e GRAPHQL_HOST=$(GRAPHQL_HOST) \
+		-e STORYBOOK_GRAPHQL_HOST=$(GRAPHQL_HOST) \
 		-e WS_HOST=$(WS_HOST) \
 		$(NODE_IMG) \
 		sh -c "npm run build"
@@ -45,6 +46,9 @@ a:
 
 down:
 	GO_IMG=$(BUILDER) CWD=$(CWD) docker-compose down -v --remove-orphans
+
+clean:
+	@-docker run --rm -w $(CWD) -v $(CURDIR):$(CWD) alpine rm -r build
 
 release: build
 	go run -tags=dev assets/generate.go

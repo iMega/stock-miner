@@ -3,6 +3,7 @@ const webpack = require("webpack");
 const TerserPlugin = require("terser-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
 
 const pathToLibrary = (name) =>
     path.resolve(__dirname, `./node_modules/${name}`);
@@ -74,6 +75,9 @@ module.exports = {
                 process.env.WS_HOST || "ws://localhost/query"
             ),
         }),
+        new CopyPlugin([
+            { from: path.resolve(__dirname, "frontend/favicon.ico") },
+        ]),
     ],
     optimization: {
         minimize: false,

@@ -3,6 +3,8 @@ package main
 import (
 	"database/sql"
 	"net/http"
+	"os"
+	"path"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -78,7 +80,7 @@ func main() {
 		"/",
 		loggerToContext(
 			logger,
-			session.DefenceHandler(http.FileServer(Assets)),
+			session.DefenceHandler(fileServerWithCustom404(Assets)),
 		),
 	)
 	mux.HandleFunc(
@@ -214,5 +216,18 @@ func loggerToContext(l logrus.FieldLogger, next http.Handler) http.Handler {
 		ctx := log.WithLogger(req.Context(), l.(*logrus.Entry))
 
 		next.ServeHTTP(w, req.WithContext(ctx))
+	})
+}
+
+func fileServerWithCustom404(fs http.FileSystem) http.Handler {
+	next := http.FileServer(fs)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, err := fs.Open(path.Clean(r.URL.Path))
+		if os.IsNotExist(err) {
+			r.URL.Path = "/index.htm"
+		}
+
+		next.ServeHTTP(w, r)
 	})
 }

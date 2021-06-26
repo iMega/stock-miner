@@ -1,9 +1,15 @@
 import React from "react";
 import { Menu, Layout } from "antd";
-import { CAN_USE_DOM } from "./CanUseDom";
-import { Switch, Route, Link } from "react-router-dom";
-import { BrowserRouter, StaticRouter } from "react-router-dom";
+import {
+    Switch,
+    Route,
+    Link,
+    useLocation,
+    BrowserRouter,
+    StaticRouter,
+} from "react-router-dom";
 
+import { CAN_USE_DOM } from "./CanUseDom";
 import Connector from "./Connector";
 import PageStat from "./Stat";
 import PageDealings from "./Dealings";
@@ -11,12 +17,6 @@ import { Add, List } from "./StockItem";
 import Profile from "./Profile";
 
 const { Sider, Content } = Layout;
-
-const LinkStat = "/";
-const LinkProfile = "/profile";
-const LinkDealings = "/dealings";
-const LinkStockItemList = "/stock-item/list";
-const LinkStockItemAdd = "/stock-item/add";
 
 const Main = () => (
     <Connector>
@@ -47,48 +47,89 @@ const Routing = () => (
                 }}
             >
                 <Switch>
-                    <Route path={LinkProfile}>
-                        <Profile />
-                    </Route>
-                    <Route path={LinkStockItemList}>
-                        <List />
-                    </Route>
-                    <Route path={LinkStockItemAdd}>
-                        <Add />
-                    </Route>
-                    <Route path={LinkDealings}>
-                        <PageDealings />
-                    </Route>
-                    {/* должен быть последним, иначе роут не пашет */}
-                    <Route path={LinkStat}>
-                        <PageStat />
-                    </Route>
+                    {builderRoutes(mainMenuItems)}
+                    {/* корневой должен быть последним, иначе роут не пашет */}
+                    {buildRootRoute(mainMenuItems)}
                 </Switch>
             </Content>
         </Layout>
     </React.Fragment>
 );
 
-const MainMenu = () => (
-    <Menu defaultSelectedKeys={["statistic"]} mode="inline" theme="dark">
-        <Menu.Item key="profile">
-            <Link to={LinkProfile}>Profile</Link>
-        </Menu.Item>
-        <Menu.Item key="statistic">
-            <Link to={LinkStat}>Statistic</Link>
-        </Menu.Item>
-        <Menu.Item key="dealings">
-            <Link to={LinkDealings}>Dealings</Link>
-        </Menu.Item>
-        <Menu.SubMenu key="stock-item" title="Stock item">
-            <Menu.Item key="stock-item-list">
-                <Link to={LinkStockItemList}>List</Link>
-            </Menu.Item>
-            <Menu.Item key="stock-item-add">
-                <Link to={LinkStockItemAdd}>Add</Link>
-            </Menu.Item>
-        </Menu.SubMenu>
-    </Menu>
+const MainMenu = () => {
+    let location = useLocation();
+    return (
+        <Menu
+            defaultSelectedKeys={[location.pathname]}
+            mode="inline"
+            theme="dark"
+        >
+            {builderMenu(mainMenuItems)}
+        </Menu>
+    );
+};
+
+const mainMenuItems = [
+    { path: "/profile", title: "Profile", page: <Profile /> },
+    { path: "/", title: "Statistic", page: <PageStat /> },
+    { path: "/dealings", title: "Dealings", page: <PageDealings /> },
+    {
+        path: "stock-item",
+        title: "Stock item",
+        sub: [
+            {
+                path: "/stock-item/list",
+                title: "List",
+                page: <List />,
+            },
+            {
+                path: "/stock-item/add",
+                title: "Add",
+                page: <Add />,
+            },
+        ],
+    },
+];
+
+const builderMenu = (menu) =>
+    menu.map((item) =>
+        hasProperty(item, "sub") ? (
+            <Menu.SubMenu key={item.path} title={item.title}>
+                {builderMenu(item.sub)}
+            </Menu.SubMenu>
+        ) : (
+            builderItemMenu(item)
+        )
+    );
+
+const builderItemMenu = (item) => (
+    <Menu.Item key={item.path}>
+        <Link to={item.path}>{item.title}</Link>
+    </Menu.Item>
 );
+
+const builderRoutes = (menu) => {
+    let r = [];
+    menu.forEach(
+        (i) =>
+            i.path !== "/" &&
+            (hasProperty(i, "sub")
+                ? r.push(...builderRoutes(i.sub))
+                : r.push(buildRoute(i)))
+    );
+
+    return r;
+};
+
+const buildRootRoute = (menu) =>
+    menu.map((item) => item.path === "/" && buildRoute(item));
+
+const buildRoute = (item) => (
+    <Route key={item.path} path={item.path}>
+        {item.page}
+    </Route>
+);
+
+const hasProperty = (o, p) => Object.prototype.hasOwnProperty.call(o, p);
 
 export default Main;

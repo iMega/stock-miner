@@ -59,8 +59,8 @@ module.exports = {
         //     patterns: [{ from: "src/icons" }],
         // }),
         new webpack.DefinePlugin({
-            GRAPHQL_HOST: JSON.stringify(
-                process.env.GRAPHQL_HOST || "http://localhost/query"
+            "process.env.STORYBOOK_GRAPHQL_HOST": JSON.stringify(
+                process.env.STORYBOOK_GRAPHQL_HOST || "http://localhost/query"
             ),
             WS_HOST: JSON.stringify(
                 process.env.WS_HOST || "ws://localhost/query"
