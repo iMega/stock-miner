@@ -51,6 +51,10 @@ func main() {
 		logger.Fatalf("failed to create database, ", err)
 	}
 
+	if err := storage.MigrateDatabase(dbFilename); err != nil {
+		logger.Fatalf("failed to migrate database, ", err)
+	}
+
 	db, err := sql.Open("sqlite3", dbFilename)
 	if err != nil {
 		logger.Errorf("failed to open db-file, %s", err)

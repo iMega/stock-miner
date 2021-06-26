@@ -159,3 +159,47 @@ func stockItemApprovedTable(ctx context.Context, tx *sql.Tx) error {
 
 	return err
 }
+
+func stockItemApprovedTableMigrate(ctx context.Context, tx *sql.Tx, ti tableInfo) error {
+	if !hasColumn(ti, col{Name: "startTime"}) {
+		if err := stockItemApprovedTableFieldStartTime(ctx, tx); err != nil {
+			return fmt.Errorf("failed to migrate table stock_item_approved, %s", err)
+		}
+	}
+
+	if !hasColumn(ti, col{Name: "endTime"}) {
+		if err := stockItemApprovedTableFieldEndTime(ctx, tx); err != nil {
+			return fmt.Errorf("failed to migrate table stock_item_approved, %s", err)
+		}
+	}
+
+	return nil
+}
+
+func stockItemApprovedTableFieldStartTime(ctx context.Context, tx *sql.Tx) error {
+	q := `ALTER TABLE stock_item_approved ADD startTime INTEGER NOT NULL DEFAULT 11`
+
+	_, err := tx.ExecContext(ctx, q)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to execute stockItemApprovedTableFieldStartTime, %s",
+			err,
+		)
+	}
+
+	return nil
+}
+
+func stockItemApprovedTableFieldEndTime(ctx context.Context, tx *sql.Tx) error {
+	q := `ALTER TABLE stock_item_approved ADD endTime INTEGER NOT NULL DEFAULT 20`
+
+	_, err := tx.ExecContext(ctx, q)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to execute stockItemApprovedTableFieldEndTime, %s",
+			err,
+		)
+	}
+
+	return nil
+}
