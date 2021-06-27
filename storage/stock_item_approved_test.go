@@ -13,7 +13,7 @@ import (
 func Test_stockItemApprovedTableFieldStartTime(t *testing.T) {
 	db, close, err := helpers.CreateDB(
 		func(ctx context.Context, tx *sql.Tx) error {
-			return stockItemApprovedTable(ctx, tx)
+			return stockItemApprovedCreateTable(ctx, tx)
 		},
 	)
 	if err != nil {

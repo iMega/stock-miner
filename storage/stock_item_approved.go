@@ -18,8 +18,9 @@ func (s *Storage) StockItemApproved(ctx context.Context) ([]domain.StockItem, er
 	q := `select ticker, figi, amount_limit, transaction_limit from stock_item_approved where email = ?`
 	rows, err := s.db.QueryContext(ctx, q, email)
 	if err != nil {
-		return nil, fmt.Errorf("failed getting approved stock items, %s", err)
+		return nil, fmt.Errorf("failed getting approved stock items, %w", err)
 	}
+	defer rows.Close()
 
 	var result []domain.StockItem
 	for rows.Next() {
@@ -29,7 +30,7 @@ func (s *Storage) StockItemApproved(ctx context.Context) ([]domain.StockItem, er
 			transactionLimit int
 		)
 		if err := rows.Scan(&ticker, &figi, &amountLimit, &transactionLimit); err != nil {
-			return nil, fmt.Errorf("failed to scan approved stock item, %s", err)
+			return nil, fmt.Errorf("failed to scan approved stock item, %w", err)
 		}
 		result = append(result, domain.StockItem{
 			Ticker:           ticker,
@@ -37,10 +38,6 @@ func (s *Storage) StockItemApproved(ctx context.Context) ([]domain.StockItem, er
 			AmountLimit:      amountLimit,
 			TransactionLimit: transactionLimit,
 		})
-	}
-
-	if err := rows.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close rows approved stock item, %s", err)
 	}
 
 	return result, nil
@@ -54,11 +51,12 @@ func (s *Storage) StockItemApprovedAll(
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		out <- domain.Message{
-			Error: fmt.Errorf("failed getting approved stock items, %s", err),
+			Error: fmt.Errorf("failed getting approved stock items, %w", err),
 		}
 
 		return
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var (
@@ -70,7 +68,7 @@ func (s *Storage) StockItemApprovedAll(
 
 		if err := rows.Scan(&email, &ticker, &figi, &amountLimit, &transactionLimit, &currency); err != nil {
 			out <- domain.Message{
-				Error: fmt.Errorf("failed to scan approved stock item, %s", err),
+				Error: fmt.Errorf("failed to scan approved stock item, %w", err),
 			}
 
 			return
@@ -91,12 +89,6 @@ func (s *Storage) StockItemApprovedAll(
 			},
 		}
 	}
-
-	if err := rows.Close(); err != nil {
-		out <- domain.Message{
-			Error: fmt.Errorf("failed to close rows approved stock item, %s", err),
-		}
-	}
 }
 
 func (s *Storage) AddStockItemApproved(ctx context.Context, item domain.StockItem) error {
@@ -108,7 +100,7 @@ func (s *Storage) AddStockItemApproved(ctx context.Context, item domain.StockIte
 	q := `insert into stock_item_approved (email, ticker, figi, amount_limit, transaction_limit, currency) values (?,?,?,?,?,?)`
 	_, err := s.db.ExecContext(ctx, q, email, item.Ticker, item.FIGI, item.AmountLimit, item.TransactionLimit, item.Currency)
 	if err != nil {
-		return fmt.Errorf("failed to add approved stock item, %s", err)
+		return fmt.Errorf("failed to add approved stock item, %w", err)
 	}
 
 	return nil
@@ -117,13 +109,13 @@ func (s *Storage) AddStockItemApproved(ctx context.Context, item domain.StockIte
 func (s *Storage) UpdateStockItemApproved(ctx context.Context, item domain.StockItem) error {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return fmt.Errorf("failed to extract user from context")
+		return contexkey.ErrExtractEmail
 	}
 
 	q := `update stock_item_approved set amount_limit=?, transaction_limit=? where email=? and ticker=?`
 	_, err := s.db.ExecContext(ctx, q, item.AmountLimit, item.TransactionLimit, email, item.Ticker)
 	if err != nil {
-		return fmt.Errorf("failed to update approved stock item, %s", err)
+		return fmt.Errorf("failed to update approved stock item, %w", err)
 	}
 
 	return nil
@@ -136,15 +128,14 @@ func (s *Storage) RemoveStockItemApproved(ctx context.Context, item domain.Stock
 	}
 
 	q := `delete from stock_item_approved where email=? and ticker=?`
-	_, err := s.db.ExecContext(ctx, q, email, item.Ticker)
-	if err != nil {
-		return fmt.Errorf("failed to delete approved stock item, %s", err)
+	if _, err := s.db.ExecContext(ctx, q, email, item.Ticker); err != nil {
+		return fmt.Errorf("failed to delete approved stock item, %w", err)
 	}
 
 	return nil
 }
 
-func stockItemApprovedTable(ctx context.Context, tx *sql.Tx) error {
+func stockItemApprovedCreateTable(ctx context.Context, tx *sql.Tx) error {
 	q := `CREATE TABLE IF NOT EXISTS stock_item_approved (
         email VARCHAR(64) NOT NULL,
         ticker VARCHAR(64) NOT NULL,
@@ -152,24 +143,35 @@ func stockItemApprovedTable(ctx context.Context, tx *sql.Tx) error {
         amount_limit FLOAT NOT NULL,
         transaction_limit INTEGER NOT NULL,
         currency VARCHAR(64) NOT NULL,
+        startTime INTEGER NOT NULL DEFAULT 11,
+        endTime INTEGER NOT NULL DEFAULT 20,
+        active INTEGER NOT NULL DEFAULT 1,
         CONSTRAINT pair PRIMARY KEY (email, ticker)
     )`
 
-	_, err := tx.ExecContext(ctx, q)
+	if _, err := tx.ExecContext(ctx, q); err != nil {
+		return fmt.Errorf("failed to create table stock_item_approved, %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func stockItemApprovedTableMigrate(ctx context.Context, tx *sql.Tx, ti tableInfo) error {
 	if !hasColumn(ti, col{Name: "startTime"}) {
 		if err := stockItemApprovedTableFieldStartTime(ctx, tx); err != nil {
-			return fmt.Errorf("failed to migrate table stock_item_approved, %s", err)
+			return fmt.Errorf("failed to migrate table stock_item_approved, %w", err)
 		}
 	}
 
 	if !hasColumn(ti, col{Name: "endTime"}) {
 		if err := stockItemApprovedTableFieldEndTime(ctx, tx); err != nil {
-			return fmt.Errorf("failed to migrate table stock_item_approved, %s", err)
+			return fmt.Errorf("failed to migrate table stock_item_approved, %w", err)
+		}
+	}
+
+	if !hasColumn(ti, col{Name: "active"}) {
+		if err := stockItemApprovedTableFieldActive(ctx, tx); err != nil {
+			return fmt.Errorf("failed to migrate table stock_item_approved, %w", err)
 		}
 	}
 
@@ -179,10 +181,9 @@ func stockItemApprovedTableMigrate(ctx context.Context, tx *sql.Tx, ti tableInfo
 func stockItemApprovedTableFieldStartTime(ctx context.Context, tx *sql.Tx) error {
 	q := `ALTER TABLE stock_item_approved ADD startTime INTEGER NOT NULL DEFAULT 11`
 
-	_, err := tx.ExecContext(ctx, q)
-	if err != nil {
+	if _, err := tx.ExecContext(ctx, q); err != nil {
 		return fmt.Errorf(
-			"failed to execute stockItemApprovedTableFieldStartTime, %s",
+			"failed to execute stockItemApprovedTableFieldStartTime, %w",
 			err,
 		)
 	}
@@ -193,10 +194,22 @@ func stockItemApprovedTableFieldStartTime(ctx context.Context, tx *sql.Tx) error
 func stockItemApprovedTableFieldEndTime(ctx context.Context, tx *sql.Tx) error {
 	q := `ALTER TABLE stock_item_approved ADD endTime INTEGER NOT NULL DEFAULT 20`
 
-	_, err := tx.ExecContext(ctx, q)
-	if err != nil {
+	if _, err := tx.ExecContext(ctx, q); err != nil {
 		return fmt.Errorf(
-			"failed to execute stockItemApprovedTableFieldEndTime, %s",
+			"failed to execute stockItemApprovedTableFieldEndTime, %w",
+			err,
+		)
+	}
+
+	return nil
+}
+
+func stockItemApprovedTableFieldActive(ctx context.Context, tx *sql.Tx) error {
+	q := `ALTER TABLE stock_item_approved ADD active INTEGER NOT NULL DEFAULT 1`
+
+	if _, err := tx.ExecContext(ctx, q); err != nil {
+		return fmt.Errorf(
+			"failed to execute stockItemApprovedTableFieldActive, %w",
 			err,
 		)
 	}
