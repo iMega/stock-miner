@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 
 	tools "github.com/imega/stock-miner/sql"
@@ -13,7 +14,24 @@ import (
 func Test_stockItemApprovedTableFieldStartTime(t *testing.T) {
 	db, close, err := helpers.CreateDB(
 		func(ctx context.Context, tx *sql.Tx) error {
-			return stockItemApprovedCreateTable(ctx, tx)
+			q := `CREATE TABLE IF NOT EXISTS stock_item_approved (
+                email VARCHAR(64) NOT NULL,
+                ticker VARCHAR(64) NOT NULL,
+                figi VARCHAR(200) NOT NULL,
+                amount_limit FLOAT NOT NULL,
+                transaction_limit INTEGER NOT NULL,
+                currency VARCHAR(64) NOT NULL,
+                CONSTRAINT pair PRIMARY KEY (email, ticker)
+            )`
+
+			if _, err := tx.ExecContext(ctx, q); err != nil {
+				return fmt.Errorf(
+					"failed to create table stock_item_approved, %w",
+					err,
+				)
+			}
+
+			return nil
 		},
 	)
 	if err != nil {
