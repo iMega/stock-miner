@@ -50,7 +50,7 @@ func (p *pricer) GetPrice(
 	}
 
 	if len(data.QuoteSummary.Result) == 0 {
-		return result, fmt.Errorf("failed getting price, %s", "empty")
+		return result, fmt.Errorf("failed getting price, %w", "empty")
 	}
 
 	response := data.QuoteSummary.Result[0]

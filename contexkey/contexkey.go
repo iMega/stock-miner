@@ -1,11 +1,16 @@
 package contexkey
 
-import "context"
+import (
+	"context"
+	"errors"
+)
 
 var (
 	emailKey  = contextKey("email")
 	tokenKey  = contextKey("token")
 	apiurlKey = contextKey("apiurl")
+
+	ErrExtractEmail = errors.New("failed to extract user from context")
 )
 
 type contextKey string

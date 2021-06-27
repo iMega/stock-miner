@@ -142,7 +142,7 @@ func (b *Broker) solver(
 ) error {
 	frame, err := b.SMAStack.Get(msg.Transaction.Slot.StockItem.Ticker)
 	if err != nil {
-		return fmt.Errorf("failed getting frame from stack, %s", err)
+		return fmt.Errorf("failed getting frame from stack, %w", err)
 	}
 
 	if !frame.IsFull() {
@@ -161,7 +161,7 @@ func (b *Broker) solver(
 
 	slots, err := b.Stack.Slot(ctx, msg.Transaction.Slot.StockItem.FIGI)
 	if err != nil {
-		return fmt.Errorf("failed getting slot, %s", err)
+		return fmt.Errorf("failed getting slot, %w", err)
 
 	}
 
@@ -185,7 +185,7 @@ func (b *Broker) solver(
 
 	isTrendUp, err := b.SMAStack.IsTrendUp(msg.Transaction.Slot.StockItem.Ticker)
 	if err != nil {
-		return fmt.Errorf("failed getting trend, %s", err)
+		return fmt.Errorf("failed getting trend, %w", err)
 	}
 
 	if isTrendUp {
@@ -208,7 +208,7 @@ func (b *Broker) solver(
 
 	tr, err := b.buy(ctx, emptyTr)
 	if err != nil {
-		return fmt.Errorf("failed to buy stock item, %s", err)
+		return fmt.Errorf("failed to buy stock item, %w", err)
 	}
 
 	confirmBuyCh <- domain.Message{Transaction: tr}

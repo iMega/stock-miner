@@ -28,11 +28,11 @@ func (Coder) Encode(data interface{}) (io.Reader, error) {
 func (Coder) Decode(reader io.Reader, data interface{}) error {
 	respData, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return fmt.Errorf("failed to read body from response, %s", err)
+		return fmt.Errorf("failed to read body from response, %w", err)
 	}
 
 	if err := json.Unmarshal(respData, data); err != nil {
-		return fmt.Errorf("failed to unmarshal body, %s", err)
+		return fmt.Errorf("failed to unmarshal body, %w", err)
 	}
 
 	return nil

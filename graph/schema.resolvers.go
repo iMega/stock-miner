@@ -70,7 +70,7 @@ func (r *mutationResolver) UpdateStockItemApproved(ctx context.Context, items []
 func (r *mutationResolver) MarketCredentials(ctx context.Context, creds model.MarketCredentialsInput) (bool, error) {
 	s, err := r.SettingsStorage.Settings(ctx)
 	if err != nil {
-		return false, fmt.Errorf("failed to save creds, %s", err)
+		return false, fmt.Errorf("failed to save creds, %w", err)
 	}
 
 	if _, ok := s.MarketCredentials[creds.Name]; !ok {
@@ -87,7 +87,7 @@ func (r *mutationResolver) MarketCredentials(ctx context.Context, creds model.Ma
 	s.MarketProvider = creds.Name
 
 	if err := r.SettingsStorage.SaveSettings(ctx, s); err != nil {
-		return false, fmt.Errorf("failed to save creds, %s", err)
+		return false, fmt.Errorf("failed to save creds, %w", err)
 	}
 
 	return true, nil
@@ -96,7 +96,7 @@ func (r *mutationResolver) MarketCredentials(ctx context.Context, creds model.Ma
 func (r *mutationResolver) Slot(ctx context.Context, global model.SlotSettingsInput) (bool, error) {
 	s, err := r.SettingsStorage.Settings(ctx)
 	if err != nil {
-		return false, fmt.Errorf("failed getting settings, %s", err)
+		return false, fmt.Errorf("failed getting settings, %w", err)
 	}
 
 	s.Slot.Volume = global.Volume
@@ -105,7 +105,7 @@ func (r *mutationResolver) Slot(ctx context.Context, global model.SlotSettingsIn
 	}
 
 	if err := r.SettingsStorage.SaveSettings(ctx, s); err != nil {
-		return false, fmt.Errorf("failed to save slot, %s", err)
+		return false, fmt.Errorf("failed to save slot, %w", err)
 	}
 
 	return true, nil
@@ -114,14 +114,14 @@ func (r *mutationResolver) Slot(ctx context.Context, global model.SlotSettingsIn
 func (r *mutationResolver) RulePrice(ctx context.Context, global model.RulePriceInput) (bool, error) {
 	s, err := r.SettingsStorage.Settings(ctx)
 	if err != nil {
-		return false, fmt.Errorf("failed getting settings, %s", err)
+		return false, fmt.Errorf("failed getting settings, %w", err)
 	}
 
 	s.MarketCommission = *global.MarketCommission
 	s.GrossMargin = *global.GrossMargin
 
 	if err := r.SettingsStorage.SaveSettings(ctx, s); err != nil {
-		return false, fmt.Errorf("failed to save rule price, %s", err)
+		return false, fmt.Errorf("failed to save rule price, %w", err)
 	}
 
 	return true, nil

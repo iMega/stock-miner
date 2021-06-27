@@ -11,7 +11,7 @@ import (
 func (b *Broker) sell(ctx context.Context, t domain.Transaction) (domain.Transaction, error) {
 	sellTr, err := b.Market.OrderSell(ctx, t)
 	if err != nil {
-		return domain.Transaction{}, fmt.Errorf("failed to send order sell, %s", err)
+		return domain.Transaction{}, fmt.Errorf("failed to send order sell, %w", err)
 	}
 
 	sellTr.SellAt = time.Now()
@@ -31,12 +31,12 @@ func (b *Broker) confirmSell(ctx context.Context, t domain.Transaction) error {
 	}
 	trs, err := b.Market.Operations(ctx, in)
 	if err != nil {
-		return fmt.Errorf("failed getting transactions, %s", err)
+		return fmt.Errorf("failed getting transactions, %w", err)
 	}
 
 	filteredTR, err := filterSellOperationByOrderID(trs, t.SellOrderID)
 	if err != nil {
-		return fmt.Errorf("failed to filter operations, %s", err)
+		return fmt.Errorf("failed to filter operations, %w", err)
 	}
 
 	t.SalePrice = filteredTR.SalePrice

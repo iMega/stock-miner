@@ -38,7 +38,7 @@ func CreateDatabase(name string) error {
 			return err
 		}
 
-		if err := stockItemApprovedTable(ctx, tx); err != nil {
+		if err := stockItemApprovedCreateTable(ctx, tx); err != nil {
 			return err
 		}
 

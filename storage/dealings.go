@@ -78,7 +78,7 @@ func (s *Storage) ConfirmBuyTransaction(ctx context.Context, t domain.Transactio
 		t.ID,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to confirm buy transaction, %s", err)
+		return fmt.Errorf("failed to confirm buy transaction, %w", err)
 	}
 
 	return nil
@@ -114,7 +114,7 @@ func (s *Storage) SellTransaction(ctx context.Context, t domain.Transaction) err
 		t.ID,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to save sell transaction, %s", err)
+		return fmt.Errorf("failed to save sell transaction, %w", err)
 	}
 
 	return nil
@@ -333,7 +333,7 @@ func (s *Storage) Transaction(ctx context.Context, ID string) (domain.Transactio
 		&result.Slot.Currency,
 	)
 	if err != nil {
-		return result, fmt.Errorf("failed getting transaction, %s", err)
+		return result, fmt.Errorf("failed getting transaction, %w", err)
 	}
 
 	if buyingPrice.Valid {

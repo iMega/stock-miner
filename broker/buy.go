@@ -11,7 +11,7 @@ import (
 func (b *Broker) buy(ctx context.Context, t domain.Transaction) (domain.Transaction, error) {
 	tr, err := b.Market.OrderBuy(ctx, t)
 	if err != nil {
-		return domain.Transaction{}, fmt.Errorf("failed to buy item, %s", err)
+		return domain.Transaction{}, fmt.Errorf("failed to buy item, %w", err)
 	}
 
 	if err := b.StockStorage.Buy(ctx, tr); err != nil {
@@ -57,7 +57,7 @@ func (b *Broker) confirmBuyJob(tr domain.Transaction) error {
 	newTr := fillBuyTransaction(tr, filteredTR, settings)
 
 	if err := b.confirmBuy(ctx, newTr); err != nil {
-		return fmt.Errorf("failed to confirm transaction, %s", err)
+		return fmt.Errorf("failed to confirm transaction, %w", err)
 	}
 
 	return nil

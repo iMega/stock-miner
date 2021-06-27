@@ -93,7 +93,7 @@ func Send(ctx context.Context, in *SendIn) error {
 	}
 	reader, err := in.Coder.Encode(in.BodySend)
 	if err != nil {
-		return fmt.Errorf("failed to encode request body, %s", err)
+		return fmt.Errorf("failed to encode request body, %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, in.Method, in.URL, reader)
@@ -139,7 +139,7 @@ func Send(ctx context.Context, in *SendIn) error {
 	}
 
 	if err := in.Coder.Decode(r.Body, in.BodyRecv); err != nil {
-		return fmt.Errorf("failed to decode response body, %s", err)
+		return fmt.Errorf("failed to decode response body, %w", err)
 	}
 
 	if err := r.Body.Close(); err != nil {

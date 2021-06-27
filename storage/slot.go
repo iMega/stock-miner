@@ -174,7 +174,7 @@ func (s *Storage) updateSlot(ctx context.Context, t domain.Slot) error {
 		t.ID,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to update slot, %s", err)
+		return fmt.Errorf("failed to update slot, %w", err)
 	}
 
 	return nil
@@ -188,7 +188,7 @@ func (s *Storage) deleteSlot(ctx context.Context, t domain.Slot) error {
     `
 	_, err := s.db.ExecContext(ctx, q, t.Email, t.ID)
 	if err != nil {
-		return fmt.Errorf("failed to delete slot, %s", err)
+		return fmt.Errorf("failed to delete slot, %w", err)
 	}
 
 	return nil

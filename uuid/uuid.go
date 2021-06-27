@@ -72,10 +72,12 @@ func (n *ID) Scan(src interface{}) error {
 	var nid ID
 	s, ok := src.([]byte)
 	if !ok {
-		return fmt.Errorf("error scan uid %v", src)
+		return fmt.Errorf("error scan uid %w", src)
 	}
+
 	copy(nid[:], s)
 	*n = ID(nid)
+
 	return nil
 }
 
@@ -86,6 +88,7 @@ func DecodeStringWithoutErr(str string) ID {
 	if err != nil {
 		return ID([16]byte{})
 	}
+
 	copy(n[:], b)
 
 	return ID(n)
