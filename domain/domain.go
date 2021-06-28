@@ -8,8 +8,11 @@ type StockItem struct {
 	ISIN              string  `json:"isin"`
 	Name              string  `json:"name"`
 	MinPriceIncrement float64 `json:"minPriceIncrement"`
-	Lot               int     `json:"lot"`
+	Lot               uint8   `json:"lot"`
 	Currency          string  `json:"currency"`
+	StartTime         uint8
+	EndTime           uint8
+	IsActive          bool
 }
 
 type PriceReceiptMessage struct {

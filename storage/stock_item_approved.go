@@ -15,7 +15,15 @@ func (s *Storage) StockItemApproved(ctx context.Context) ([]domain.StockItem, er
 		return nil, contexkey.ErrExtractEmail
 	}
 
-	q := `select ticker, figi, amount_limit, transaction_limit from stock_item_approved where email = ?`
+	q := `select ticker,
+            figi,
+            amount_limit,
+            transaction_limit,
+            startTime,
+            endTime,
+            active
+        from stock_item_approved
+        where email = ?`
 
 	rows, err := s.db.QueryContext(ctx, q, email)
 	if err != nil {
@@ -26,22 +34,22 @@ func (s *Storage) StockItemApproved(ctx context.Context) ([]domain.StockItem, er
 	var result []domain.StockItem
 
 	for rows.Next() {
-		var (
-			ticker, figi     string
-			amountLimit      float64
-			transactionLimit int
-		)
+		var item domain.StockItem
 
-		if err := rows.Scan(&ticker, &figi, &amountLimit, &transactionLimit); err != nil {
+		err := rows.Scan(
+			&item.Ticker,
+			&item.FIGI,
+			&item.AmountLimit,
+			&item.TransactionLimit,
+			&item.StartTime,
+			&item.EndTime,
+			&item.IsActive,
+		)
+		if err != nil {
 			return nil, fmt.Errorf("failed to scan approved stock item, %w", err)
 		}
 
-		result = append(result, domain.StockItem{
-			Ticker:           ticker,
-			FIGI:             figi,
-			AmountLimit:      amountLimit,
-			TransactionLimit: transactionLimit,
-		})
+		result = append(result, item)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -108,15 +116,35 @@ func (s *Storage) StockItemApprovedAll(
 	}
 }
 
-func (s *Storage) AddStockItemApproved(ctx context.Context, item domain.StockItem) error {
+func (s *Storage) AddStockItemApproved(
+	ctx context.Context,
+	item domain.StockItem,
+) error {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
 		return contexkey.ErrExtractEmail
 	}
 
-	q := `insert into stock_item_approved (email, ticker, figi, amount_limit, transaction_limit, currency) values (?,?,?,?,?,?)`
+	q := `insert into stock_item_approved (
+            email,
+            ticker,
+            figi,
+            amount_limit,
+            transaction_limit,
+            currency
+        )
+        values (?,?,?,?,?,?)`
 
-	_, err := s.db.ExecContext(ctx, q, email, item.Ticker, item.FIGI, item.AmountLimit, item.TransactionLimit, item.Currency)
+	_, err := s.db.ExecContext(
+		ctx,
+		q,
+		email,
+		item.Ticker,
+		item.FIGI,
+		item.AmountLimit,
+		item.TransactionLimit,
+		item.Currency,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to add approved stock item, %w", err)
 	}
@@ -124,15 +152,34 @@ func (s *Storage) AddStockItemApproved(ctx context.Context, item domain.StockIte
 	return nil
 }
 
-func (s *Storage) UpdateStockItemApproved(ctx context.Context, item domain.StockItem) error {
+func (s *Storage) UpdateStockItemApproved(
+	ctx context.Context,
+	item domain.StockItem,
+) error {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
 		return contexkey.ErrExtractEmail
 	}
 
-	q := `update stock_item_approved set amount_limit=?, transaction_limit=? where email=? and ticker=?`
+	q := `update stock_item_approved
+        set amount_limit=?,
+            transaction_limit=?,
+            startTime=?,
+            endTime=?,
+            active=?
+        where email=? and ticker=?`
 
-	_, err := s.db.ExecContext(ctx, q, item.AmountLimit, item.TransactionLimit, email, item.Ticker)
+	_, err := s.db.ExecContext(
+		ctx,
+		q,
+		item.AmountLimit,
+		item.TransactionLimit,
+		item.StartTime,
+		item.EndTime,
+		item.IsActive,
+		email,
+		item.Ticker,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to update approved stock item, %w", err)
 	}

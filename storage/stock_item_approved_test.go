@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/imega/stock-miner/contexkey"
+	"github.com/imega/stock-miner/domain"
 	tools "github.com/imega/stock-miner/sql"
 	"github.com/imega/stock-miner/tests/helpers"
 	"github.com/stretchr/testify/assert"
@@ -64,4 +66,39 @@ func stockItemApprovedCreateTableHelper(ctx context.Context, tx *sql.Tx) error {
 	}
 
 	return nil
+}
+
+func TestStorage_UpdateStockItemApproved(t *testing.T) {
+	db, close, err := helpers.CreateDB(stockItemApprovedCreateTable)
+	if err != nil {
+		t.Fatalf("failed to create database, %s", err)
+	}
+	defer close()
+
+	ctx := contexkey.WithEmail(context.Background(), "test@example.com")
+	s := Storage{db: db}
+
+	expected := domain.StockItem{
+		Ticker: "ticker",
+	}
+	if err := s.AddStockItemApproved(ctx, expected); err != nil {
+		t.Fatalf("failed to add stock item, %s", err)
+	}
+
+	expected.StartTime += 1
+	expected.EndTime += 1
+	expected.IsActive = true
+
+	if err := s.UpdateStockItemApproved(ctx, expected); err != nil {
+		t.Fatalf("failed to update stock item, %s", err)
+	}
+
+	items, err := s.StockItemApproved(ctx)
+	if err != nil {
+		t.Fatalf("failed getting stock item, %s", err)
+	}
+
+	actual := items[0]
+
+	assert.Equal(t, expected, actual)
 }
