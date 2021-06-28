@@ -22,7 +22,11 @@ func (b *Broker) buy(ctx context.Context, t domain.Transaction) (domain.Transact
 }
 
 func (b *Broker) confirmBuy(ctx context.Context, t domain.Transaction) error {
-	return b.StockStorage.ConfirmBuy(ctx, t)
+	if err := b.StockStorage.ConfirmBuy(ctx, t); err != nil {
+		return fmt.Errorf("failed to confirm buy, %w", err)
+	}
+
+	return nil
 }
 
 func (b *Broker) confirmBuyJob(tr domain.Transaction) error {

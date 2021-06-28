@@ -2,6 +2,7 @@ package google
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/dghubble/gologin/v2"
@@ -42,7 +43,7 @@ func GoogleSignInHandlers(
 func UserFromContext(ctx context.Context) (domain.User, error) {
 	googleUser, err := google.UserFromContext(ctx)
 	if err != nil {
-		return domain.User{}, err
+		return domain.User{}, fmt.Errorf("failed getting user from context, %w", err)
 	}
 
 	return domain.User{

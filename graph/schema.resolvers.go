@@ -16,7 +16,10 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error) {
+func (r *mutationResolver) AddStockItemApproved(
+	ctx context.Context,
+	items []*model.StockItemInput,
+) (bool, error) {
 	for _, item := range items {
 		in := domain.StockItem{
 			Ticker:           item.Ticker,
@@ -26,14 +29,18 @@ func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*mo
 			Currency:         item.Currency,
 		}
 		if err := r.StockStorage.AddStockItemApproved(ctx, in); err != nil {
-			return false, err
+			return false,
+				fmt.Errorf("failed to add approved stock item, %w", err)
 		}
 	}
 
 	return true, nil
 }
 
-func (r *mutationResolver) RemoveStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error) {
+func (r *mutationResolver) RemoveStockItemApproved(
+	ctx context.Context,
+	items []*model.StockItemInput,
+) (bool, error) {
 	for _, item := range items {
 		in := domain.StockItem{
 			Ticker:           item.Ticker,
@@ -43,14 +50,18 @@ func (r *mutationResolver) RemoveStockItemApproved(ctx context.Context, items []
 			Currency:         item.Currency,
 		}
 		if err := r.StockStorage.RemoveStockItemApproved(ctx, in); err != nil {
-			return false, err
+			return false,
+				fmt.Errorf("failed to remove approved stock item, %w", err)
 		}
 	}
 
 	return true, nil
 }
 
-func (r *mutationResolver) UpdateStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error) {
+func (r *mutationResolver) UpdateStockItemApproved(
+	ctx context.Context,
+	items []*model.StockItemInput,
+) (bool, error) {
 	for _, item := range items {
 		in := domain.StockItem{
 			Ticker:           item.Ticker,
@@ -60,7 +71,8 @@ func (r *mutationResolver) UpdateStockItemApproved(ctx context.Context, items []
 			Currency:         item.Currency,
 		}
 		if err := r.StockStorage.UpdateStockItemApproved(ctx, in); err != nil {
-			return false, err
+			return false,
+				fmt.Errorf("failed to update approved stock item, %w", err)
 		}
 	}
 
@@ -77,6 +89,7 @@ func (r *mutationResolver) MarketCredentials(ctx context.Context, creds model.Ma
 		if s.MarketCredentials == nil {
 			s.MarketCredentials = make(map[string]domain.MarketCredentials)
 		}
+
 		s.MarketCredentials[creds.Name] = domain.MarketCredentials{}
 	}
 
@@ -138,7 +151,7 @@ func (r *mutationResolver) GlobalMiningStart(ctx context.Context) (bool, error) 
 func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
 	user, err := r.UserStorage.GetUser(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed getting user, %w", err)
 	}
 
 	return &model.User{
@@ -148,11 +161,14 @@ func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
 	}, nil
 }
 
-func (r *queryResolver) StockItemApproved(ctx context.Context) ([]*model.StockItem, error) {
+func (r *queryResolver) StockItemApproved(
+	ctx context.Context,
+) ([]*model.StockItem, error) {
 	var result []*model.StockItem
+
 	items, err := r.StockStorage.StockItemApproved(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed getting approved stock item, %w", err)
 	}
 
 	for _, item := range items {
@@ -181,23 +197,31 @@ func (r *queryResolver) GlobalMiningStatus(ctx context.Context) (bool, error) {
 	return r.MainerController.Status(), nil
 }
 
-func (r *queryResolver) MarketStockItems(ctx context.Context) ([]*model.StockItem, error) {
+func (r *queryResolver) MarketStockItems(
+	ctx context.Context,
+) ([]*model.StockItem, error) {
 	s, err := r.SettingsStorage.Settings(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed getting settings, %w", err)
 	}
 
-	ctxNew := contexkey.WithToken(ctx, s.MarketCredentials[s.MarketProvider].Token)
-	ctxNew = contexkey.WithAPIURL(ctxNew, s.MarketCredentials[s.MarketProvider].APIURL)
+	ctxNew := contexkey.WithToken(
+		ctx,
+		s.MarketCredentials[s.MarketProvider].Token,
+	)
+	ctxNew = contexkey.WithAPIURL(
+		ctxNew,
+		s.MarketCredentials[s.MarketProvider].APIURL,
+	)
 
 	items, err := r.Market.ListStockItems(ctxNew)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed getting stock items, %w", err)
 	}
 
-	var result []*model.StockItem
-	for _, item := range items {
-		result = append(result, &model.StockItem{
+	result := make([]*model.StockItem, len(items))
+	for i, item := range items {
+		result[i] = &model.StockItem{
 			Ticker:            item.Ticker,
 			Figi:              item.FIGI,
 			Isin:              &item.ISIN,
@@ -205,7 +229,7 @@ func (r *queryResolver) MarketStockItems(ctx context.Context) ([]*model.StockIte
 			Lot:               &item.Lot,
 			Currency:          &item.Currency,
 			Name:              &item.Name,
-		})
+		}
 	}
 
 	return result, nil
@@ -214,10 +238,10 @@ func (r *queryResolver) MarketStockItems(ctx context.Context) ([]*model.StockIte
 func (r *queryResolver) Settings(ctx context.Context) (*model.Settings, error) {
 	s, err := r.SettingsStorage.Settings(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed getting settings, %w", err)
 	}
 
-	var cred []*model.MarketCredentials
+	cred := []*model.MarketCredentials{}
 	for k, c := range s.MarketCredentials {
 		cred = append(cred, &model.MarketCredentials{
 			Name:   k,
@@ -238,29 +262,32 @@ func (r *queryResolver) Settings(ctx context.Context) (*model.Settings, error) {
 }
 
 func (r *queryResolver) Slots(ctx context.Context) ([]*model.Slot, error) {
-	var result []*model.Slot
-
 	slots, err := r.StockStorage.Slot(ctx, "")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed getting slot, %w", err)
 	}
 
-	for _, v := range slots {
+	result := make([]*model.Slot, len(slots))
+
+	for i, v := range slots {
 		slot := v
 
 		var (
 			currentPrice float64
 			currency     = "USD"
 		)
+
 		if frame, err := r.SMAStack.Get(slot.Ticker); err == nil {
 			currentPrice = frame.Last()
 		}
+
 		if len(slot.StockItem.Currency) > 0 {
 			currency = slot.StockItem.Currency
 		}
 
 		profit, _ := decimal.NewFromFloat(slot.TargetAmount).Sub(decimal.NewFromFloat(slot.AmountSpent)).Float64()
-		result = append(result, &model.Slot{
+
+		result[i] = &model.Slot{
 			ID:           slot.ID,
 			Ticker:       slot.Ticker,
 			Figi:         slot.FIGI,
@@ -275,19 +302,19 @@ func (r *queryResolver) Slots(ctx context.Context) ([]*model.Slot, error) {
 			TotalProfit:  &profit,
 			Currency:     currency,
 			CurrentPrice: currentPrice,
-		})
+		}
 	}
 
 	return result, nil
 }
 
 func (r *queryResolver) Dealings(ctx context.Context) ([]*model.Deal, error) {
-	var result []*model.Deal
-
 	dealings, err := r.StockStorage.Dealings(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed getting dealings, %w", err)
 	}
+
+	result := make([]*model.Deal, len(dealings))
 
 	for _, v := range dealings {
 		deal := v
@@ -353,6 +380,8 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 // Subscription returns generated.SubscriptionResolver implementation.
 func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
 
-type mutationResolver struct{ *Resolver }
-type queryResolver struct{ *Resolver }
-type subscriptionResolver struct{ *Resolver }
+type (
+	mutationResolver     struct{ *Resolver }
+	queryResolver        struct{ *Resolver }
+	subscriptionResolver struct{ *Resolver }
+)

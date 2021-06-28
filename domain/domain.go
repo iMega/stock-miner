@@ -58,7 +58,10 @@ type PriceQty struct {
 type OperationType string
 
 const (
-	BUY  OperationType = "Buy"
+	// BUY operation type.
+	BUY OperationType = "Buy"
+
+	// SELL operation type.
 	SELL OperationType = "Sell"
 )
 

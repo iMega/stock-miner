@@ -8,20 +8,25 @@ func calcSub(a, b float64) float64 {
 	return r
 }
 
+const (
+	hundredPercent = 100
+	precision      = 2
+)
+
 // формула расчета целевой цены для продажи
 //
 // ценаПокупки+(ценаПокупки/100*комиссия) = затраты
 // затраты + (затраты / 100 * маржа%) = ЦенаПродажиБезКомиссии
-// ЦенаПродажиБезКомиссии+(ЦенаПродажиБезКомиссии/100*комиссия) = ЦенаПродажи
+// ЦенаПродажиБезКомиссии+(ЦенаПродажиБезКомиссии/100*комиссия) = ЦенаПродажи.
 func calcTargetPrice(commission, buyingPrice, margin float64) float64 {
 	c := decimal.NewFromFloat(commission)
 	bp := decimal.NewFromFloat(buyingPrice)
 	m := decimal.NewFromFloat(margin)
 
-	spent := bp.Add(bp.Div(decimal.NewFromInt(100)).Mul(c).Round(2))
-	gm := spent.Add(spent.Div(decimal.NewFromInt(100)).Mul(m).Round(2))
+	spent := bp.Add(bp.Div(decimal.NewFromInt(hundredPercent)).Mul(c).Round(precision))
+	gm := spent.Add(spent.Div(decimal.NewFromInt(hundredPercent)).Mul(m).Round(precision))
 
-	target, _ := gm.Add(gm.Div(decimal.NewFromInt(100)).Mul(c).Round(2)).Float64()
+	target, _ := gm.Add(gm.Div(decimal.NewFromInt(hundredPercent)).Mul(c).Round(precision)).Float64()
 
 	return target
 }

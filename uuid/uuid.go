@@ -27,7 +27,7 @@ func NewID() ID {
 	)
 	copy(n[:], j)
 
-	return ID(n)
+	return n
 }
 
 func NewFromString(str string) (ID, error) {
@@ -41,15 +41,15 @@ func NewFromString(str string) (ID, error) {
 	j := bytes.Join([][]byte{b[6:8], b[4:6], b[0:4], b[8:10], b[10:]}, []byte{})
 	copy(n[:], j)
 
-	return ID(n), nil
+	return n, nil
 }
 
-// String encode NID to string
+// String encode NID to string.
 func (n ID) String() string {
 	return hex.EncodeToString(n[:])
 }
 
-// DecodeString decode string to NID
+// DecodeString decode string to NID.
 func DecodeString(str string) (ID, error) {
 	var n ID
 
@@ -57,19 +57,21 @@ func DecodeString(str string) (ID, error) {
 	if err != nil {
 		return ID([16]byte{}), err
 	}
+
 	copy(n[:], b)
 
-	return ID(n), nil
+	return n, nil
 }
 
-// Value encode unique identification for store to db
+// Value encode unique identification for store to db.
 func (n ID) Value() (driver.Value, error) {
 	return n[:], nil
 }
 
-// Scan decode unique identification to get from db
+// Scan decode unique identification to get from db.
 func (n *ID) Scan(src interface{}) error {
 	var nid ID
+
 	s, ok := src.([]byte)
 	if !ok {
 		return fmt.Errorf("error scan uid %w", src)
@@ -91,5 +93,5 @@ func DecodeStringWithoutErr(str string) ID {
 
 	copy(n[:], b)
 
-	return ID(n)
+	return n
 }

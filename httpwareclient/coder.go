@@ -7,24 +7,24 @@ import (
 )
 
 const (
-	// JSON type coder
+	// JSON type coder.
 	JSON CoderType = iota
-	// XML type coder
+	// XML type coder.
 	XML
 )
 
 type (
-	// CoderType type coder
+	// CoderType type coder.
 	CoderType int
 
-	// Coder is a interface coding
+	// Coder is a interface coding.
 	Coder interface {
 		Encode(data interface{}) (io.Reader, error)
 		Decode(reader io.Reader, data interface{}) error
 	}
 )
 
-// GetCoder return coder by type
+// GetCoder return coder by type.
 func GetCoder(coderType CoderType) Coder {
 	switch coderType {
 	case JSON:

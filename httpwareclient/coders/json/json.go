@@ -14,13 +14,16 @@ type Coder struct{}
 // Encode encode to json.
 func (Coder) Encode(data interface{}) (io.Reader, error) {
 	var bodyReader io.Reader
+
 	if data != nil {
 		buffer := new(bytes.Buffer)
 		if err := json.NewEncoder(buffer).Encode(data); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to encode to json, %w", err)
 		}
+
 		bodyReader = buffer
 	}
+
 	return bodyReader, nil
 }
 

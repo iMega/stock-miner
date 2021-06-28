@@ -17,16 +17,20 @@ func (w *TxWrapper) Transaction(
 ) error {
 	tx, err := w.BeginTx(ctx, opts)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to begin transaction, %w", err)
 	}
 
 	if err := f(ctx, tx); err != nil {
 		if e := tx.Rollback(); e != nil {
-			return fmt.Errorf("%s, failed to rollback transaction, %s", err, e)
+			return fmt.Errorf("failed to execute transaction, %w", err)
 		}
 
 		return err
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction, %w", err)
+	}
+
+	return nil
 }

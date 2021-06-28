@@ -53,6 +53,7 @@ func (b *Broker) pricerWorker(in chan domain.Message, out, out2 chan domain.Pric
 	go func() {
 		for m := range in {
 			msg := m
+
 			wp.Submit(func() {
 				if msg.Error != nil {
 					b.logger.Errorf("message has error, %W", msg.Error)
@@ -92,6 +93,7 @@ func (b *Broker) makePriceStorageChannel(in chan domain.PriceReceiptMessage) *wo
 	go func() {
 		for task := range in {
 			t := task
+
 			wp.Submit(func() {
 				err := b.StockStorage.AddMarketPrice(context.Background(), t)
 				if err != nil {
@@ -114,6 +116,7 @@ func (b *Broker) solveWorker(
 	go func() {
 		for task := range in {
 			t := task
+
 			wp.Submit(func() {
 				msg := domain.Message{
 					Price: t.Price,
@@ -162,7 +165,6 @@ func (b *Broker) solver(
 	slots, err := b.Stack.Slot(ctx, msg.Transaction.Slot.StockItem.FIGI)
 	if err != nil {
 		return fmt.Errorf("failed getting slot, %w", err)
-
 	}
 
 	sellSlots := getItemsForSale(slots, frame.Last())
@@ -222,6 +224,7 @@ func (b *Broker) buyWorker(in chan domain.Slot) *workerpool.WorkerPool {
 	go func() {
 		for task := range in {
 			t := task
+
 			wp.Submit(func() {
 				_ = t
 			})
@@ -240,6 +243,7 @@ func (b *Broker) sellWorker(
 	go func() {
 		for task := range in {
 			t := task
+
 			wp.Submit(func() {
 				ctx, err := b.contextWithCreds(context.Background(), t.Email)
 				if err != nil {
@@ -300,12 +304,12 @@ func (b *Broker) getPrice(msg domain.Message) (domain.Message, error) {
 		msg.Transaction.Slot.Email,
 	)
 	if err != nil {
-		return result, fmt.Errorf("failed getting creds, %W", err)
+		return result, fmt.Errorf("failed getting creds, %w", err)
 	}
 
 	ob, err := b.Market.OrderBook(ctx, msg.Transaction.Slot.StockItem)
 	if err != nil {
-		return result, err
+		return result, fmt.Errorf("failed getting orderbook, %w", err)
 	}
 
 	result.Price = ob.LastPrice
@@ -330,6 +334,8 @@ func getItemsForSale(slots []domain.Slot, price float64) []domain.Slot {
 	return result
 }
 
+const delayTask = 4 * time.Second
+
 func (b *Broker) queueOperation(
 	in, confirmBuyCh, confirmSellCh chan domain.Message,
 ) *workerpool.WorkerPool {
@@ -338,7 +344,8 @@ func (b *Broker) queueOperation(
 	go func() {
 		for m := range in {
 			msg := m
-			<-time.After(4 * time.Second)
+
+			<-time.After(delayTask)
 
 			wp.Submit(func() {
 				newMsg, op, err := processOperation(msg)
@@ -356,7 +363,6 @@ func (b *Broker) queueOperation(
 					confirmSellCh <- newMsg
 				}
 			})
-
 		}
 	}()
 
@@ -423,7 +429,7 @@ func (b *Broker) contextWithCreds(ctxIn context.Context, email string) (context.
 	if err != nil {
 		b.logger.Errorf("failed getting settings, %s", err)
 
-		return nil, err
+		return nil, fmt.Errorf("failed getting settings, %w", err)
 	}
 
 	cred := settings.MarketCredentials[settings.MarketProvider]

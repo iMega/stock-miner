@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Broker is the main struct
+// Broker is the main struct.
 type Broker struct {
 	StockStorage    domain.StockStorage
 	Pricer          domain.Pricer
@@ -22,7 +22,7 @@ type Broker struct {
 	cronIsRunning bool
 }
 
-// New creates a new instance of Broker
+// New creates a new instance of Broker.
 func New(opts ...Option) *Broker {
 	b := &Broker{
 		cron:     cron.New(),

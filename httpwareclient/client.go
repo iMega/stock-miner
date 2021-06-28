@@ -20,7 +20,7 @@ var (
 )
 
 // SendIn returns a new request given a method, URL, and optional body,
-// and optional coder, and RequestFunc for modify of request before send
+// and optional coder, and RequestFunc for modify of request before send.
 type SendIn struct {
 	Method      string
 	URL         string
@@ -31,49 +31,49 @@ type SendIn struct {
 	RequestFunc RequestFunc
 }
 
-// HTTPClientDo is interface http.Client
+// HTTPClientDo is interface http.Client.
 type HTTPClientDo interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// WithLogger append logger
+// WithLogger append logger.
 func WithLogger(l *logrus.Entry) {
 	logger = l
 }
 
-// RequestFunc is a signature for all http request middleware
+// RequestFunc is a signature for all http request middleware.
 type RequestFunc func(req *http.Request)
 
-// WithTripperware append tripperwares
+// WithTripperware append tripperwares.
 func WithTripperware(httpClient *http.Client, tripperwares ...httpwares.Tripperware) {
 	httpClient = httpwares.WrapClient(httpClient, tripperwares...)
 }
 
-// WithRequestWares append ware in request
+// WithRequestWares append ware in request.
 func WithRequestWares(wares ...RequestFunc) {
 	rmw = append(rmw, wares...)
 }
 
-// RetryTriceTripperwares will retry three times to send request
+// RetryTriceTripperwares will retry three times to send request.
 func RetryTriceTripperwares() []httpwares.Tripperware {
 	var wares []httpwares.Tripperware
 
 	wares = append(wares, http_retry.Tripperware(
 		http_retry.WithMax(3),
 		http_retry.WithBackoff(func(attempt uint) time.Duration {
-			return time.Duration(time.Duration(int64(attempt)) * 100 * time.Millisecond)
+			return time.Duration(time.Duration(attempt) * 100 * time.Millisecond)
 		}),
 	))
 
 	return wares
 }
 
-// WithClient append tripperwares
+// WithClient append tripperwares.
 func WithClient(c HTTPClientDo) {
 	httpClient = c
 }
 
-// DefaultHTTPClient returns default http.Client with set timeouts
+// DefaultHTTPClient returns default http.Client with set timeouts.
 func DefaultHTTPClient() *http.Client {
 	return &http.Client{
 		Timeout: 10 * time.Second,
@@ -86,11 +86,12 @@ func DefaultHTTPClient() *http.Client {
 	}
 }
 
-// Send request with context
+// Send request with context.
 func Send(ctx context.Context, in *SendIn) error {
 	if in.Coder == nil {
 		in.Coder = &nullCoder{}
 	}
+
 	reader, err := in.Coder.Encode(in.BodySend)
 	if err != nil {
 		return fmt.Errorf("failed to encode request body, %w", err)
@@ -98,7 +99,7 @@ func Send(ctx context.Context, in *SendIn) error {
 
 	req, err := http.NewRequestWithContext(ctx, in.Method, in.URL, reader)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create request, %w", err)
 	}
 
 	if len(rmw) > 0 {
@@ -126,7 +127,7 @@ func Send(ctx context.Context, in *SendIn) error {
 
 	r, err := httpClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to sent request, %w", err)
 	}
 
 	if logger != nil && logger.Logger.Level == logrus.DebugLevel {
@@ -143,7 +144,7 @@ func Send(ctx context.Context, in *SendIn) error {
 	}
 
 	if err := r.Body.Close(); err != nil {
-		return err
+		return fmt.Errorf("failed to close body, %w", err)
 	}
 
 	return nil

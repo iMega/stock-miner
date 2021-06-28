@@ -8,18 +8,30 @@ import (
 	"github.com/imega/stock-miner/domain"
 )
 
-func (b *Broker) sell(ctx context.Context, t domain.Transaction) (domain.Transaction, error) {
+func (b *Broker) sell(
+	ctx context.Context,
+	t domain.Transaction,
+) (domain.Transaction, error) {
 	sellTr, err := b.Market.OrderSell(ctx, t)
 	if err != nil {
-		return domain.Transaction{}, fmt.Errorf("failed to send order sell, %w", err)
+		return domain.Transaction{},
+			fmt.Errorf("failed to send order sell, %w", err)
 	}
 
 	sellTr.SellAt = time.Now()
 	if sellTr.Slot.Qty == t.Slot.Qty {
-		return sellTr, b.StockStorage.Sell(ctx, sellTr)
+		if err := b.StockStorage.Sell(ctx, sellTr); err != nil {
+			return sellTr, fmt.Errorf("failed getting sell, %w", err)
+		}
+
+		return sellTr, nil
 	}
 
-	return sellTr, b.StockStorage.PartialSell(ctx, sellTr, t.Slot.Qty)
+	if err := b.StockStorage.PartialSell(ctx, sellTr, t.Slot.Qty); err != nil {
+		return sellTr, fmt.Errorf("failed getting partial sell, %w", err)
+	}
+
+	return sellTr, nil
 }
 
 func (b *Broker) confirmSell(ctx context.Context, t domain.Transaction) error {
@@ -29,6 +41,7 @@ func (b *Broker) confirmSell(ctx context.Context, t domain.Transaction) error {
 		FIGI:          t.Slot.FIGI,
 		OperationType: "Sell",
 	}
+
 	trs, err := b.Market.Operations(ctx, in)
 	if err != nil {
 		return fmt.Errorf("failed getting transactions, %w", err)
@@ -45,10 +58,17 @@ func (b *Broker) confirmSell(ctx context.Context, t domain.Transaction) error {
 	t.TotalProfit = calcSub(t.AmountIncome, t.AmountSpent)
 
 	if t.Slot.Qty == filteredTR.Qty {
-		return b.StockStorage.ConfirmSell(ctx, t)
+		if err := b.StockStorage.ConfirmSell(ctx, t); err != nil {
+			return fmt.Errorf("failed to confirm sell, %w", err)
+		}
 	}
 
-	return b.StockStorage.PartialConfirmSell(ctx, t, filteredTR.Qty)
+	err = b.StockStorage.PartialConfirmSell(ctx, t, filteredTR.Qty)
+	if err != nil {
+		return fmt.Errorf("failed to confirm partial sell, %w", err)
+	}
+
+	return nil
 }
 
 func filterSellOperationByOrderID(trs []domain.Transaction, orderID string) (domain.Transaction, error) {

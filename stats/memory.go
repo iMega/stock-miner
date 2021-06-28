@@ -15,6 +15,7 @@ type MemStats struct {
 
 func GetMemStats() MemStats {
 	var memStat runtime.MemStats
+
 	runtime.ReadMemStats(&memStat)
 
 	return MemStats{
@@ -24,7 +25,7 @@ func GetMemStats() MemStats {
 	}
 }
 
-// Bytes represent number only MB
+// Bytes represent number only MB.
 func Bytes(i uint64) string {
 	p := message.NewPrinter(language.English)
 

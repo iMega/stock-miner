@@ -39,7 +39,7 @@ func (p *pricer) GetPrice(
 	}
 
 	if err := httpwareclient.Send(ctx, req); err != nil {
-		return result, err
+		return result, fmt.Errorf("failed to sent request, %w", err)
 	}
 
 	if data.QuoteSummary.Err != nil {
@@ -50,7 +50,7 @@ func (p *pricer) GetPrice(
 	}
 
 	if len(data.QuoteSummary.Result) == 0 {
-		return result, fmt.Errorf("failed getting price, %w", "empty")
+		return result, fmt.Errorf("failed getting price, is zero")
 	}
 
 	response := data.QuoteSummary.Result[0]

@@ -170,6 +170,7 @@ func (s *SessionStore) issueSession() http.Handler {
 		if err != nil {
 			log.GetLogger(ctx).Errorf("failed to extract user from context, %s", err)
 			http.Error(w, ":(", http.StatusInternalServerError)
+
 			return
 		}
 

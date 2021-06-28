@@ -46,7 +46,7 @@ func Handler(opts ...Option) http.Handler {
 	return h
 }
 
-// HandlerFunc returns an http.HandlerFunc
+// HandlerFunc returns an http.HandlerFunc.
 func HandlerFunc(opts ...Option) http.HandlerFunc {
 	return Handler(opts...).ServeHTTP
 }
@@ -74,6 +74,7 @@ func (h *health) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if h.timeout > 0 {
 		ctx, cancel = context.WithTimeout(ctx, h.timeout)
 	}
+
 	defer cancel()
 
 	statusCh := make(chan bool, len(h.hcf))
@@ -81,12 +82,12 @@ func (h *health) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	wg.Add(len(h.hcf))
 
-	for k, f := range h.hcf {
-		go func(k int, f daemon.HealthCheckFunc) {
+	for _, f := range h.hcf {
+		go func(f daemon.HealthCheckFunc) {
 			statusCh <- f()
 
 			wg.Done()
-		}(k, f)
+		}(f)
 	}
 
 	go func() {
