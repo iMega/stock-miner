@@ -27,7 +27,7 @@ func (s *Storage) Settings(ctx context.Context) (domain.Settings, error) {
 
 	var doc string
 	if err := s.db.QueryRowContext(ctx, q, email).Scan(&doc); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if !errors.Is(err, sql.ErrNoRows) {
 			return result, fmt.Errorf("failed to scan settings, %w", err)
 		}
 
