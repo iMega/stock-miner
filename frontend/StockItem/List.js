@@ -80,6 +80,7 @@ const columns = (settingsStockItemHandler) => [
                         settingsStockItemHandler(r);
                     }}
                 />
+                -
                 <HourInput
                     val={r.endTime}
                     onChange={(v) => {

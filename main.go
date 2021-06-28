@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"os"
 	"path"
@@ -35,9 +36,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const shutdownTimeout = 15 * time.Second
-const dbFilename = "./data.db"
+const (
+	shutdownTimeout = 15 * time.Second
+	dbFilename      = "./data.db"
+)
 
+// nolint
 var isDevMode = "false"
 
 func main() {
@@ -47,12 +51,9 @@ func main() {
 	})
 
 	httpwareclient.WithLogger(logger.(*logrus.Entry))
-	if err := storage.CreateDatabase(dbFilename); err != nil {
-		logger.Fatalf("failed to create database, ", err)
-	}
 
-	if err := storage.MigrateDatabase(dbFilename); err != nil {
-		logger.Fatalf("failed to migrate database, ", err)
+	if err := prepareDatabase(); err != nil {
+		logger.Fatalf("failed to prepare database, %s", err)
 	}
 
 	db, err := sql.Open("sqlite3", dbFilename)
@@ -156,7 +157,8 @@ func main() {
 					Market:           marketInstance,
 					SettingsStorage:  s,
 					SMAStack:         smastack,
-				}},
+				},
+			},
 		),
 	)
 	srv.AddTransport(&transport.Websocket{
@@ -234,4 +236,16 @@ func fileServerWithCustom404(fs http.FileSystem) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func prepareDatabase() error {
+	if err := storage.CreateDatabase(dbFilename); err != nil {
+		return fmt.Errorf("failed to create database, %w", err)
+	}
+
+	if err := storage.MigrateDatabase(dbFilename); err != nil {
+		return fmt.Errorf("failed to migrate database, %w", err)
+	}
+
+	return nil
 }

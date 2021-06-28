@@ -41,19 +41,19 @@ func (m *Market) OrderBook(ctx context.Context, i domain.StockItem) (*domain.Ord
 	}
 
 	bids := make([]domain.PriceQty, len(data.Payload.Bids))
-	for _, b := range data.Payload.Bids {
-		bids = append(bids, domain.PriceQty{
+	for i, b := range data.Payload.Bids {
+		bids[i] = domain.PriceQty{
 			Price: b.Price,
 			Qty:   b.Quantity,
-		})
+		}
 	}
 
 	asks := make([]domain.PriceQty, len(data.Payload.Asks))
-	for _, b := range data.Payload.Asks {
-		asks = append(asks, domain.PriceQty{
+	for i, b := range data.Payload.Asks {
+		asks[i] = domain.PriceQty{
 			Price: b.Price,
 			Qty:   b.Quantity,
-		})
+		}
 	}
 
 	return &domain.OrderBook{

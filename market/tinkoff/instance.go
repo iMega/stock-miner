@@ -74,8 +74,8 @@ func (m *Market) ListStockItems(ctx context.Context) ([]*domain.StockItem, error
 	}
 
 	result := make([]*domain.StockItem, len(data.Payload.Instruments))
-	for _, i := range data.Payload.Instruments {
-		result = append(result, &domain.StockItem{
+	for idx, i := range data.Payload.Instruments {
+		result[idx] = &domain.StockItem{
 			Ticker:            i.Ticker,
 			FIGI:              i.FIGI,
 			ISIN:              i.ISIN,
@@ -83,7 +83,7 @@ func (m *Market) ListStockItems(ctx context.Context) ([]*domain.StockItem, error
 			MinPriceIncrement: i.MinPriceIncrement,
 			Lot:               i.Lot,
 			Currency:          string(i.Currency),
-		})
+		}
 	}
 
 	return result, nil
