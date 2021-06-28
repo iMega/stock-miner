@@ -10,10 +10,14 @@ import (
 	"github.com/imega/stock-miner/httpwareclient"
 )
 
-func (m *Market) OrderSell(ctx context.Context, i domain.Transaction) (domain.Transaction, error) {
+func (m *Market) OrderSell(
+	ctx context.Context,
+	i domain.Transaction,
+) (domain.Transaction, error) {
 	tu, err := ExtractTokenURL(ctx)
 	if err != nil {
-		return domain.Transaction{}, err
+		return domain.Transaction{},
+			fmt.Errorf("failed to extract token from context, %w", err)
 	}
 
 	if i.Slot.FIGI == "" {
@@ -40,7 +44,8 @@ func (m *Market) OrderSell(ctx context.Context, i domain.Transaction) (domain.Tr
 	}
 
 	if err := httpwareclient.Send(ctx, req); err != nil {
-		return domain.Transaction{}, err
+		return domain.Transaction{},
+			fmt.Errorf("failed to sent request, %w", err)
 	}
 
 	if data.Status != statusOk {
@@ -52,7 +57,6 @@ func (m *Market) OrderSell(ctx context.Context, i domain.Transaction) (domain.Tr
 	}
 
 	result := i
-
 	result.SellOrderID = data.Payload.ID
 	result.Slot.Qty = data.Payload.ExecutedLots
 

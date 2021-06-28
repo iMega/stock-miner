@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"os"
 
 	tools "github.com/imega/stock-miner/sql"
@@ -23,20 +24,19 @@ type col struct {
 
 func MigrateDatabase(name string) error {
 	if _, err := os.Stat(name); os.IsNotExist(err) {
-		return err
+		return fmt.Errorf("failed getting file info, %w", err)
 	}
 
 	db, err := sql.Open("sqlite3", name)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open database, %w", err)
 	}
 
-	var getInfo = func(name string) (tableInfo, error) {
+	getInfo := func(name string) (tableInfo, error) {
 		return getTableInfo(db, name)
 	}
 
-	wrapper := tools.TxWrapper{db}
-	wrapper.Transaction(context.Background(), nil, func(ctx context.Context, tx *sql.Tx) error {
+	tx := func(ctx context.Context, tx *sql.Tx) error {
 		slotInfo, err := getInfo("slot")
 		if err != nil {
 			return err
@@ -51,14 +51,19 @@ func MigrateDatabase(name string) error {
 			return err
 		}
 
-		if err := stockItemApprovedTableMigrate(ctx, tx, slotInfo); err != nil {
-			return err
-		}
+		return stockItemApprovedTableMigrate(ctx, tx, slotInfo)
+	}
 
-		return nil
-	})
+	wrapper := tools.TxWrapper{db}
+	if err := wrapper.Transaction(context.Background(), nil, tx); err != nil {
+		return fmt.Errorf("failed to execute transaction, %w", err)
+	}
 
-	return db.Close()
+	if err := db.Close(); err != nil {
+		return fmt.Errorf("failed to close database, %w", err)
+	}
+
+	return nil
 }
 
 func getTableInfo(db *sql.DB, name string) (tableInfo, error) {
@@ -66,16 +71,18 @@ func getTableInfo(db *sql.DB, name string) (tableInfo, error) {
 
 	rows, err := db.Query("PRAGMA table_info(" + name + ")")
 	if err != nil {
-		return ti, err
+		return ti, fmt.Errorf("failed to execute query, %w", err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var dfl sql.NullString
+
 		r := col{}
+
 		err := rows.Scan(&r.CID, &r.Name, &r.Type, &r.NotNull, &dfl, &r.PK)
 		if err != nil {
-			return ti, err
+			return ti, fmt.Errorf("failed to scan row, %w", err)
 		}
 
 		if dfl.Valid {
@@ -83,6 +90,10 @@ func getTableInfo(db *sql.DB, name string) (tableInfo, error) {
 		}
 
 		ti.Columns = append(ti.Columns, r)
+	}
+
+	if err := rows.Err(); err != nil {
+		return ti, fmt.Errorf("failed getting row, %w", err)
 	}
 
 	return ti, nil

@@ -15,7 +15,7 @@ func (s *Storage) Slot(ctx context.Context, figi string) ([]domain.Slot, error) 
 
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return result, fmt.Errorf("failed to extract user from context")
+		return result, contexkey.ErrExtractEmail
 	}
 
 	q := `select
@@ -38,19 +38,20 @@ func (s *Storage) Slot(ctx context.Context, figi string) ([]domain.Slot, error) 
     `
 
 	if figi != "" {
-		q = q + "and figi = ?"
+		q += "and figi = ?"
 	}
 
 	rows, err := s.db.QueryContext(ctx, q, email, figi)
-	defer rows.Close()
 	if err != nil {
-		return result, err
+		return result, fmt.Errorf("failed to execute query, %w", err)
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		slot := domain.Slot{
 			Email: email,
 		}
+
 		err := rows.Scan(
 			&slot.SlotID,
 			&slot.ID,
@@ -68,10 +69,14 @@ func (s *Storage) Slot(ctx context.Context, figi string) ([]domain.Slot, error) 
 			&slot.StockItem.Currency,
 		)
 		if err != nil {
-			return result, err
+			return result, fmt.Errorf("failed to execute query, %w", err)
 		}
 
 		result = append(result, slot)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed getting row, %w", err)
 	}
 
 	return result, nil
@@ -116,25 +121,27 @@ func (s *Storage) addSlot(ctx context.Context, t domain.Slot) error {
 		t.StockItem.Currency,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to execute query, %w", err)
 	}
 
 	return nil
 }
 
 func (s *Storage) BuyStockItem(ctx context.Context, tr domain.Transaction) error {
-	wrapper := tools.TxWrapper{s.db}
-	return wrapper.Transaction(ctx, nil, func(ctx context.Context, tx *sql.Tx) error {
+	tx := func(ctx context.Context, tx *sql.Tx) error {
 		if err := s.addSlot(ctx, tr.Slot); err != nil {
 			return err
 		}
 
-		if err := s.buyTransaction(ctx, tr); err != nil {
-			return err
-		}
+		return s.buyTransaction(ctx, tr)
+	}
 
-		return nil
-	})
+	wrapper := tools.TxWrapper{s.db}
+	if err := wrapper.Transaction(ctx, nil, tx); err != nil {
+		return fmt.Errorf("failed to execute transaction, %w", err)
+	}
+
+	return nil
 }
 
 func (s *Storage) updateSlot(ctx context.Context, t domain.Slot) error {
@@ -155,6 +162,7 @@ func (s *Storage) updateSlot(ctx context.Context, t domain.Slot) error {
         where email = ?
           and id = ?
     `
+
 	_, err := s.db.ExecContext(
 		ctx,
 		q,
@@ -186,6 +194,7 @@ func (s *Storage) deleteSlot(ctx context.Context, t domain.Slot) error {
         where email = ?
           and id = ?
     `
+
 	_, err := s.db.ExecContext(ctx, q, t.Email, t.ID)
 	if err != nil {
 		return fmt.Errorf("failed to delete slot, %w", err)
@@ -218,9 +227,11 @@ func slotTable(ctx context.Context, tx *sql.Tx) error {
         CONSTRAINT pair PRIMARY KEY (email, ticker, id)
     )`
 
-	_, err := tx.ExecContext(ctx, q)
+	if _, err := tx.ExecContext(ctx, q); err != nil {
+		return fmt.Errorf("failed to execute query, %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func slotTableMigrate(ctx context.Context, tx *sql.Tx, ti tableInfo) error {

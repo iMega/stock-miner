@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/imega/stock-miner/contexkey"
@@ -15,7 +16,7 @@ func (s *Storage) Settings(ctx context.Context) (domain.Settings, error) {
 
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return result, fmt.Errorf("failed to extract user from context")
+		return result, contexkey.ErrExtractEmail
 	}
 
 	if v, ok := s.settings[email]; ok {
@@ -26,9 +27,10 @@ func (s *Storage) Settings(ctx context.Context) (domain.Settings, error) {
 
 	var doc string
 	if err := s.db.QueryRowContext(ctx, q, email).Scan(&doc); err != nil {
-		if err != sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return result, fmt.Errorf("failed to scan settings, %w", err)
 		}
+
 		return result, nil
 	}
 
@@ -44,7 +46,7 @@ func (s *Storage) Settings(ctx context.Context) (domain.Settings, error) {
 func (s *Storage) SaveSettings(ctx context.Context, set domain.Settings) error {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return fmt.Errorf("failed to extract user from context")
+		return contexkey.ErrExtractEmail
 	}
 
 	b, err := json.Marshal(set)
@@ -68,7 +70,9 @@ func settingsTable(ctx context.Context, tx *sql.Tx) error {
         doc TEXT
     )`
 
-	_, err := tx.ExecContext(ctx, q)
+	if _, err := tx.ExecContext(ctx, q); err != nil {
+		return fmt.Errorf("failed to execute query, %w", err)
+	}
 
-	return err
+	return nil
 }

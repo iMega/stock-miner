@@ -70,10 +70,10 @@ func (m *Market) ListStockItems(ctx context.Context) ([]*domain.StockItem, error
 	}
 
 	if err := httpwareclient.Send(ctx, req); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to sent request, %w", err)
 	}
 
-	var result []*domain.StockItem
+	result := make([]*domain.StockItem, len(data.Payload.Instruments))
 	for _, i := range data.Payload.Instruments {
 		result = append(result, &domain.StockItem{
 			Ticker:            i.Ticker,

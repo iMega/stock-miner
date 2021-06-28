@@ -12,10 +12,11 @@ import (
 func (s *Storage) StockItemApproved(ctx context.Context) ([]domain.StockItem, error) {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return nil, fmt.Errorf("failed to extract user from context")
+		return nil, contexkey.ErrExtractEmail
 	}
 
 	q := `select ticker, figi, amount_limit, transaction_limit from stock_item_approved where email = ?`
+
 	rows, err := s.db.QueryContext(ctx, q, email)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting approved stock items, %w", err)
@@ -23,21 +24,28 @@ func (s *Storage) StockItemApproved(ctx context.Context) ([]domain.StockItem, er
 	defer rows.Close()
 
 	var result []domain.StockItem
+
 	for rows.Next() {
 		var (
 			ticker, figi     string
 			amountLimit      float64
 			transactionLimit int
 		)
+
 		if err := rows.Scan(&ticker, &figi, &amountLimit, &transactionLimit); err != nil {
 			return nil, fmt.Errorf("failed to scan approved stock item, %w", err)
 		}
+
 		result = append(result, domain.StockItem{
 			Ticker:           ticker,
 			FIGI:             figi,
 			AmountLimit:      amountLimit,
 			TransactionLimit: transactionLimit,
 		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed getting row, %w", err)
 	}
 
 	return result, nil
@@ -48,6 +56,7 @@ func (s *Storage) StockItemApprovedAll(
 	out chan domain.Message,
 ) {
 	query := `select email, ticker, figi, amount_limit, transaction_limit, currency from stock_item_approved`
+
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		out <- domain.Message{
@@ -89,15 +98,24 @@ func (s *Storage) StockItemApprovedAll(
 			},
 		}
 	}
+
+	if err := rows.Err(); err != nil {
+		out <- domain.Message{
+			Error: fmt.Errorf("failed getting row, %w", err),
+		}
+
+		return
+	}
 }
 
 func (s *Storage) AddStockItemApproved(ctx context.Context, item domain.StockItem) error {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return fmt.Errorf("failed to extract user from context")
+		return contexkey.ErrExtractEmail
 	}
 
 	q := `insert into stock_item_approved (email, ticker, figi, amount_limit, transaction_limit, currency) values (?,?,?,?,?,?)`
+
 	_, err := s.db.ExecContext(ctx, q, email, item.Ticker, item.FIGI, item.AmountLimit, item.TransactionLimit, item.Currency)
 	if err != nil {
 		return fmt.Errorf("failed to add approved stock item, %w", err)
@@ -113,6 +131,7 @@ func (s *Storage) UpdateStockItemApproved(ctx context.Context, item domain.Stock
 	}
 
 	q := `update stock_item_approved set amount_limit=?, transaction_limit=? where email=? and ticker=?`
+
 	_, err := s.db.ExecContext(ctx, q, item.AmountLimit, item.TransactionLimit, email, item.Ticker)
 	if err != nil {
 		return fmt.Errorf("failed to update approved stock item, %w", err)
@@ -124,7 +143,7 @@ func (s *Storage) UpdateStockItemApproved(ctx context.Context, item domain.Stock
 func (s *Storage) RemoveStockItemApproved(ctx context.Context, item domain.StockItem) error {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return fmt.Errorf("failed to extract user from context")
+		return contexkey.ErrExtractEmail
 	}
 
 	q := `delete from stock_item_approved where email=? and ticker=?`

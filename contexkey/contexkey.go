@@ -10,6 +10,7 @@ var (
 	tokenKey  = contextKey("token")
 	apiurlKey = contextKey("apiurl")
 
+	// ErrExtractEmail static error extracting user from context
 	ErrExtractEmail = errors.New("failed to extract user from context")
 )
 

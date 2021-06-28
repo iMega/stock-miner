@@ -18,7 +18,7 @@ type responseOB struct {
 func (m *Market) OrderBook(ctx context.Context, i domain.StockItem) (*domain.OrderBook, error) {
 	tu, err := ExtractTokenURL(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to extract token from context, %w", err)
 	}
 
 	data := &responseOB{}
@@ -33,14 +33,14 @@ func (m *Market) OrderBook(ctx context.Context, i domain.StockItem) (*domain.Ord
 	}
 
 	if err := httpwareclient.Send(ctx, req); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to sent request, %w", err)
 	}
 
 	if data.Payload.TradeStatus != sdk.NormalTrading {
 		return nil, fmt.Errorf("trade status isn't normal trading")
 	}
 
-	var bids []domain.PriceQty
+	bids := make([]domain.PriceQty, len(data.Payload.Bids))
 	for _, b := range data.Payload.Bids {
 		bids = append(bids, domain.PriceQty{
 			Price: b.Price,
@@ -48,7 +48,7 @@ func (m *Market) OrderBook(ctx context.Context, i domain.StockItem) (*domain.Ord
 		})
 	}
 
-	var asks []domain.PriceQty
+	asks := make([]domain.PriceQty, len(data.Payload.Asks))
 	for _, b := range data.Payload.Asks {
 		asks = append(asks, domain.PriceQty{
 			Price: b.Price,

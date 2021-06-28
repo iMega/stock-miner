@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/imega/stock-miner/domain"
@@ -36,7 +37,7 @@ func New(opts ...Option) *Storage {
 func (s *Storage) AddMarketPrice(ctx context.Context, msg domain.PriceReceiptMessage) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to begin transaction, %w", err)
 	}
 
 	// var (
@@ -57,13 +58,18 @@ func (s *Storage) AddMarketPrice(ctx context.Context, msg domain.PriceReceiptMes
 	// 	return nil
 	// }
 
-	insertPrice := "insert into price (symbol, create_at, price) values (?, ?, ?)"
-	_, err = tx.ExecContext(ctx, insertPrice, msg.Ticker, time.Now().String(), msg.Price)
+	q := "insert into price (symbol, create_at, price) values (?, ?, ?)"
+
+	_, err = tx.ExecContext(ctx, q, msg.Ticker, time.Now().String(), msg.Price)
 	if err != nil {
-		tx.Rollback()
-	} else {
-		tx.Commit()
+		if rErr := tx.Rollback(); rErr != nil {
+			return fmt.Errorf("failed to execute query, %w", err)
+		}
 	}
 
-	return err
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction, %w", err)
+	}
+
+	return nil
 }

@@ -14,11 +14,12 @@ import (
 func (s *Storage) GetUser(ctx context.Context) (domain.User, error) {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return domain.User{}, fmt.Errorf("failed to extract user from context")
+		return domain.User{}, contexkey.ErrExtractEmail
 	}
 
 	q := `select name, avatar, role from user where email = ?`
 	row := s.db.QueryRowContext(ctx, q, email)
+
 	var name, avatar, role string
 	if err := row.Scan(&name, &avatar, &role); err != nil {
 		return domain.User{}, fmt.Errorf("failed getting user, %w", err)
@@ -35,30 +36,42 @@ func (s *Storage) GetUser(ctx context.Context) (domain.User, error) {
 func (s *Storage) CreateUser(ctx context.Context, user domain.User) error {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return fmt.Errorf("failed to extract user from context")
+		return contexkey.ErrExtractEmail
 	}
-	wrapper := sqlTool.TxWrapper{s.db}
 
-	return wrapper.Transaction(ctx, nil, func(ctx context.Context, tx *sql.Tx) error {
-		userQuery := `insert into user (email, name, avatar, id, role, create_at) values(?,?,?,?,?,?)`
-		_, err := tx.ExecContext(ctx, userQuery, email, user.Name, user.Avatar, user.ID, user.Role, time.Now())
+	createUserTx := func(ctx context.Context, tx *sql.Tx) error {
+		q := `insert into user (email, name, avatar, id, role, create_at)
+                values(?,?,?,?,?,?)`
+
+		_, err := tx.ExecContext(
+			ctx,
+			q,
+			email,
+			user.Name,
+			user.Avatar,
+			user.ID,
+			user.Role,
+			time.Now(),
+		)
 		if err != nil {
 			return fmt.Errorf("failed to create user, %w", err)
 		}
 
-		// settingsQuery := ``
-		// if _, err := tx.ExecContext(ctx, settingsQuery, email, "{}"); err != nil {
-		// 	return fmt.Errorf("failed to create user, %w", err)
-		// }
-
 		return nil
-	})
+	}
+
+	wrapper := sqlTool.TxWrapper{s.db}
+	if err := wrapper.Transaction(ctx, nil, createUserTx); err != nil {
+		return fmt.Errorf("failed to execute transaction, %w", err)
+	}
+
+	return nil
 }
 
 func (s *Storage) RemoveUser(ctx context.Context, user domain.User) error {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return fmt.Errorf("failed to extract user from context")
+		return contexkey.ErrExtractEmail
 	}
 
 	q := `update user set delete=1 where email = ?`

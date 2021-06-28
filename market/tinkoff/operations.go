@@ -27,11 +27,9 @@ type responseOperations struct {
 const format = "2006-01-02T15:04:05-07:00"
 
 func (m *Market) Operations(ctx context.Context, in domain.OperationInput) ([]domain.Transaction, error) {
-	var result []domain.Transaction
-
 	tu, err := ExtractTokenURL(ctx)
 	if err != nil {
-		return result, err
+		return nil, fmt.Errorf("failed to extract token from context, %w", err)
 	}
 
 	q := url.Values{
@@ -52,18 +50,19 @@ func (m *Market) Operations(ctx context.Context, in domain.OperationInput) ([]do
 	}
 
 	if err := httpwareclient.Send(ctx, req); err != nil {
-		return result, fmt.Errorf("failed to send request, %w", err)
+		return nil, fmt.Errorf("failed to send request, %w", err)
 	}
 
 	if data.Status != statusOk {
-		return result, fmt.Errorf(
+		return nil, fmt.Errorf(
 			"failed getting operations, status is %s, %s",
 			data.Status,
 			data.Payload.Message,
 		)
 	}
 
-	for _, o := range data.Payload.Operations {
+	result := make([]domain.Transaction, len(data.Payload.Operations))
+	for i, o := range data.Payload.Operations {
 		if o.OperationType != sdk.OperationType(in.OperationType) {
 			continue
 		}
@@ -99,22 +98,22 @@ func (m *Market) Operations(ctx context.Context, in domain.OperationInput) ([]do
 			)
 		}
 
-		result = append(result, t)
+		result[i] = t
 	}
 
 	return result, nil
 }
 
 func maxTradePrices(v []sdk.Trade) float64 {
-	var tradePrices []float64
-
 	if len(v) == 0 {
 		return 0
 	}
 
-	for _, trade := range v {
-		tradePrices = append(tradePrices, trade.Price)
+	tradePrices := make([]float64, len(v))
+	for i, trade := range v {
+		tradePrices[i] = trade.Price
 	}
+
 	sort.Float64s(tradePrices)
 
 	return tradePrices[len(tradePrices)-1]

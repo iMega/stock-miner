@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 func (s *Storage) buyTransaction(ctx context.Context, t domain.Transaction) error {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return fmt.Errorf("failed to extract user from context")
+		return contexkey.ErrExtractEmail
 	}
 
 	q := `insert into dealings (
@@ -42,7 +43,7 @@ func (s *Storage) buyTransaction(ctx context.Context, t domain.Transaction) erro
 		t.Currency,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to execute query, %w", err)
 	}
 
 	return nil
@@ -51,7 +52,7 @@ func (s *Storage) buyTransaction(ctx context.Context, t domain.Transaction) erro
 func (s *Storage) ConfirmBuyTransaction(ctx context.Context, t domain.Transaction) error {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return fmt.Errorf("failed to extract user from context")
+		return contexkey.ErrExtractEmail
 	}
 
 	q := `update dealings
@@ -87,7 +88,7 @@ func (s *Storage) ConfirmBuyTransaction(ctx context.Context, t domain.Transactio
 func (s *Storage) SellTransaction(ctx context.Context, t domain.Transaction) error {
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return fmt.Errorf("failed to extract user from context")
+		return contexkey.ErrExtractEmail
 	}
 
 	q := `update dealings
@@ -125,7 +126,7 @@ func (s *Storage) Dealings(ctx context.Context) ([]domain.Transaction, error) {
 
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return result, fmt.Errorf("failed to extract user from context")
+		return result, contexkey.ErrExtractEmail
 	}
 
 	q := `select email,
@@ -151,15 +152,12 @@ func (s *Storage) Dealings(ctx context.Context) ([]domain.Transaction, error) {
 	    from dealings
 	    where email = ?
 	    order by buy_at`
-	rows, err := s.db.QueryContext(ctx, q, email)
-	defer rows.Close()
-	if err != nil {
-		if err != sql.ErrNoRows {
-			return result, err
-		}
 
-		return result, nil
+	rows, err := s.db.QueryContext(ctx, q, email)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return result, fmt.Errorf("failed to execute query, %w", err)
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var (
@@ -175,6 +173,7 @@ func (s *Storage) Dealings(ctx context.Context) ([]domain.Transaction, error) {
 			duration     sql.NullInt64
 			sellAt       sql.NullTime
 		)
+
 		t := domain.Transaction{}
 		err := rows.Scan(
 			&t.Slot.Email,
@@ -203,6 +202,10 @@ func (s *Storage) Dealings(ctx context.Context) ([]domain.Transaction, error) {
 			//
 			&t.Slot.Currency,
 		)
+
+		if err != nil {
+			return result, fmt.Errorf("failed to scan row, %w", err)
+		}
 
 		if buyingPrice.Valid {
 			t.Slot.BuyingPrice = buyingPrice.Float64
@@ -249,11 +252,11 @@ func (s *Storage) Dealings(ctx context.Context) ([]domain.Transaction, error) {
 			t.SellAt = sellAt.Time
 		}
 
-		if err != nil {
-			return result, err
-		}
-
 		result = append(result, t)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed getting row, %w", err)
 	}
 
 	return result, nil
@@ -261,9 +264,10 @@ func (s *Storage) Dealings(ctx context.Context) ([]domain.Transaction, error) {
 
 func (s *Storage) Transaction(ctx context.Context, ID string) (domain.Transaction, error) {
 	var result domain.Transaction
+
 	email, ok := contexkey.EmailFromContext(ctx)
 	if !ok {
-		return result, fmt.Errorf("failed to extract user from context")
+		return result, contexkey.ErrExtractEmail
 	}
 
 	q := `select email,
@@ -416,7 +420,9 @@ func dealingsTable(ctx context.Context, tx *sql.Tx) error {
         CONSTRAINT pair PRIMARY KEY (email, id)
     )`
 
-	_, err := tx.ExecContext(ctx, q)
+	if _, err := tx.ExecContext(ctx, q); err != nil {
+		return fmt.Errorf("failed to execute query, %w", err)
+	}
 
-	return err
+	return nil
 }

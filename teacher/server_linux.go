@@ -4,6 +4,4 @@ package teacher
 
 import "net/http"
 
-func New(mux *http.ServeMux) {
-
-}
+func New(mux *http.ServeMux) {}

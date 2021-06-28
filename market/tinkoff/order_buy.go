@@ -20,10 +20,14 @@ type requestOrderAdd struct {
 	Operation string `json:"operation"`
 }
 
-func (m *Market) OrderBuy(ctx context.Context, i domain.Transaction) (domain.Transaction, error) {
+func (m *Market) OrderBuy(
+	ctx context.Context,
+	i domain.Transaction,
+) (domain.Transaction, error) {
 	tu, err := ExtractTokenURL(ctx)
 	if err != nil {
-		return domain.Transaction{}, err
+		return domain.Transaction{},
+			fmt.Errorf("failed to extract token from context, %w", err)
 	}
 
 	if i.FIGI == "" {
@@ -50,7 +54,8 @@ func (m *Market) OrderBuy(ctx context.Context, i domain.Transaction) (domain.Tra
 	}
 
 	if err := httpwareclient.Send(ctx, req); err != nil {
-		return domain.Transaction{}, err
+		return domain.Transaction{},
+			fmt.Errorf("failed to sent request, %w", err)
 	}
 
 	if data.Status != statusOk {
@@ -62,7 +67,6 @@ func (m *Market) OrderBuy(ctx context.Context, i domain.Transaction) (domain.Tra
 	}
 
 	result := i
-
 	result.BuyOrderID = data.Payload.ID
 	result.Slot.Qty = data.Payload.ExecutedLots
 

@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"os"
 
 	tools "github.com/imega/stock-miner/sql"
@@ -15,21 +16,21 @@ func CreateDatabase(name string) error {
 
 	file, err := os.OpenFile(name, os.O_CREATE, 0666)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create file database, %w", err)
 	}
 
 	if err := file.Close(); err != nil {
-		return err
+		return fmt.Errorf("failed to close file database, %w", err)
 	}
 
 	db, err := sql.Open("sqlite3", name)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open database, %w", err)
 	}
 
 	ctx := context.Background()
 	wrapper := tools.TxWrapper{db}
-	wrapper.Transaction(ctx, nil, func(ctx context.Context, tx *sql.Tx) error {
+	tx := func(ctx context.Context, tx *sql.Tx) error {
 		if err := priceTable(ctx, tx); err != nil {
 			return err
 		}
@@ -50,14 +51,18 @@ func CreateDatabase(name string) error {
 			return err
 		}
 
-		if err := slotTable(ctx, tx); err != nil {
-			return err
-		}
+		return slotTable(ctx, tx)
+	}
 
-		return nil
-	})
+	if err := wrapper.Transaction(ctx, nil, tx); err != nil {
+		return fmt.Errorf("failed to execute transaction, %w", err)
+	}
 
-	return db.Close()
+	if err := db.Close(); err != nil {
+		return fmt.Errorf("failed to close database, %w", err)
+	}
+
+	return nil
 }
 
 func priceTable(ctx context.Context, tx *sql.Tx) error {
@@ -68,9 +73,11 @@ func priceTable(ctx context.Context, tx *sql.Tx) error {
         CONSTRAINT price PRIMARY KEY (symbol, create_at)
     )`
 
-	_, err := tx.ExecContext(ctx, q)
+	if _, err := tx.ExecContext(ctx, q); err != nil {
+		return fmt.Errorf("failed to execute query, %w", err)
+	}
 
-	return err
+	return nil
 }
 
 func userTable(ctx context.Context, tx *sql.Tx) error {
@@ -84,7 +91,9 @@ func userTable(ctx context.Context, tx *sql.Tx) error {
         create_at DATETIME NOT NULL
     )`
 
-	_, err := tx.ExecContext(ctx, q)
+	if _, err := tx.ExecContext(ctx, q); err != nil {
+		return fmt.Errorf("failed to execute query, %w", err)
+	}
 
-	return err
+	return nil
 }
