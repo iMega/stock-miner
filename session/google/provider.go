@@ -13,17 +13,17 @@ import (
 	googleApi "google.golang.org/api/oauth2/v2"
 )
 
-func GoogleSignInHandlers(
+func SignInHandlers(
 	clientID,
 	clientSecret,
-	callbackUrl string,
+	callbackURL string,
 	state gologin.CookieConfig,
 	issueSession http.Handler,
 ) (http.Handler, http.Handler) {
 	conf := &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
-		RedirectURL:  callbackUrl,
+		RedirectURL:  callbackURL,
 		Endpoint:     googleOAuth2.Endpoint,
 		Scopes:       []string{"profile", "email"},
 	}

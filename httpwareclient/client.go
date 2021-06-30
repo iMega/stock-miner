@@ -14,9 +14,12 @@ import (
 )
 
 var (
+	// nolint
 	httpClient HTTPClientDo
-	logger     *logrus.Entry
-	rmw        []RequestFunc
+	// nolint
+	logger *logrus.Entry
+	// nolint
+	rmw []RequestFunc
 )
 
 // SendIn returns a new request given a method, URL, and optional body,
@@ -54,14 +57,19 @@ func WithRequestWares(wares ...RequestFunc) {
 	rmw = append(rmw, wares...)
 }
 
+const (
+	maxRetry = 3
+	hundred  = 100
+)
+
 // RetryTriceTripperwares will retry three times to send request.
 func RetryTriceTripperwares() []httpwares.Tripperware {
 	var wares []httpwares.Tripperware
 
 	wares = append(wares, http_retry.Tripperware(
-		http_retry.WithMax(3),
+		http_retry.WithMax(maxRetry),
 		http_retry.WithBackoff(func(attempt uint) time.Duration {
-			return time.Duration(time.Duration(attempt) * 100 * time.Millisecond)
+			return time.Duration(attempt*hundred) * time.Millisecond
 		}),
 	))
 
@@ -73,15 +81,20 @@ func WithClient(c HTTPClientDo) {
 	httpClient = c
 }
 
+const (
+	timeoutClient = 10 * time.Second
+	timeoutDialer = 5 * time.Second
+)
+
 // DefaultHTTPClient returns default http.Client with set timeouts.
 func DefaultHTTPClient() *http.Client {
 	return &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: timeoutClient,
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
-				Timeout: 5 * time.Second,
+				Timeout: timeoutDialer,
 			}).DialContext,
-			TLSHandshakeTimeout: 5 * time.Second,
+			TLSHandshakeTimeout: timeoutDialer,
 		},
 	}
 }

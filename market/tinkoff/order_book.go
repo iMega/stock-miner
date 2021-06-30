@@ -2,6 +2,7 @@ package tinkoff
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -15,8 +16,10 @@ type responseOB struct {
 	Status  string            `json:"status"`
 }
 
+var errNotNormalTrading = errors.New("trade status isn't normal trading")
+
 func (m *Market) OrderBook(ctx context.Context, i domain.StockItem) (*domain.OrderBook, error) {
-	tu, err := ExtractTokenURL(ctx)
+	tu, err := extractTokenURL(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract token from context, %w", err)
 	}
@@ -37,7 +40,7 @@ func (m *Market) OrderBook(ctx context.Context, i domain.StockItem) (*domain.Ord
 	}
 
 	if data.Payload.TradeStatus != sdk.NormalTrading {
-		return nil, fmt.Errorf("trade status isn't normal trading")
+		return nil, errNotNormalTrading
 	}
 
 	bids := make([]domain.PriceQty, len(data.Payload.Bids))

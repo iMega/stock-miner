@@ -6,12 +6,21 @@ import (
 )
 
 var (
-	emailKey  = contextKey("email")
-	tokenKey  = contextKey("token")
+	// nolint
+	emailKey = contextKey("email")
+	// nolint
+	tokenKey = contextKey("token")
+	// nolint
 	apiurlKey = contextKey("apiurl")
 
-	// ErrExtractEmail static error extracting user from context
+	// ErrExtractEmail static error extracting user from context.
 	ErrExtractEmail = errors.New("failed to extract user from context")
+
+	// ErrExtractToken static error extracting token from context.
+	ErrExtractToken = errors.New("failed to extract token from context")
+
+	// ErrExtractAPIURL static error extracting apiURL from context.
+	ErrExtractAPIURL = errors.New("failed to extract apiurl from context")
 )
 
 type contextKey string

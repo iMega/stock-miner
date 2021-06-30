@@ -2,6 +2,7 @@ package tinkoff
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -10,22 +11,28 @@ import (
 	"github.com/imega/stock-miner/httpwareclient"
 )
 
+var (
+	errFIGIEmpty    = errors.New("FIGI is empty")
+	errQuantityZero = errors.New("quantity must be more zero")
+	errSell         = errors.New("failed to sell")
+)
+
 func (m *Market) OrderSell(
 	ctx context.Context,
 	i domain.Transaction,
 ) (domain.Transaction, error) {
-	tu, err := ExtractTokenURL(ctx)
+	tu, err := extractTokenURL(ctx)
 	if err != nil {
 		return domain.Transaction{},
 			fmt.Errorf("failed to extract token from context, %w", err)
 	}
 
 	if i.Slot.FIGI == "" {
-		return domain.Transaction{}, fmt.Errorf("FIGI is empty")
+		return domain.Transaction{}, errFIGIEmpty
 	}
 
 	if i.Slot.Qty < 1 {
-		return domain.Transaction{}, fmt.Errorf("quantity must be more zero")
+		return domain.Transaction{}, errQuantityZero
 	}
 
 	dataSend := &requestOrderAdd{
@@ -49,11 +56,11 @@ func (m *Market) OrderSell(
 	}
 
 	if data.Status != statusOk {
-		return domain.Transaction{}, fmt.Errorf(
-			"failed to sell, status is %s, %s",
-			data.Status,
-			data.Payload.Message,
-		)
+		return domain.Transaction{},
+			fmt.Errorf(
+				"%w, status: %s, %s",
+				errSell, data.Status, data.Payload.Message,
+			)
 	}
 
 	result := i

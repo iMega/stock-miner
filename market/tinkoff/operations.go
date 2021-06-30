@@ -2,6 +2,7 @@ package tinkoff
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -26,10 +27,15 @@ type responseOperations struct {
 
 const format = "2006-01-02T15:04:05-07:00"
 
-func (m *Market) Operations(ctx context.Context, in domain.OperationInput) ([]domain.Transaction, error) {
-	tu, err := ExtractTokenURL(ctx)
+var errGettingOperations = errors.New("failed getting operations")
+
+func (m *Market) Operations(
+	ctx context.Context,
+	in domain.OperationInput,
+) ([]domain.Transaction, error) {
+	tu, err := extractTokenURL(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to extract token from context, %w", err)
+		return nil, fmt.Errorf("failed to extract data from context, %w", err)
 	}
 
 	q := url.Values{
@@ -54,14 +60,15 @@ func (m *Market) Operations(ctx context.Context, in domain.OperationInput) ([]do
 	}
 
 	if data.Status != statusOk {
-		return nil, fmt.Errorf(
-			"failed getting operations, status is %s, %s",
-			data.Status,
-			data.Payload.Message,
-		)
+		return nil,
+			fmt.Errorf(
+				"%w, status is %s, %s",
+				errGettingOperations, data.Status, data.Payload.Message,
+			)
 	}
 
 	result := make([]domain.Transaction, len(data.Payload.Operations))
+
 	for i, o := range data.Payload.Operations {
 		if o.OperationType != sdk.OperationType(in.OperationType) {
 			continue

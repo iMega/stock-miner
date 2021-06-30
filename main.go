@@ -39,6 +39,10 @@ import (
 const (
 	shutdownTimeout = 15 * time.Second
 	dbFilename      = "./data.db"
+	bufferSize      = 1024
+	pingInterval    = 15
+	lruSize         = 1000
+	lruSmallSize    = 100
 )
 
 // nolint
@@ -166,19 +170,19 @@ func main() {
 			CheckOrigin: func(r *http.Request) bool {
 				return true
 			},
-			ReadBufferSize:  1024,
-			WriteBufferSize: 1024,
+			ReadBufferSize:  bufferSize,
+			WriteBufferSize: bufferSize,
 		},
-		KeepAlivePingInterval: 15,
+		KeepAlivePingInterval: pingInterval,
 	})
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})
 	srv.AddTransport(transport.POST{})
-	srv.SetQueryCache(lru.New(1000))
+	srv.SetQueryCache(lru.New(lruSize))
 
 	srv.Use(extension.Introspection{})
 	srv.Use(extension.AutomaticPersistedQuery{
-		Cache: lru.New(100),
+		Cache: lru.New(lruSmallSize),
 	})
 
 	corsOptions := cors.Options{

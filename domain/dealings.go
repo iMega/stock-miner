@@ -5,13 +5,13 @@ import "time"
 type Transaction struct {
 	Slot
 
-	SalePrice    float64 `json:"sale_price"`
-	AmountIncome float64 `json:"amount_income"`
+	SalePrice    float64
+	AmountIncome float64
 
-	BuyOrderID  string `json:"buy_order_id"`
-	SellOrderID string `json:"sell_order_id"`
+	BuyOrderID  string
+	SellOrderID string
 
-	BuyAt    time.Time `json:"buy_at"`
-	Duration int       `json:"duration"`
-	SellAt   time.Time `json:"sell_at"`
+	BuyAt    time.Time
+	Duration int
+	SellAt   time.Time
 }

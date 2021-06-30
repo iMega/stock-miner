@@ -34,10 +34,12 @@ func (b *Broker) sell(
 	return sellTr, nil
 }
 
+const periodFiveMin = 5 * time.Minute
+
 func (b *Broker) confirmSell(ctx context.Context, t domain.Transaction) error {
 	in := domain.OperationInput{
 		From:          t.SellAt,
-		To:            t.SellAt.Add(5 * time.Minute),
+		To:            t.SellAt.Add(periodFiveMin),
 		FIGI:          t.Slot.FIGI,
 		OperationType: "Sell",
 	}
@@ -78,7 +80,7 @@ func filterSellOperationByOrderID(trs []domain.Transaction, orderID string) (dom
 		}
 	}
 
-	return domain.Transaction{}, fmt.Errorf("operation does not exist")
+	return domain.Transaction{}, errOperationNotExist
 }
 
 func (b *Broker) confirmSellJob(msg domain.Message) error {

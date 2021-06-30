@@ -2,6 +2,7 @@ package yahooprovider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -20,6 +21,8 @@ func New(url string) domain.Pricer {
 
 	return p
 }
+
+var errGettingPrice = errors.New("failed getting price")
 
 func (p *pricer) GetPrice(
 	ctx context.Context,
@@ -43,14 +46,11 @@ func (p *pricer) GetPrice(
 	}
 
 	if data.QuoteSummary.Err != nil {
-		return result, fmt.Errorf(
-			"failed getting price, %s",
-			data.QuoteSummary.Err.Code,
-		)
+		return result, errGettingPrice
 	}
 
 	if len(data.QuoteSummary.Result) == 0 {
-		return result, fmt.Errorf("failed getting price, is zero")
+		return result, errGettingPrice
 	}
 
 	response := data.QuoteSummary.Result[0]

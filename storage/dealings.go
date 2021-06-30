@@ -175,6 +175,7 @@ func (s *Storage) Dealings(ctx context.Context) ([]domain.Transaction, error) {
 		)
 
 		t := domain.Transaction{}
+
 		err := rows.Scan(
 			&t.Slot.Email,
 			&t.Slot.ID,
@@ -202,7 +203,6 @@ func (s *Storage) Dealings(ctx context.Context) ([]domain.Transaction, error) {
 			//
 			&t.Slot.Currency,
 		)
-
 		if err != nil {
 			return result, fmt.Errorf("failed to scan row, %w", err)
 		}

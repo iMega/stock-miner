@@ -1,7 +1,7 @@
 package broker
 
 import (
-	"fmt"
+	"errors"
 	"sync"
 
 	"github.com/imega/stock-miner/domain"
@@ -13,7 +13,11 @@ type smaStack struct {
 	stackMutex sync.RWMutex
 }
 
-const capacity = 5
+const (
+	capacity   = 5
+	lastItem   = 4
+	secondItem = 2
+)
 
 func NewSMAStack() domain.SMAStack {
 	return &smaStack{
@@ -39,6 +43,8 @@ func (s *smaStack) Add(key string, v float64) bool {
 	return true
 }
 
+var errKeyNotExist = errors.New("key does not exist")
+
 func (s *smaStack) IsTrendUp(key string) (bool, error) {
 	s.stackMutex.RLock()
 	defer s.stackMutex.RUnlock()
@@ -47,7 +53,7 @@ func (s *smaStack) IsTrendUp(key string) (bool, error) {
 		return f.IsTrendUp(), nil
 	}
 
-	return false, fmt.Errorf("key does not exist")
+	return false, errKeyNotExist
 }
 
 func (s *smaStack) Get(key string) (domain.SMAFrame, error) {
@@ -58,7 +64,7 @@ func (s *smaStack) Get(key string) (domain.SMAFrame, error) {
 		return f, nil
 	}
 
-	return nil, fmt.Errorf("key does not exist")
+	return nil, errKeyNotExist
 }
 
 type smaFrame struct {
@@ -69,7 +75,7 @@ type smaFrame struct {
 }
 
 func (s *smaFrame) Add(v float64) {
-	f, _ := decimal.NewFromFloat(v).Truncate(2).Float64()
+	f, _ := decimal.NewFromFloat(v).Truncate(precision).Float64()
 	s.Fifo[s.Cur] = f
 	s.Lastt = f
 	s.CalcAvg()
@@ -77,7 +83,7 @@ func (s *smaFrame) Add(v float64) {
 }
 
 func (s *smaFrame) NextCur() {
-	if s.Cur == 4 {
+	if s.Cur == lastItem {
 		s.Cur = 0
 
 		return
@@ -102,9 +108,9 @@ func (s *smaFrame) IsTrendUp() bool {
 }
 
 func (s *smaFrame) Prev() float64 {
-	prev := s.Cur - 2
+	prev := s.Cur - secondItem
 	if s.Cur <= 1 {
-		prev = capacity - 2 + s.Cur
+		prev = capacity - secondItem + s.Cur
 	}
 
 	return s.Fifo[prev]

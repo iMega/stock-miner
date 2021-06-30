@@ -15,6 +15,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+const maxQueues = 20
+
 func (b *Broker) run() {
 	pricerCh := make(chan domain.Message)
 
@@ -38,17 +40,29 @@ func (b *Broker) run() {
 	b.sellWorker(sellCh, confirmSellCh)
 
 	delay := cron.DelayIfStillRunning(&logger{log: b.logger})
-	b.cron.AddJob("@every 2s", delay(cron.FuncJob(func() {
-		if w1.WaitingQueueSize()+w2.WaitingQueueSize() > 20 {
+
+	_, err := b.cron.AddJob("@every 2s", delay(cron.FuncJob(func() {
+		if w1.WaitingQueueSize()+w2.WaitingQueueSize() > maxQueues {
 			b.logger.Debugf("WaitingQueueSize = %d", w1.WaitingQueueSize()+w2.WaitingQueueSize())
 		}
 
 		b.StockStorage.StockItemApprovedAll(context.Background(), pricerCh)
 	})))
+	if err != nil {
+		b.logger.Errorf("failed to add jiob to cron, %w", err)
+	}
 }
 
-func (b *Broker) pricerWorker(in chan domain.Message, out, out2 chan domain.PriceReceiptMessage) *workerpool.WorkerPool {
-	wp := workerpool.New(5)
+const (
+	five    = 5
+	hundred = 100
+)
+
+func (b *Broker) pricerWorker(
+	in chan domain.Message,
+	out, out2 chan domain.PriceReceiptMessage,
+) *workerpool.WorkerPool {
+	wp := workerpool.New(five)
 
 	go func() {
 		for m := range in {
@@ -111,7 +125,7 @@ func (b *Broker) solveWorker(
 	sellCh chan domain.Slot,
 	confirmBuyCh chan domain.Message,
 ) *workerpool.WorkerPool {
-	wp := workerpool.New(5)
+	wp := workerpool.New(five)
 
 	go func() {
 		for task := range in {
@@ -138,6 +152,8 @@ func (b *Broker) solveWorker(
 	return wp
 }
 
+var errFrameNotFull = errors.New("frame is not full")
+
 func (b *Broker) solver(
 	msg domain.Message,
 	sellCh chan domain.Slot,
@@ -149,7 +165,7 @@ func (b *Broker) solver(
 	}
 
 	if !frame.IsFull() {
-		return fmt.Errorf("frame is not full") //nil
+		return errFrameNotFull
 	}
 
 	ctx, err := b.contextWithCreds(context.Background(), msg.Transaction.Slot.Email)
@@ -277,7 +293,7 @@ func (b *Broker) sellWorker(
 }
 
 func (b *Broker) confirmSellWorker(confirmSellCh, operationCh chan domain.Message) *workerpool.WorkerPool {
-	wp := workerpool.New(100)
+	wp := workerpool.New(hundred)
 
 	go func() {
 		for m := range confirmSellCh {
@@ -369,13 +385,19 @@ func (b *Broker) queueOperation(
 	return wp
 }
 
+var (
+	errMaxAttempts        = errors.New("the maximum number of attempts to receive the operation has been reached")
+	errUnknownTransaction = errors.New("unknown transaction type")
+)
+
+const retryCount = 60
+
 func processOperation(msg domain.Message) (domain.Message, domain.OperationType, error) {
 	msg.RetryCount++
-	if msg.RetryCount > 60 {
-		return msg, "", fmt.Errorf(
-			"the maximum number of attempts to receive the operation has been reached, id:%s",
-			msg.Transaction.ID,
-		)
+	if msg.RetryCount > retryCount {
+		return msg,
+			"",
+			fmt.Errorf("%w, id:%s", errMaxAttempts, msg.Transaction.ID)
 	}
 
 	if msg.Transaction.BuyingPrice == 0 {
@@ -386,14 +408,14 @@ func processOperation(msg domain.Message) (domain.Message, domain.OperationType,
 		return msg, domain.SELL, nil
 	}
 
-	return msg, "", errors.New("unknown transaction type")
+	return msg, "", errUnknownTransaction
 }
 
 func (b *Broker) confirmBuyWorker(
 	confirmBuyCh chan domain.Message,
 	operationCh chan domain.Message,
 ) *workerpool.WorkerPool {
-	wp := workerpool.New(100)
+	wp := workerpool.New(hundred)
 
 	go func() {
 		for m := range confirmBuyCh {
@@ -412,6 +434,8 @@ func (b *Broker) confirmBuyWorker(
 	return wp
 }
 
+var errOperationNotExist = errors.New("operation does not exist")
+
 func filterOperationByOrderID(trs []domain.Transaction, orderID string) (domain.Transaction, error) {
 	for _, t := range trs {
 		if t.BuyOrderID == orderID {
@@ -419,7 +443,7 @@ func filterOperationByOrderID(trs []domain.Transaction, orderID string) (domain.
 		}
 	}
 
-	return domain.Transaction{}, fmt.Errorf("operation does not exist")
+	return domain.Transaction{}, errOperationNotExist
 }
 
 func (b *Broker) contextWithCreds(ctxIn context.Context, email string) (context.Context, error) {
@@ -444,9 +468,9 @@ func minBuyingPrice(slots []domain.Slot) float64 {
 		return -1
 	}
 
-	var byuing []float64
-	for _, slot := range slots {
-		byuing = append(byuing, slot.BuyingPrice)
+	byuing := make([]float64, len(slots))
+	for i, slot := range slots {
+		byuing[i] = slot.BuyingPrice
 	}
 
 	sort.Float64s(byuing)

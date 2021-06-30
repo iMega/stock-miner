@@ -78,7 +78,7 @@ func (n *ID) Scan(src interface{}) error {
 	}
 
 	copy(nid[:], s)
-	*n = ID(nid)
+	*n = nid
 
 	return nil
 }

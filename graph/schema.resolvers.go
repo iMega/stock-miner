@@ -164,20 +164,19 @@ func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
 func (r *queryResolver) StockItemApproved(
 	ctx context.Context,
 ) ([]*model.StockItem, error) {
-	var result []*model.StockItem
-
 	items, err := r.StockStorage.StockItemApproved(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting approved stock item, %w", err)
 	}
 
-	for _, item := range items {
-		result = append(result, &model.StockItem{
+	result := make([]*model.StockItem, len(items))
+	for i, item := range items {
+		result[i] = &model.StockItem{
 			Ticker:           item.Ticker,
 			Figi:             item.FIGI,
 			AmountLimit:      item.AmountLimit,
 			TransactionLimit: item.TransactionLimit,
-		})
+		}
 	}
 
 	return result, nil
@@ -220,13 +219,15 @@ func (r *queryResolver) MarketStockItems(
 	}
 
 	result := make([]*model.StockItem, len(items))
+
 	for i, item := range items {
+		lot := int(item.Lot)
 		result[i] = &model.StockItem{
 			Ticker:            item.Ticker,
 			Figi:              item.FIGI,
 			Isin:              &item.ISIN,
 			MinPriceIncrement: &item.MinPriceIncrement,
-			Lot:               &item.Lot,
+			Lot:               &lot,
 			Currency:          &item.Currency,
 			Name:              &item.Name,
 		}
@@ -316,12 +317,12 @@ func (r *queryResolver) Dealings(ctx context.Context) ([]*model.Deal, error) {
 
 	result := make([]*model.Deal, len(dealings))
 
-	for _, v := range dealings {
+	for i, v := range dealings {
 		deal := v
 		buyAt := deal.BuyAt.Format(time.RFC3339)
 		sellAt := deal.SellAt.Format(time.RFC3339)
 
-		result = append(result, &model.Deal{
+		result[i] = &model.Deal{
 			ID:           deal.ID,
 			Ticker:       deal.Ticker,
 			Figi:         deal.FIGI,
@@ -339,7 +340,7 @@ func (r *queryResolver) Dealings(ctx context.Context) ([]*model.Deal, error) {
 			Duration:     &deal.Duration,
 			SellAt:       &sellAt,
 			Currency:     "USD",
-		})
+		}
 	}
 
 	return result, nil

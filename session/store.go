@@ -19,7 +19,7 @@ const (
 	cookieMaxAge = 60
 )
 
-type SessionStore struct {
+type Store struct {
 	ClientID     string
 	ClientSecret string
 	CallbackURL  string
@@ -29,8 +29,8 @@ type SessionStore struct {
 	RootEmail    string
 }
 
-func New(opts ...Option) *SessionStore {
-	s := &SessionStore{}
+func New(opts ...Option) *Store {
+	s := &Store{}
 
 	for _, opt := range opts {
 		opt(s)
@@ -38,11 +38,15 @@ func New(opts ...Option) *SessionStore {
 
 	if s.isDevMode {
 		ctx := contexkey.WithEmail(context.Background(), s.RootEmail)
-		s.userDB.CreateUser(ctx, domain.User{
+
+		err := s.userDB.CreateUser(ctx, domain.User{
 			ID:    "1",
 			Email: s.RootEmail,
 			Role:  "root",
 		})
+		if err != nil {
+			//
+		}
 	}
 
 	s.db = sessions.NewCookieStore([]byte(s.ClientSecret), nil)
@@ -50,34 +54,34 @@ func New(opts ...Option) *SessionStore {
 	return s
 }
 
-type Option func(p *SessionStore)
+type Option func(p *Store)
 
 func WithClintID(id string) Option {
-	return func(p *SessionStore) {
+	return func(p *Store) {
 		p.ClientID = id
 	}
 }
 
 func WithClientSecret(s string) Option {
-	return func(p *SessionStore) {
+	return func(p *Store) {
 		p.ClientSecret = s
 	}
 }
 
 func WithCallbackURL(s string) Option {
-	return func(p *SessionStore) {
+	return func(p *Store) {
 		p.CallbackURL = s
 	}
 }
 
 func WithUserStorage(s domain.UserStorage) Option {
-	return func(p *SessionStore) {
+	return func(p *Store) {
 		p.userDB = s
 	}
 }
 
 func WithDevMode(s string) Option {
-	return func(p *SessionStore) {
+	return func(p *Store) {
 		if s == "true" {
 			p.isDevMode = true
 		}
@@ -85,13 +89,13 @@ func WithDevMode(s string) Option {
 }
 
 func WithRootEmail(s string) Option {
-	return func(p *SessionStore) {
+	return func(p *Store) {
 		p.RootEmail = s
 	}
 }
 
-func (s *SessionStore) AppendHandlers(mux *http.ServeMux) {
-	login, callback := google.GoogleSignInHandlers(
+func (s *Store) AppendHandlers(mux *http.ServeMux) {
+	login, callback := google.SignInHandlers(
 		s.ClientID,
 		s.ClientSecret,
 		s.CallbackURL,
@@ -121,7 +125,7 @@ func (s *SessionStore) AppendHandlers(mux *http.ServeMux) {
 	mux.Handle("/logout", s.logoutHandler())
 }
 
-func (s *SessionStore) DefenceHandler(next http.Handler) http.Handler {
+func (s *Store) DefenceHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		session, err := s.db.Get(r, sessionName)
 		if err != nil {
@@ -141,7 +145,7 @@ func (s *SessionStore) DefenceHandler(next http.Handler) http.Handler {
 	})
 }
 
-func (s *SessionStore) logoutHandler() http.HandlerFunc {
+func (s *Store) logoutHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		s.db.Destroy(w, sessionName)
 
@@ -163,7 +167,7 @@ func (s *SessionStore) logoutHandler() http.HandlerFunc {
 	}
 }
 
-func (s *SessionStore) issueSession() http.Handler {
+func (s *Store) issueSession() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 		user, err := google.UserFromContext(ctx)

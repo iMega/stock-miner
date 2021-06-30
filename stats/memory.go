@@ -25,9 +25,11 @@ func GetMemStats() MemStats {
 	}
 }
 
+const thousand = 1000
+
 // Bytes represent number only MB.
 func Bytes(i uint64) string {
 	p := message.NewPrinter(language.English)
 
-	return p.Sprintf("%d %s", i/1000, "MB")
+	return p.Sprintf("%d %s", i/thousand, "MB")
 }

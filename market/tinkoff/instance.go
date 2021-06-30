@@ -35,15 +35,15 @@ type tokenURL struct {
 	URL   string
 }
 
-func ExtractTokenURL(ctx context.Context) (*tokenURL, error) {
+func extractTokenURL(ctx context.Context) (*tokenURL, error) {
 	token, ok := contexkey.TokenFromContext(ctx)
 	if !ok {
-		return nil, fmt.Errorf("failed to extract token from context")
+		return nil, contexkey.ErrExtractToken
 	}
 
 	apiurl, ok := contexkey.APIURLFromContext(ctx)
 	if !ok {
-		return nil, fmt.Errorf("failed to extract apiurl from context")
+		return nil, contexkey.ErrExtractAPIURL
 	}
 
 	return &tokenURL{
@@ -53,7 +53,7 @@ func ExtractTokenURL(ctx context.Context) (*tokenURL, error) {
 }
 
 func (m *Market) ListStockItems(ctx context.Context) ([]*domain.StockItem, error) {
-	tu, err := ExtractTokenURL(ctx)
+	tu, err := extractTokenURL(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (m *Market) ListStockItems(ctx context.Context) ([]*domain.StockItem, error
 			ISIN:              i.ISIN,
 			Name:              i.Name,
 			MinPriceIncrement: i.MinPriceIncrement,
-			Lot:               i.Lot,
+			Lot:               uint8(i.Lot),
 			Currency:          string(i.Currency),
 		}
 	}

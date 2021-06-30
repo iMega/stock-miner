@@ -2,6 +2,7 @@ package tinkoff
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -20,22 +21,24 @@ type requestOrderAdd struct {
 	Operation string `json:"operation"`
 }
 
+var errBuy = errors.New("failed to buy")
+
 func (m *Market) OrderBuy(
 	ctx context.Context,
 	i domain.Transaction,
 ) (domain.Transaction, error) {
-	tu, err := ExtractTokenURL(ctx)
+	tu, err := extractTokenURL(ctx)
 	if err != nil {
 		return domain.Transaction{},
 			fmt.Errorf("failed to extract token from context, %w", err)
 	}
 
 	if i.FIGI == "" {
-		return domain.Transaction{}, fmt.Errorf("FIGI is empty")
+		return domain.Transaction{}, errFIGIEmpty
 	}
 
 	if i.Qty < 1 {
-		return domain.Transaction{}, fmt.Errorf("quantity must be more zero")
+		return domain.Transaction{}, errQuantityZero
 	}
 
 	dataSend := &requestOrderAdd{
@@ -60,9 +63,8 @@ func (m *Market) OrderBuy(
 
 	if data.Status != statusOk {
 		return domain.Transaction{}, fmt.Errorf(
-			"failed to buy, status is %s, %s",
-			data.Status,
-			data.Payload.Message,
+			"%w, status is %s, %s",
+			errBuy, data.Status, data.Payload.Message,
 		)
 	}
 

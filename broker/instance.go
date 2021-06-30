@@ -17,8 +17,8 @@ type Broker struct {
 	Stack           domain.Stack
 
 	logger        logrus.FieldLogger
-	isShutdown    bool
 	cron          *cron.Cron
+	isShutdown    bool
 	cronIsRunning bool
 }
 
