@@ -1,28 +1,12 @@
 import React from "react";
-import { useQuery, gql } from "@apollo/client";
+import { useQuery, useMutation, gql } from "@apollo/client";
 import { PageHeader, Row, Col, Table, InputNumber, Space } from "antd";
 
 import Link from "../StockItemLink";
+import Message from "../Message";
 
 const List = () => {
-    let ds = [
-        {
-            ticker: "AAPL",
-            figi: "BBG000B9XRY4",
-            amountLimit: 0,
-            transactionLimit: 0,
-            startTime: 10,
-            endTime: 22,
-        },
-        {
-            ticker: "AMZN",
-            figi: "BBG000BVPV84",
-            amountLimit: 0,
-            transactionLimit: 0,
-            startTime: 12,
-            endTime: 20,
-        },
-    ];
+    let ds = [];
 
     const { loading, data } = useQuery(StockItemApprovedND, {
         fetchPolicy: "network-only",
@@ -32,8 +16,31 @@ const List = () => {
         ds = data.stockItemApproved;
     }
 
-    const settingsStockItemHandler = (rec) => {
-        console.log(rec);
+    const [updateStockItem] = useMutation(UpdateStockItemAprovedND);
+
+    const settingsStockItemHandler = async (records) => {
+        console.log(records);
+        const stockItems = records.map((i) => ({
+            ticker: i.ticker,
+            figi: i.figi,
+            amountLimit: 0,
+            transactionLimit: 0,
+            currency: i.currency,
+            startTime: i.startTime,
+            endTime: i.endTime,
+        }));
+
+        try {
+            const { data } = await updateStockItem({
+                variables: { in: stockItems },
+            });
+            if (data?.updateStockItemApproved === true) {
+                return;
+            }
+            Message.Failure();
+        } catch (e) {
+            Message.Failure();
+        }
     };
 
     return (
@@ -77,7 +84,7 @@ const columns = (settingsStockItemHandler) => [
                     val={r.startTime}
                     onChange={(v) => {
                         r.startTime = v;
-                        settingsStockItemHandler(r);
+                        settingsStockItemHandler([r]);
                     }}
                 />
                 -
@@ -85,7 +92,7 @@ const columns = (settingsStockItemHandler) => [
                     val={r.endTime}
                     onChange={(v) => {
                         r.endTime = v;
-                        settingsStockItemHandler(r);
+                        settingsStockItemHandler([r]);
                     }}
                 />
             </Space>
@@ -110,7 +117,16 @@ const StockItemApprovedND = gql`
             figi
             amountLimit
             transactionLimit
+            currency
+            startTime
+            endTime
         }
+    }
+`;
+
+const UpdateStockItemAprovedND = gql`
+    mutation UpdateStockItemAproved($in: [StockItemInput!]!) {
+        updateStockItemApproved(items: $in)
     }
 `;
 

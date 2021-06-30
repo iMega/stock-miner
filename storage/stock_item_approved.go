@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/imega/stock-miner/contexkey"
 	"github.com/imega/stock-miner/domain"
@@ -19,6 +20,7 @@ func (s *Storage) StockItemApproved(
 
 	q := `select ticker,
             figi,
+            currency,
             amount_limit,
             transaction_limit,
             startTime,
@@ -41,6 +43,7 @@ func (s *Storage) StockItemApproved(
 		err := rows.Scan(
 			&item.Ticker,
 			&item.FIGI,
+			&item.Currency,
 			&item.AmountLimit,
 			&item.TransactionLimit,
 			&item.StartTime,
@@ -71,8 +74,11 @@ func (s *Storage) StockItemApprovedAll(
                     figi,
                     amount_limit,
                     transaction_limit,
-                    currency
-                from stock_item_approved`
+                    currency,
+                    startTime,
+                    endTime,
+                from stock_item_approved
+                where active=1`
 
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
@@ -90,6 +96,7 @@ func (s *Storage) StockItemApprovedAll(
 			currency            string
 			amountLimit         float64
 			transactionLimit    int
+			startTime, endTime  int
 		)
 
 		err := rows.Scan(
@@ -99,6 +106,8 @@ func (s *Storage) StockItemApprovedAll(
 			&amountLimit,
 			&transactionLimit,
 			&currency,
+			&startTime,
+			&endTime,
 		)
 		if err != nil {
 			out <- domain.Message{
@@ -109,6 +118,10 @@ func (s *Storage) StockItemApprovedAll(
 			}
 
 			return
+		}
+
+		if !isValidPeriod(startTime, endTime) {
+			continue
 		}
 
 		out <- domain.Message{
@@ -134,6 +147,12 @@ func (s *Storage) StockItemApprovedAll(
 
 		return
 	}
+}
+
+func isValidPeriod(start, end int) bool {
+	currentHour := time.Now().Hour()
+
+	return start <= currentHour && currentHour <= end
 }
 
 func (s *Storage) AddStockItemApproved(

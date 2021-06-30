@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-type TxWrapper struct{ *sql.DB }
+type TxWrapper struct{ DB *sql.DB }
 
 type TxFunc func(context.Context, *sql.Tx) error
 
@@ -15,7 +15,7 @@ func (w *TxWrapper) Transaction(
 	opts *sql.TxOptions,
 	f TxFunc,
 ) error {
-	tx, err := w.BeginTx(ctx, opts)
+	tx, err := w.DB.BeginTx(ctx, opts)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction, %w", err)
 	}

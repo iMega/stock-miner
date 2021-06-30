@@ -18,7 +18,7 @@ func (s *Storage) Buy(ctx context.Context, t domain.Transaction) error {
 		return s.buyTransaction(ctx, t)
 	}
 
-	wrapper := tools.TxWrapper{s.db}
+	wrapper := tools.TxWrapper{DB: s.db}
 	if err := wrapper.Transaction(ctx, nil, tx); err != nil {
 		return fmt.Errorf("failed to execute transaction, %w", err)
 	}
@@ -35,7 +35,7 @@ func (s *Storage) ConfirmBuy(ctx context.Context, t domain.Transaction) error {
 		return s.ConfirmBuyTransaction(ctx, t)
 	}
 
-	wrapper := tools.TxWrapper{s.db}
+	wrapper := tools.TxWrapper{DB: s.db}
 	if err := wrapper.Transaction(ctx, nil, tx); err != nil {
 		return fmt.Errorf("failed to execute transaction, %w", err)
 	}

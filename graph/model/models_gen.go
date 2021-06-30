@@ -90,6 +90,8 @@ type StockItem struct {
 	Name              *string  `json:"name"`
 	AmountLimit       float64  `json:"amountLimit"`
 	TransactionLimit  int      `json:"transactionLimit"`
+	StartTime         int      `json:"startTime"`
+	EndTime           int      `json:"endTime"`
 }
 
 type StockItemInput struct {
@@ -98,6 +100,8 @@ type StockItemInput struct {
 	AmountLimit      float64 `json:"amountLimit"`
 	TransactionLimit int     `json:"transactionLimit"`
 	Currency         string  `json:"currency"`
+	StartTime        int     `json:"startTime"`
+	EndTime          int     `json:"endTime"`
 }
 
 type User struct {

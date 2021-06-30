@@ -29,7 +29,7 @@ func CreateDatabase(name string) error {
 	}
 
 	ctx := context.Background()
-	wrapper := tools.TxWrapper{db}
+	wrapper := tools.TxWrapper{DB: db}
 	tx := func(ctx context.Context, tx *sql.Tx) error {
 		if err := priceTable(ctx, tx); err != nil {
 			return err

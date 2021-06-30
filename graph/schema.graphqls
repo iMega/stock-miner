@@ -46,6 +46,9 @@ type StockItem {
 
     amountLimit: Float!
     transactionLimit: Int!
+
+    startTime: Int!
+    endTime: Int!
 }
 
 input StockItemInput {
@@ -54,6 +57,8 @@ input StockItemInput {
     amountLimit: Float!
     transactionLimit: Int!
     currency: String!
+    startTime: Int!
+    endTime: Int!
 }
 
 type MemStats {

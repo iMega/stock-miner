@@ -16,10 +16,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func (r *mutationResolver) AddStockItemApproved(
-	ctx context.Context,
-	items []*model.StockItemInput,
-) (bool, error) {
+func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error) {
 	for _, item := range items {
 		in := domain.StockItem{
 			Ticker:           item.Ticker,
@@ -37,10 +34,7 @@ func (r *mutationResolver) AddStockItemApproved(
 	return true, nil
 }
 
-func (r *mutationResolver) RemoveStockItemApproved(
-	ctx context.Context,
-	items []*model.StockItemInput,
-) (bool, error) {
+func (r *mutationResolver) RemoveStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error) {
 	for _, item := range items {
 		in := domain.StockItem{
 			Ticker:           item.Ticker,
@@ -58,10 +52,7 @@ func (r *mutationResolver) RemoveStockItemApproved(
 	return true, nil
 }
 
-func (r *mutationResolver) UpdateStockItemApproved(
-	ctx context.Context,
-	items []*model.StockItemInput,
-) (bool, error) {
+func (r *mutationResolver) UpdateStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error) {
 	for _, item := range items {
 		in := domain.StockItem{
 			Ticker:           item.Ticker,
@@ -69,6 +60,8 @@ func (r *mutationResolver) UpdateStockItemApproved(
 			AmountLimit:      item.AmountLimit,
 			TransactionLimit: item.TransactionLimit,
 			Currency:         item.Currency,
+			StartTime:        uint8(item.StartTime),
+			EndTime:          uint8(item.EndTime),
 		}
 		if err := r.StockStorage.UpdateStockItemApproved(ctx, in); err != nil {
 			return false,
@@ -161,9 +154,7 @@ func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
 	}, nil
 }
 
-func (r *queryResolver) StockItemApproved(
-	ctx context.Context,
-) ([]*model.StockItem, error) {
+func (r *queryResolver) StockItemApproved(ctx context.Context) ([]*model.StockItem, error) {
 	items, err := r.StockStorage.StockItemApproved(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting approved stock item, %w", err)
@@ -176,6 +167,9 @@ func (r *queryResolver) StockItemApproved(
 			Figi:             item.FIGI,
 			AmountLimit:      item.AmountLimit,
 			TransactionLimit: item.TransactionLimit,
+			Currency:         &item.Currency,
+			StartTime:        int(item.StartTime),
+			EndTime:          int(item.EndTime),
 		}
 	}
 
@@ -196,9 +190,7 @@ func (r *queryResolver) GlobalMiningStatus(ctx context.Context) (bool, error) {
 	return r.MainerController.Status(), nil
 }
 
-func (r *queryResolver) MarketStockItems(
-	ctx context.Context,
-) ([]*model.StockItem, error) {
+func (r *queryResolver) MarketStockItems(ctx context.Context) ([]*model.StockItem, error) {
 	s, err := r.SettingsStorage.Settings(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting settings, %w", err)
@@ -381,8 +373,6 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 // Subscription returns generated.SubscriptionResolver implementation.
 func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
 
-type (
-	mutationResolver     struct{ *Resolver }
-	queryResolver        struct{ *Resolver }
-	subscriptionResolver struct{ *Resolver }
-)
+type mutationResolver struct{ *Resolver }
+type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }

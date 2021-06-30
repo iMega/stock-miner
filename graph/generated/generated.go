@@ -132,11 +132,13 @@ type ComplexityRoot struct {
 	StockItem struct {
 		AmountLimit       func(childComplexity int) int
 		Currency          func(childComplexity int) int
+		EndTime           func(childComplexity int) int
 		Figi              func(childComplexity int) int
 		Isin              func(childComplexity int) int
 		Lot               func(childComplexity int) int
 		MinPriceIncrement func(childComplexity int) int
 		Name              func(childComplexity int) int
+		StartTime         func(childComplexity int) int
 		Ticker            func(childComplexity int) int
 		TransactionLimit  func(childComplexity int) int
 	}
@@ -655,6 +657,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.StockItem.Currency(childComplexity), true
 
+	case "StockItem.endTime":
+		if e.complexity.StockItem.EndTime == nil {
+			break
+		}
+
+		return e.complexity.StockItem.EndTime(childComplexity), true
+
 	case "StockItem.figi":
 		if e.complexity.StockItem.Figi == nil {
 			break
@@ -689,6 +698,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.StockItem.Name(childComplexity), true
+
+	case "StockItem.startTime":
+		if e.complexity.StockItem.StartTime == nil {
+			break
+		}
+
+		return e.complexity.StockItem.StartTime(childComplexity), true
 
 	case "StockItem.ticker":
 		if e.complexity.StockItem.Ticker == nil {
@@ -861,6 +877,9 @@ type StockItem {
 
     amountLimit: Float!
     transactionLimit: Int!
+
+    startTime: Int!
+    endTime: Int!
 }
 
 input StockItemInput {
@@ -869,6 +888,8 @@ input StockItemInput {
     amountLimit: Float!
     transactionLimit: Int!
     currency: String!
+    startTime: Int!
+    endTime: Int!
 }
 
 type MemStats {
@@ -3540,6 +3561,76 @@ func (ec *executionContext) _StockItem_transactionLimit(ctx context.Context, fie
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _StockItem_startTime(ctx context.Context, field graphql.CollectedField, obj *model.StockItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StockItem",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StockItem_endTime(ctx context.Context, field graphql.CollectedField, obj *model.StockItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StockItem",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EndTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Subscription_memStats(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4909,6 +5000,22 @@ func (ec *executionContext) unmarshalInputStockItemInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
+		case "startTime":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTime"))
+			it.StartTime, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "endTime":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endTime"))
+			it.EndTime, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -5440,6 +5547,16 @@ func (ec *executionContext) _StockItem(ctx context.Context, sel ast.SelectionSet
 			}
 		case "transactionLimit":
 			out.Values[i] = ec._StockItem_transactionLimit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "startTime":
+			out.Values[i] = ec._StockItem_startTime(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "endTime":
+			out.Values[i] = ec._StockItem_endTime(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
