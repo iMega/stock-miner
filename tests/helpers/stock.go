@@ -24,6 +24,8 @@ func AddStockItemApproved(graphQLUrl, ticker, figi string) {
 				"amountLimit":      0,
 				"transactionLimit": 0,
 				"currency":         "USD",
+				"startTime":        0,
+				"endTime":          24,
 			},
 		},
 	}
@@ -50,6 +52,8 @@ func RemoveStockItemApproved(graphQLUrl, ticker string) {
 				"amountLimit":      0,
 				"transactionLimit": 0,
 				"currency":         "USD",
+				"startTime":        0,
+				"endTime":          0,
 			},
 		},
 	}

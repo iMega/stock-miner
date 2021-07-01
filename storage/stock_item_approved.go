@@ -76,14 +76,17 @@ func (s *Storage) StockItemApprovedAll(
                     transaction_limit,
                     currency,
                     startTime,
-                    endTime,
+                    endTime
                 from stock_item_approved
                 where active=1`
 
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		out <- domain.Message{
-			Error: fmt.Errorf("failed getting approved stock items, %w", err),
+			Error: fmt.Errorf(
+				"failed getting all approved stock items, %s",
+				err,
+			),
 		}
 
 		return
@@ -112,7 +115,7 @@ func (s *Storage) StockItemApprovedAll(
 		if err != nil {
 			out <- domain.Message{
 				Error: fmt.Errorf(
-					"failed to scan approved stock item, %w",
+					"failed to scan approved stock item, %s",
 					err,
 				),
 			}
@@ -170,9 +173,11 @@ func (s *Storage) AddStockItemApproved(
             figi,
             amount_limit,
             transaction_limit,
-            currency
+            currency,
+            startTime,
+            endTime
         )
-        values (?,?,?,?,?,?)`
+        values (?,?,?,?,?,?,?,?)`
 
 	_, err := s.db.ExecContext(
 		ctx,
@@ -183,6 +188,8 @@ func (s *Storage) AddStockItemApproved(
 		item.AmountLimit,
 		item.TransactionLimit,
 		item.Currency,
+		item.StartTime,
+		item.EndTime,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to add approved stock item, %w", err)

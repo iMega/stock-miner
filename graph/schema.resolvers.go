@@ -24,6 +24,8 @@ func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*mo
 			AmountLimit:      item.AmountLimit,
 			TransactionLimit: item.TransactionLimit,
 			Currency:         item.Currency,
+			StartTime:        uint8(item.StartTime),
+			EndTime:          uint8(item.EndTime),
 		}
 		if err := r.StockStorage.AddStockItemApproved(ctx, in); err != nil {
 			return false,

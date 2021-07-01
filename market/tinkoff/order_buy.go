@@ -21,7 +21,7 @@ type requestOrderAdd struct {
 	Operation string `json:"operation"`
 }
 
-var errBuy = errors.New("failed to buy")
+var errBuy = errors.New("failed to order buy")
 
 func (m *Market) OrderBuy(
 	ctx context.Context,

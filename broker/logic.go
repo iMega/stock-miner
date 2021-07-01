@@ -70,7 +70,10 @@ func (b *Broker) pricerWorker(
 
 			wp.Submit(func() {
 				if msg.Error != nil {
-					b.logger.Errorf("message has error, %W", msg.Error)
+					b.logger.Errorf(
+						"pricer worker reports about the message has error, %w",
+						msg.Error,
+					)
 
 					return
 				}
@@ -143,7 +146,7 @@ func (b *Broker) solveWorker(
 				}
 				err := b.solver(msg, sellCh, confirmBuyCh)
 				if err != nil {
-					b.logger.Errorf("failed to solve, %s", err)
+					b.logger.Errorf("solve worker reports, %s", err)
 				}
 			})
 		}
