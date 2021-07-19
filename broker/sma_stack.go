@@ -68,15 +68,26 @@ func (s *smaStack) Get(key string) (domain.SMAFrame, error) {
 }
 
 type smaFrame struct {
-	Avg   [2]float64
-	Lastt float64
-	Fifo  [capacity]float64
-	Cur   int
+	Avg       [2]float64
+	Lastt     float64
+	Fifo      [capacity]float64
+	Cur       int
+	RangeHigh float64
+	RangeLow  float64
 }
 
 func (s *smaFrame) Add(v float64) {
 	f, _ := decimal.NewFromFloat(v).Truncate(precision).Float64()
 	s.Fifo[s.Cur] = f
+
+	if s.RangeHigh > 0 && s.RangeHigh < f {
+		s.RangeHigh = f
+	}
+
+	if s.RangeLow > 0 && s.RangeLow > f {
+		s.RangeLow = f
+	}
+
 	s.Lastt = f
 	s.CalcAvg()
 	s.NextCur()
@@ -128,4 +139,13 @@ func (s *smaFrame) IsFull() bool {
 	}
 
 	return true
+}
+
+func (s *smaFrame) RangeHL() (float64, float64) {
+	return s.RangeHigh, s.RangeLow
+}
+
+func (s *smaFrame) SetRangeHL(h, l float64) {
+	s.RangeHigh = h
+	s.RangeLow = l
 }

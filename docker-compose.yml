@@ -12,6 +12,7 @@ services:
       - STOCK_MINER_HTTP_SERVER_HOST=0.0.0.0:80
       - ROOT_EMAIL=info@example.com
       - FIXTURE_PATH=tests/fixtures
+      - YAHOO_FINANCE_URL=http://acceptance
     ports:
       - 8080:80
 

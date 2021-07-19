@@ -5,7 +5,7 @@ NODE_IMG = node:16.1.0-alpine3.13
 BUILDER=builder
 GITHUB_REF = version//dev
 
-test: lint unit build acceptance
+test: unit build acceptance
 
 builder:
 	@docker build --build-arg GO_IMG=$(GO_IMG) \

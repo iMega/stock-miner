@@ -23,4 +23,6 @@ type SMAFrame interface {
 	Prev() float64
 	IsFull() bool
 	Last() float64
+	RangeHL() (float64, float64)
+	SetRangeHL(h, l float64)
 }

@@ -36,7 +36,11 @@ func (b *Broker) run() {
 
 	w1 := b.pricerWorker(pricerCh, outCh, psCh)
 	w2 := b.makePriceStorageChannel(psCh)
-	b.solveWorker(outCh, sellCh, confirmBuyCh)
+	b.solveWorker(solveWorkerInput{
+		MessageCh:    outCh,
+		SellCh:       sellCh,
+		ConfirmBuyCh: confirmBuyCh,
+	})
 	b.sellWorker(sellCh, confirmSellCh)
 
 	delay := cron.DelayIfStillRunning(&logger{log: b.logger})
@@ -123,15 +127,18 @@ func (b *Broker) makePriceStorageChannel(in chan domain.PriceReceiptMessage) *wo
 	return wp
 }
 
-func (b *Broker) solveWorker(
-	in chan domain.PriceReceiptMessage,
-	sellCh chan domain.Slot,
-	confirmBuyCh chan domain.Message,
-) *workerpool.WorkerPool {
+type solveWorkerInput struct {
+	MessageCh    chan domain.PriceReceiptMessage
+	SellCh       chan domain.Slot
+	ConfirmBuyCh chan domain.Message
+	RequestRange chan domain.Slot
+}
+
+func (b *Broker) solveWorker(in solveWorkerInput) *workerpool.WorkerPool {
 	wp := workerpool.New(five)
 
 	go func() {
-		for task := range in {
+		for task := range in.MessageCh {
 			t := task
 
 			wp.Submit(func() {
@@ -144,9 +151,35 @@ func (b *Broker) solveWorker(
 						},
 					},
 				}
-				err := b.solver(msg, sellCh, confirmBuyCh)
-				if err != nil {
+
+				input := solverInput{
+					Message:      msg,
+					SellCh:       in.SellCh,
+					ConfirmBuyCh: in.ConfirmBuyCh,
+				}
+				if err := b.solver(input); err != nil {
 					b.logger.Errorf("solve worker reports, %s", err)
+
+					if err == errRangeIsZero {
+						ctx := context.Background()
+						r, rErr := b.Pricer.Range(ctx, t.StockItem)
+						if rErr != nil {
+							b.logger.Errorf(
+								"failed getting stock item range, %s",
+								rErr,
+							)
+						}
+
+						frame, err := b.SMAStack.Get(t.StockItem.Ticker)
+						if err != nil {
+							b.logger.Errorf(
+								"failed getting frame from stack, %s",
+								err,
+							)
+						}
+
+						frame.SetRangeHL(r.High, r.Low)
+					}
 				}
 			})
 		}
@@ -155,23 +188,36 @@ func (b *Broker) solveWorker(
 	return wp
 }
 
-var errFrameNotFull = errors.New("frame is not full")
+var (
+	errFrameNotFull = errors.New("frame is not full")
+	errRangeIsZero  = errors.New("range is zero")
+)
 
-func (b *Broker) solver(
-	msg domain.Message,
-	sellCh chan domain.Slot,
-	confirmBuyCh chan domain.Message,
-) error {
-	frame, err := b.SMAStack.Get(msg.Transaction.Slot.StockItem.Ticker)
+type solverInput struct {
+	Message      domain.Message
+	SellCh       chan domain.Slot
+	ConfirmBuyCh chan domain.Message
+}
+
+func (b *Broker) solver(in solverInput) error {
+	frame, err := b.SMAStack.Get(in.Message.Transaction.Slot.StockItem.Ticker)
 	if err != nil {
 		return fmt.Errorf("failed getting frame from stack, %w", err)
+	}
+
+	h, l := frame.RangeHL()
+	if h == 0 || l == 0 {
+		return errRangeIsZero
 	}
 
 	if !frame.IsFull() {
 		return errFrameNotFull
 	}
 
-	ctx, err := b.contextWithCreds(context.Background(), msg.Transaction.Slot.Email)
+	ctx, err := b.contextWithCreds(
+		context.Background(),
+		in.Message.Transaction.Slot.Email,
+	)
 	if err != nil {
 		return fmt.Errorf("failed getting creds, %w", err)
 	}
@@ -181,14 +227,14 @@ func (b *Broker) solver(
 		return fmt.Errorf("failed getting settings, %w", err)
 	}
 
-	slots, err := b.Stack.Slot(ctx, msg.Transaction.Slot.StockItem.FIGI)
+	slots, err := b.Stack.Slot(ctx, in.Message.Transaction.Slot.StockItem.FIGI)
 	if err != nil {
 		return fmt.Errorf("failed getting slot, %w", err)
 	}
 
 	sellSlots := getItemsForSale(slots, frame.Last())
 	for _, slot := range sellSlots {
-		sellCh <- slot
+		in.SellCh <- slot
 	}
 
 	if settings.Slot.Volume <= len(slots) {
@@ -200,11 +246,11 @@ func (b *Broker) solver(
 		return nil
 	}
 
-	if minPrice-settings.Slot.ModificatorMinPrice >= msg.Price {
+	if minPrice-settings.Slot.ModificatorMinPrice >= in.Message.Price {
 		return nil
 	}
 
-	isTrendUp, err := b.SMAStack.IsTrendUp(msg.Transaction.Slot.StockItem.Ticker)
+	isTrendUp, err := b.SMAStack.IsTrendUp(in.Message.Transaction.Slot.StockItem.Ticker)
 	if err != nil {
 		return fmt.Errorf("failed getting trend, %w", err)
 	}
@@ -217,8 +263,8 @@ func (b *Broker) solver(
 	emptyTr := domain.Transaction{
 		Slot: domain.Slot{
 			ID:          uuid.NewID().String(),
-			Email:       msg.Transaction.Email,
-			StockItem:   msg.Transaction.Slot.StockItem,
+			Email:       in.Message.Transaction.Email,
+			StockItem:   in.Message.Transaction.Slot.StockItem,
 			SlotID:      len(slots) + 1,
 			StartPrice:  frame.Prev(),
 			ChangePrice: frame.Last(),
@@ -232,7 +278,7 @@ func (b *Broker) solver(
 		return fmt.Errorf("failed to buy stock item, %w", err)
 	}
 
-	confirmBuyCh <- domain.Message{Transaction: tr}
+	in.ConfirmBuyCh <- domain.Message{Transaction: tr}
 
 	return nil
 }

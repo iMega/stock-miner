@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	sdk "github.com/TinkoffCreditSystems/invest-openapi-go-sdk"
@@ -81,6 +82,25 @@ var _ = Describe("Automatically buy and sell", func() {
 					"limitDown":         0,
 					"faceValue":         0,
 				},
+			}
+
+			if strings.Contains(r.URL.Path, "chart") {
+				data = map[string]interface{}{
+					"chart": map[string]interface{}{
+						"result": []map[string]interface{}{
+							{
+								"indicators": map[string]interface{}{
+									"quote": []map[string][]float64{
+										{
+											"high": []float64{149.75},
+											"low":  []float64{147.08},
+										},
+									},
+								},
+							},
+						},
+					},
+				}
 			}
 
 			if "/orders/market-order" == r.URL.Path {
@@ -377,8 +397,8 @@ var _ = Describe("Automatically buy and sell", func() {
 			Id:           "",
 			Ticker:       graphql.String(ticker),
 			Figi:         graphql.String(figi),
-			StartPrice:   95,
-			ChangePrice:  94,
+			StartPrice:   94,
+			ChangePrice:  93,
 			BuyingPrice:  95,
 			TargetPrice:  95.77,
 			Profit:       0.77,

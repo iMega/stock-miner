@@ -19,6 +19,8 @@ https://tinkoffcreditsystems.github.io/invest-openapi/swagger-ui/
 
 curl -s https://query1.finance.yahoo.com/v10/finance/quoteSummary/AAPL?modules=price | json_pp | grep -C2 regularMarketPrice
 
+curl -s "https://query1.finance.yahoo.com/v8/finance/chart/AAPL?symbol=AAPL&period1=1619514290&period2=9999999999&interval=1d"
+
 ## Install webhook on VPS
 
 ```shell

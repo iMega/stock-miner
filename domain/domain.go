@@ -15,6 +15,11 @@ type StockItem struct {
 	IsActive          bool
 }
 
+type StockItemRange struct {
+	High float64
+	Low  float64
+}
+
 type PriceReceiptMessage struct {
 	Email       string
 	Price       float64
