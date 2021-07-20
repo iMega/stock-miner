@@ -78,14 +78,16 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddStockItemApproved    func(childComplexity int, items []*model.StockItemInput) int
-		GlobalMiningStart       func(childComplexity int) int
-		GlobalMiningStop        func(childComplexity int) int
-		MarketCredentials       func(childComplexity int, creds model.MarketCredentialsInput) int
-		RemoveStockItemApproved func(childComplexity int, items []*model.StockItemInput) int
-		RulePrice               func(childComplexity int, global model.RulePriceInput) int
-		Slot                    func(childComplexity int, global model.SlotSettingsInput) int
-		UpdateStockItemApproved func(childComplexity int, items []*model.StockItemInput) int
+		AddStockItemApproved      func(childComplexity int, items []*model.StockItemInput) int
+		DisableStockItemsApproved func(childComplexity int) int
+		EnableStockItemsApproved  func(childComplexity int) int
+		GlobalMiningStart         func(childComplexity int) int
+		GlobalMiningStop          func(childComplexity int) int
+		MarketCredentials         func(childComplexity int, creds model.MarketCredentialsInput) int
+		RemoveStockItemApproved   func(childComplexity int, items []*model.StockItemInput) int
+		RulePrice                 func(childComplexity int, global model.RulePriceInput) int
+		Slot                      func(childComplexity int, global model.SlotSettingsInput) int
+		UpdateStockItemApproved   func(childComplexity int, items []*model.StockItemInput) int
 	}
 
 	Query struct {
@@ -104,6 +106,7 @@ type ComplexityRoot struct {
 		MarketCommission  func(childComplexity int) int
 		MarketCredentials func(childComplexity int) int
 		MarketProvider    func(childComplexity int) int
+		MiningStatus      func(childComplexity int) int
 		Slot              func(childComplexity int) int
 	}
 
@@ -158,6 +161,8 @@ type MutationResolver interface {
 	AddStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error)
 	RemoveStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error)
 	UpdateStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error)
+	EnableStockItemsApproved(ctx context.Context) (bool, error)
+	DisableStockItemsApproved(ctx context.Context) (bool, error)
 	MarketCredentials(ctx context.Context, creds model.MarketCredentialsInput) (bool, error)
 	Slot(ctx context.Context, global model.SlotSettingsInput) (bool, error)
 	RulePrice(ctx context.Context, global model.RulePriceInput) (bool, error)
@@ -366,6 +371,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddStockItemApproved(childComplexity, args["items"].([]*model.StockItemInput)), true
 
+	case "Mutation.disableStockItemsApproved":
+		if e.complexity.Mutation.DisableStockItemsApproved == nil {
+			break
+		}
+
+		return e.complexity.Mutation.DisableStockItemsApproved(childComplexity), true
+
+	case "Mutation.enableStockItemsApproved":
+		if e.complexity.Mutation.EnableStockItemsApproved == nil {
+			break
+		}
+
+		return e.complexity.Mutation.EnableStockItemsApproved(childComplexity), true
+
 	case "Mutation.globalMiningStart":
 		if e.complexity.Mutation.GlobalMiningStart == nil {
 			break
@@ -523,6 +542,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Settings.MarketProvider(childComplexity), true
+
+	case "Settings.miningStatus":
+		if e.complexity.Settings.MiningStatus == nil {
+			break
+		}
+
+		return e.complexity.Settings.MiningStatus(childComplexity), true
 
 	case "Settings.slot":
 		if e.complexity.Settings.Slot == nil {
@@ -845,6 +871,8 @@ type Mutation {
     addStockItemApproved(items: [StockItemInput!]!): Boolean!
     removeStockItemApproved(items: [StockItemInput!]!): Boolean!
     updateStockItemApproved(items: [StockItemInput!]!): Boolean!
+    enableStockItemsApproved: Boolean!
+    disableStockItemsApproved: Boolean!
 
     # settings
     marketCredentials(creds: MarketCredentialsInput!): Boolean!
@@ -905,6 +933,7 @@ type Settings {
     marketProvider: String!
     marketCommission: Float
     grossMargin: Float
+    miningStatus: Boolean!
 }
 
 type SlotSettings {
@@ -2027,6 +2056,76 @@ func (ec *executionContext) _Mutation_updateStockItemApproved(ctx context.Contex
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_enableStockItemsApproved(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().EnableStockItemsApproved(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_disableStockItemsApproved(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DisableStockItemsApproved(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_marketCredentials(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2723,6 +2822,41 @@ func (ec *executionContext) _Settings_grossMargin(ctx context.Context, field gra
 	res := resTmp.(*float64)
 	fc.Result = res
 	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Settings_miningStatus(ctx context.Context, field graphql.CollectedField, obj *model.Settings) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Settings",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MiningStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Slot_id(ctx context.Context, field graphql.CollectedField, obj *model.Slot) (ret graphql.Marshaler) {
@@ -5208,6 +5342,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "enableStockItemsApproved":
+			out.Values[i] = ec._Mutation_enableStockItemsApproved(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "disableStockItemsApproved":
+			out.Values[i] = ec._Mutation_disableStockItemsApproved(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "marketCredentials":
 			out.Values[i] = ec._Mutation_marketCredentials(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -5398,6 +5542,11 @@ func (ec *executionContext) _Settings(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._Settings_marketCommission(ctx, field, obj)
 		case "grossMargin":
 			out.Values[i] = ec._Settings_grossMargin(ctx, field, obj)
+		case "miningStatus":
+			out.Values[i] = ec._Settings_miningStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

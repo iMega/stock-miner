@@ -51,6 +51,7 @@ type Settings struct {
 	MarketProvider    string               `json:"marketProvider"`
 	MarketCommission  *float64             `json:"marketCommission"`
 	GrossMargin       *float64             `json:"grossMargin"`
+	MiningStatus      bool                 `json:"miningStatus"`
 }
 
 type Slot struct {

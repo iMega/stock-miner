@@ -102,3 +102,31 @@ func TestStorage_UpdateStockItemApproved(t *testing.T) {
 
 	assert.Equal(t, expected, actual)
 }
+
+func TestStorage_AddStockItemApproved(t *testing.T) {
+	db, close, err := helpers.CreateDB(stockItemApprovedCreateTable)
+	if err != nil {
+		t.Fatalf("failed to create database, %s", err)
+	}
+	defer close()
+
+	ctx := contexkey.WithEmail(context.Background(), "test@example.com")
+	s := Storage{db: db}
+
+	expected := domain.StockItem{
+		Ticker:   "ticker",
+		IsActive: true,
+	}
+	if err := s.AddStockItemApproved(ctx, expected); err != nil {
+		t.Fatalf("failed to add stock item, %s", err)
+	}
+
+	items, err := s.StockItemApproved(ctx)
+	if err != nil {
+		t.Fatalf("failed getting stock item, %s", err)
+	}
+
+	actual := items[0]
+
+	assert.Equal(t, expected, actual)
+}

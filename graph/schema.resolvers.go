@@ -17,6 +17,11 @@ import (
 )
 
 func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error) {
+	settings, err := r.SettingsStorage.Settings(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed getting settings, %w", err)
+	}
+
 	for _, item := range items {
 		in := domain.StockItem{
 			Ticker:           item.Ticker,
@@ -26,6 +31,7 @@ func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*mo
 			Currency:         item.Currency,
 			StartTime:        uint8(item.StartTime),
 			EndTime:          uint8(item.EndTime),
+			IsActive:         settings.MiningStatus,
 		}
 		if err := r.StockStorage.AddStockItemApproved(ctx, in); err != nil {
 			return false,
@@ -69,6 +75,48 @@ func (r *mutationResolver) UpdateStockItemApproved(ctx context.Context, items []
 			return false,
 				fmt.Errorf("failed to update approved stock item, %w", err)
 		}
+	}
+
+	return true, nil
+}
+
+func (r *mutationResolver) EnableStockItemsApproved(ctx context.Context) (bool, error) {
+	err := r.StockStorage.UpdateActiveStatusStockItemApproved(ctx, true)
+	if err != nil {
+		return false,
+			fmt.Errorf("failed to enable approved stock items, %w", err)
+	}
+
+	settings, err := r.SettingsStorage.Settings(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed getting settings, %w", err)
+	}
+
+	settings.MiningStatus = true
+
+	if err := r.SettingsStorage.SaveSettings(ctx, settings); err != nil {
+		return false, fmt.Errorf("failed to save settings, %w", err)
+	}
+
+	return true, nil
+}
+
+func (r *mutationResolver) DisableStockItemsApproved(ctx context.Context) (bool, error) {
+	err := r.StockStorage.UpdateActiveStatusStockItemApproved(ctx, false)
+	if err != nil {
+		return false,
+			fmt.Errorf("failed to disable approved stock items, %w", err)
+	}
+
+	settings, err := r.SettingsStorage.Settings(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed getting settings, %w", err)
+	}
+
+	settings.MiningStatus = false
+
+	if err := r.SettingsStorage.SaveSettings(ctx, settings); err != nil {
+		return false, fmt.Errorf("failed to save settings, %w", err)
 	}
 
 	return true, nil
@@ -253,6 +301,7 @@ func (r *queryResolver) Settings(ctx context.Context) (*model.Settings, error) {
 		MarketCredentials: cred,
 		MarketCommission:  &s.MarketCommission,
 		GrossMargin:       &s.GrossMargin,
+		MiningStatus:      s.MiningStatus,
 	}, nil
 }
 

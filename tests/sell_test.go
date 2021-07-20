@@ -43,6 +43,7 @@ var _ = Describe("Automatically buy and sell", func() {
 			helpers.RemoveStockItemApproved(GraphQLUrl, string(item.Ticker))
 		}
 		helpers.AddStockItemApproved(GraphQLUrl, ticker, figi)
+		helpers.EnableStockItemApproved(GraphQLUrl)
 	})
 
 	It("buy stock item", func() {

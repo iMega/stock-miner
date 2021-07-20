@@ -6,6 +6,7 @@ type StockStorage interface {
 	AddStockItemApproved(context.Context, StockItem) error
 	UpdateStockItemApproved(context.Context, StockItem) error
 	RemoveStockItemApproved(context.Context, StockItem) error
+	UpdateActiveStatusStockItemApproved(context.Context, bool) error
 
 	StockItemApprovedAll(context.Context, chan Message)
 	StockItemApproved(context.Context) ([]StockItem, error)

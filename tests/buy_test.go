@@ -129,6 +129,10 @@ var _ = Describe("Automatically buy", func() {
 	})
 
 	It("start mining", func() {
+		helpers.EnableStockItemApproved(GraphQLUrl)
+	})
+
+	It("mining process", func() {
 		var (
 			requestCount int
 			startPrice   = 100

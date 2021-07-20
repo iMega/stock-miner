@@ -86,3 +86,29 @@ func StockItemApproved(graphQLUrl string) []StockItem {
 
 	return reqStockItemApproved.StockItemApproved
 }
+
+func EnableStockItemApproved(graphQLUrl string) {
+	var (
+		req struct {
+			EnableStockItemsApproved bool `graphql:"enableStockItemsApproved"`
+		}
+		ctx    = context.Background()
+		client = graphql.NewClient(graphQLUrl, GetHTTPClient())
+	)
+	variables := map[string]interface{}{}
+	err := client.Mutate(ctx, &req, variables)
+	Expect(err).NotTo(HaveOccurred())
+}
+
+func DisableStockItemApproved(graphQLUrl string) {
+	var (
+		req struct {
+			DisableStockItemsApproved bool `graphql:"disableStockItemsApproved"`
+		}
+		ctx    = context.Background()
+		client = graphql.NewClient(graphQLUrl, GetHTTPClient())
+	)
+	variables := map[string]interface{}{}
+	err := client.Mutate(ctx, &req, variables)
+	Expect(err).NotTo(HaveOccurred())
+}

@@ -15,6 +15,8 @@ type Settings struct {
 	MarketCommission  float64                      `json:"market_commission,omitempty"`
 
 	GrossMargin float64 `json:"gross_margin,omitempty"`
+
+	MiningStatus bool `json:"miningStatus"`
 }
 
 type SlotSettings struct {

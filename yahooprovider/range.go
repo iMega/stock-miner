@@ -59,28 +59,28 @@ func (p *pricer) Range(
 }
 
 type responseRange struct {
-	Chart yfChart `json:chart`
+	Chart yfChart `json:"chart"`
 }
 
 type yfChart struct {
-	Error  *yfError        `json:chart,omitempty`
-	Result []yfChartResult `json:result,omitempty`
+	Error  *yfError        `json:"chart,omitempty"`
+	Result []yfChartResult `json:"result,omitempty"`
 }
 
 type yfError struct {
-	Code        string `json:code`
-	Description string `json:description`
+	Code        string `json:"code"`
+	Description string `json:"description"`
 }
 
 type yfChartResult struct {
-	Indicators yfIndicators `json:indicators`
+	Indicators yfIndicators `json:"indicators"`
 }
 
 type yfIndicators struct {
-	Quote []yfQuote `json:quote`
+	Quote []yfQuote `json:"quote"`
 }
 
 type yfQuote struct {
-	High []float64 `json:high`
-	Low  []float64 `json:low`
+	High []float64 `json:"high"`
+	Low  []float64 `json:"low"`
 }

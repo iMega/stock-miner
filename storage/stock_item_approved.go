@@ -175,9 +175,10 @@ func (s *Storage) AddStockItemApproved(
             transaction_limit,
             currency,
             startTime,
-            endTime
+            endTime,
+            active
         )
-        values (?,?,?,?,?,?,?,?)`
+        values (?,?,?,?,?,?,?,?,?)`
 
 	_, err := s.db.ExecContext(
 		ctx,
@@ -190,6 +191,7 @@ func (s *Storage) AddStockItemApproved(
 		item.Currency,
 		item.StartTime,
 		item.EndTime,
+		item.IsActive,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to add approved stock item, %w", err)
