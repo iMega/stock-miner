@@ -259,6 +259,10 @@ func (b *Broker) solver(in solverInput) error {
 		return nil
 	}
 
+	if !priceInRange(frame, in.Message.Price) {
+		return nil
+	}
+
 	// buy
 	emptyTr := domain.Transaction{
 		Slot: domain.Slot{
@@ -281,6 +285,16 @@ func (b *Broker) solver(in solverInput) error {
 	in.ConfirmBuyCh <- domain.Message{Transaction: tr}
 
 	return nil
+}
+
+func priceInRange(frame domain.SMAFrame, p float64) bool {
+	h, l := frame.RangeHL()
+
+	high := decimal.NewFromFloat(h)
+	low := decimal.NewFromFloat(l)
+	price := decimal.NewFromFloat(p)
+
+	return price.LessThan(high) && price.GreaterThan(low)
 }
 
 func (b *Broker) buyWorker(in chan domain.Slot) *workerpool.WorkerPool {

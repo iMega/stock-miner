@@ -94,7 +94,7 @@ var _ = Describe("Automatically buy and sell", func() {
 									"quote": []map[string][]float64{
 										{
 											"high": []float64{149.75},
-											"low":  []float64{147.08},
+											"low":  []float64{47.08},
 										},
 									},
 								},

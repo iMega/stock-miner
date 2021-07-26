@@ -146,3 +146,88 @@ func Test_minBuyingPrice(t *testing.T) {
 		})
 	}
 }
+
+func Test_priceInRange(t *testing.T) {
+	type args struct {
+		frame func() domain.SMAFrame
+		p     float64
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "in range",
+			args: args{
+				frame: func() domain.SMAFrame {
+					return &smaFrame{
+						RangeHigh: 100,
+						RangeLow:  80,
+					}
+				},
+				p: 90,
+			},
+			want: true,
+		},
+		{
+			name: "great",
+			args: args{
+				frame: func() domain.SMAFrame {
+					return &smaFrame{
+						RangeHigh: 100,
+						RangeLow:  80,
+					}
+				},
+				p: 100,
+			},
+			want: false,
+		},
+		{
+			name: "great",
+			args: args{
+				frame: func() domain.SMAFrame {
+					return &smaFrame{
+						RangeHigh: 100,
+						RangeLow:  80,
+					}
+				},
+				p: 110,
+			},
+			want: false,
+		},
+		{
+			name: "less",
+			args: args{
+				frame: func() domain.SMAFrame {
+					return &smaFrame{
+						RangeHigh: 100,
+						RangeLow:  80,
+					}
+				},
+				p: 80,
+			},
+			want: false,
+		},
+		{
+			name: "less",
+			args: args{
+				frame: func() domain.SMAFrame {
+					return &smaFrame{
+						RangeHigh: 100,
+						RangeLow:  80,
+					}
+				},
+				p: 70,
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := priceInRange(tt.args.frame(), tt.args.p); got != tt.want {
+				t.Errorf("priceInRange() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
