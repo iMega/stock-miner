@@ -1,3 +1,7 @@
+## [0.0.16]
+
+-   test GITHUB_REF
+
 ## [0.0.15]
 
 -   check values of range stock item

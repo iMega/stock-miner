@@ -22,11 +22,10 @@ jobs:
           CHANGELOG_FILE: "CHANGELOG.md"
 
       - name: Release
-        run: make release
+        run: make -e release
         env:
           GRAPHQL_HOST: ${{ secrets.GRAPHQL_HOST }}
           GRAPHQL_SCHEMA: "https"
-          GITHUB_REF: $GITHUB_REF
 
       - name: Go Release Binaries
         uses: wangyoucao577/go-release-action@v1.14
