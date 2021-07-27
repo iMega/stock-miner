@@ -52,8 +52,10 @@ func (p *pricer) Range(
 	sort.Float64s(quote.High)
 	sort.Float64s(quote.Low)
 
-	result.High = quote.High[len(quote.High)-1]
-	result.Low = quote.Low[0]
+	if len(quote.High) > 0 && len(quote.Low) > 0 {
+		result.High = quote.High[len(quote.High)-1]
+		result.Low = quote.Low[0]
+	}
 
 	return result, nil
 }
