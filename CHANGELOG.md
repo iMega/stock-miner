@@ -1,3 +1,7 @@
+## [0.0.17]
+
+-   remove defence handler for static files
+
 ## [0.0.16]
 
 -   test GITHUB_REF
