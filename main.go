@@ -89,8 +89,7 @@ func main() {
 		"/",
 		loggerToContext(
 			logger,
-			// session.DefenceHandler(fileServerWithCustom404(Assets)),
-			fileServerWithCustom404(Assets),
+			session.DefenceHandler(fileServerWithCustom404(Assets)),
 		),
 	)
 	mux.HandleFunc(

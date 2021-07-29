@@ -1,3 +1,7 @@
+## [0.0.18]
+
+-   revert, remove defence handler for static files
+
 ## [0.0.17]
 
 -   remove defence handler for static files
