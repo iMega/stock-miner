@@ -17,7 +17,7 @@ func (s *Storage) GetUser(ctx context.Context) (domain.User, error) {
 		return domain.User{}, contexkey.ErrExtractEmail
 	}
 
-	q := `select name, avatar, role from user where email = ?`
+	q := `select name, avatar, role from user where email = ? and delete=0`
 	row := s.db.QueryRowContext(ctx, q, email)
 
 	var name, avatar, role string
@@ -60,7 +60,7 @@ func (s *Storage) CreateUser(ctx context.Context, user domain.User) error {
 		return nil
 	}
 
-	wrapper := sqlTool.TxWrapper{s.db}
+	wrapper := sqlTool.TxWrapper{DB: s.db}
 	if err := wrapper.Transaction(ctx, nil, createUserTx); err != nil {
 		return fmt.Errorf("failed to execute transaction, %w", err)
 	}
@@ -77,6 +77,24 @@ func (s *Storage) RemoveUser(ctx context.Context, user domain.User) error {
 	q := `update user set delete=1 where email = ?`
 	if _, err := s.db.ExecContext(ctx, q, email); err != nil {
 		return fmt.Errorf("failed to remove user, %w", err)
+	}
+
+	return nil
+}
+
+func userTable(ctx context.Context, tx *sql.Tx) error {
+	q := `CREATE TABLE IF NOT EXISTS user (
+        email VARCHAR(64) PRIMARY KEY,
+        name VARCHAR(64),
+        avatar VARCHAR(200),
+        id VARCHAR(200),
+        deleted INTEGER DEFAULT 0,
+        role CHAR(4),
+        create_at DATETIME NOT NULL
+    )`
+
+	if _, err := tx.ExecContext(ctx, q); err != nil {
+		return fmt.Errorf("failed to execute query, %w", err)
 	}
 
 	return nil

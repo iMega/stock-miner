@@ -79,21 +79,3 @@ func priceTable(ctx context.Context, tx *sql.Tx) error {
 
 	return nil
 }
-
-func userTable(ctx context.Context, tx *sql.Tx) error {
-	q := `CREATE TABLE IF NOT EXISTS user (
-        email VARCHAR(64) PRIMARY KEY,
-        name VARCHAR(64),
-        avatar VARCHAR(200),
-        id VARCHAR(200),
-        deleted INTEGER DEFAULT 0,
-        role CHAR(4),
-        create_at DATETIME NOT NULL
-    )`
-
-	if _, err := tx.ExecContext(ctx, q); err != nil {
-		return fmt.Errorf("failed to execute query, %w", err)
-	}
-
-	return nil
-}
