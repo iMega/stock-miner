@@ -1,3 +1,9 @@
+## [0.0.20]
+
+### Fixed
+
+-   a.settings.marketCredentials[0] is undefined
+
 ## [0.0.19]
 
 -   Works only on weekdays

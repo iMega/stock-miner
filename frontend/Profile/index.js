@@ -72,7 +72,10 @@ const Profile = () => {
     const [saveSlot] = useMutation(slotND);
     React.useEffect(() => {
         if (loading === false && data) {
-            if (data.settings.marketCredentials !== null) {
+            if (
+                data.settings.marketCredentials !== null &&
+                data.settings.marketCredentials.length > 0
+            ) {
                 setCreds({
                     provider: data.settings.marketCredentials[0].name,
                     url: data.settings.marketCredentials[0].apiUrl,
