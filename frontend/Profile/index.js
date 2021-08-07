@@ -90,6 +90,9 @@ const Profile = () => {
             setSlot({
                 volume: data.settings.slot.volume,
             });
+            setSlot({
+                volume: data.settings.slot.volume,
+            });
         }
     }, [loading, data]);
 

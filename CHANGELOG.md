@@ -1,3 +1,7 @@
+## [0.0.22]
+
+-   marketCredentials
+
 ## [0.0.21]
 
 -   marketCredentials
