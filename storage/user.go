@@ -17,28 +17,21 @@ func (s *Storage) GetUser(ctx context.Context) (domain.User, error) {
 		return domain.User{}, contexkey.ErrExtractEmail
 	}
 
-	q := `select name, avatar, role from user where email = ? and delete=0`
+	q := `select name, avatar, role, id from user where email = ? and deleted=0`
 	row := s.db.QueryRowContext(ctx, q, email)
 
-	var name, avatar, role string
-	if err := row.Scan(&name, &avatar, &role); err != nil {
-		return domain.User{}, fmt.Errorf("failed getting user, %w", err)
+	u := domain.User{Email: email}
+	if err := row.Scan(&u.Name, &u.Avatar, &u.Role, &u.ID); err != nil {
+		if err == sql.ErrNoRows {
+			return domain.User{}, domain.ErrUserNotFound
+		}
+		return domain.User{}, fmt.Errorf("failed to scan record, %w", err)
 	}
 
-	return domain.User{
-		Email:  email,
-		Name:   name,
-		Avatar: avatar,
-		Role:   role,
-	}, nil
+	return u, nil
 }
 
 func (s *Storage) CreateUser(ctx context.Context, user domain.User) error {
-	email, ok := contexkey.EmailFromContext(ctx)
-	if !ok {
-		return contexkey.ErrExtractEmail
-	}
-
 	createUserTx := func(ctx context.Context, tx *sql.Tx) error {
 		q := `insert into user (email, name, avatar, id, role, create_at)
                 values(?,?,?,?,?,?)`
@@ -46,7 +39,7 @@ func (s *Storage) CreateUser(ctx context.Context, user domain.User) error {
 		_, err := tx.ExecContext(
 			ctx,
 			q,
-			email,
+			user.Email,
 			user.Name,
 			user.Avatar,
 			user.ID,
@@ -69,17 +62,45 @@ func (s *Storage) CreateUser(ctx context.Context, user domain.User) error {
 }
 
 func (s *Storage) RemoveUser(ctx context.Context, user domain.User) error {
-	email, ok := contexkey.EmailFromContext(ctx)
-	if !ok {
-		return contexkey.ErrExtractEmail
-	}
-
-	q := `update user set delete=1 where email = ?`
-	if _, err := s.db.ExecContext(ctx, q, email); err != nil {
+	q := `update user set deleted=1 where email = ?`
+	if _, err := s.db.ExecContext(ctx, q, user.Email); err != nil {
 		return fmt.Errorf("failed to remove user, %w", err)
 	}
 
 	return nil
+}
+
+func (s *Storage) UpdateUser(ctx context.Context, user domain.User) error {
+	q := `update user set name=?, avatar=? where email = ?`
+	_, err := s.db.ExecContext(ctx, q, user.Name, user.Avatar, user.Email)
+	if err != nil {
+		return fmt.Errorf("failed to remove user, %w", err)
+	}
+
+	return nil
+}
+
+func (s *Storage) Users(ctx context.Context) ([]domain.User, error) {
+	q := `select id, name, avatar, role, email from user where deleted=0`
+	rows, err := s.db.QueryContext(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting users, %w", err)
+	}
+	defer rows.Close()
+
+	result := []domain.User{}
+	for rows.Next() {
+		var u domain.User
+
+		err := rows.Scan(&u.ID, &u.Name, &u.Avatar, &u.Role, &u.Email)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan, %w", err)
+		}
+
+		result = append(result, u)
+	}
+
+	return result, nil
 }
 
 func userTable(ctx context.Context, tx *sql.Tx) error {

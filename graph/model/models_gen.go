@@ -110,3 +110,9 @@ type User struct {
 	Name   *string `json:"name"`
 	Avatar *string `json:"avatar"`
 }
+
+type UserInput struct {
+	Email  string  `json:"email"`
+	Name   *string `json:"name"`
+	Avatar *string `json:"avatar"`
+}

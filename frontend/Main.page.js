@@ -15,6 +15,7 @@ import PageStat from "./Stat";
 import PageDealings from "./Dealings";
 import { Add, List } from "./StockItem";
 import Profile from "./Profile";
+import Users from "./Users";
 
 const { Sider, Content } = Layout;
 
@@ -89,6 +90,7 @@ const mainMenuItems = [
             },
         ],
     },
+    { path: "/users", title: "Users", page: <Users /> },
 ];
 
 const builderMenu = (menu) =>

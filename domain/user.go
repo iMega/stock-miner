@@ -1,6 +1,9 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"errors"
+)
 
 type User struct {
 	Email  string `json:"email"`
@@ -10,9 +13,13 @@ type User struct {
 	Role   string `json:"role"`
 }
 
+var ErrUserNotFound = errors.New("user not found")
+
 type UserStorage interface {
 	GetUser(context.Context) (User, error)
+	Users(context.Context) ([]User, error)
 
 	CreateUser(context.Context, User) error
+	UpdateUser(context.Context, User) error
 	RemoveUser(context.Context, User) error
 }

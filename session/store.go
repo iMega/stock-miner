@@ -178,6 +178,41 @@ func (s *Store) issueSession() http.Handler {
 			return
 		}
 
+		ctxNew := contexkey.WithEmail(ctx, user.Email)
+		userFromDB, err := s.userDB.GetUser(ctxNew)
+		if err != nil && err != domain.ErrUserNotFound {
+			log.GetLogger(ctx).Errorf("failed getting user, %s", err)
+			http.Error(w, ":(", http.StatusInternalServerError)
+
+			return
+		}
+
+		if err == domain.ErrUserNotFound && user.Email == s.RootEmail {
+			user.Role = "root"
+			if err := s.userDB.CreateUser(ctxNew, user); err != nil {
+				log.GetLogger(ctx).Errorf("failed to create user, %s", err)
+				http.Error(w, ":(", http.StatusInternalServerError)
+
+				return
+			}
+		}
+
+		if err == domain.ErrUserNotFound {
+			log.GetLogger(ctx).Errorf("access denied for user, %s", err)
+			http.Error(w, ":(", http.StatusForbidden)
+
+			return
+		}
+
+		if userFromDB.Name == "" {
+			if err := s.userDB.UpdateUser(ctxNew, user); err != nil {
+				log.GetLogger(ctx).Errorf("failed to update user, %s", err)
+				http.Error(w, ":(", http.StatusInternalServerError)
+
+				return
+			}
+		}
+
 		session := s.db.New(sessionName)
 
 		session.Values["id"] = user.ID
@@ -189,20 +224,6 @@ func (s *Store) issueSession() http.Handler {
 			http.Error(w, ":(", http.StatusInternalServerError)
 
 			return
-		}
-
-		ctxNew := contexkey.WithEmail(ctx, user.Email)
-		if _, err = s.userDB.GetUser(ctxNew); err != nil {
-			user.Role = "user"
-			if user.Email == s.RootEmail {
-				user.Role = "root"
-			}
-			if err := s.userDB.CreateUser(ctxNew, user); err != nil {
-				log.GetLogger(ctx).Errorf("failed to create user, %s", err)
-				http.Error(w, ":(", http.StatusInternalServerError)
-
-				return
-			}
 		}
 
 		http.Redirect(w, req.WithContext(ctxNew), "/", http.StatusFound)

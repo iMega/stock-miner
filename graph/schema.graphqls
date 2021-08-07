@@ -8,6 +8,7 @@ type Query {
     settings: Settings!
     slots: [Slot]
     dealings: [Deal]
+    users: [User!]!
 }
 
 type Mutation {
@@ -24,6 +25,9 @@ type Mutation {
 
     globalMiningStop: Boolean!
     globalMiningStart: Boolean!
+
+    createUser(user: UserInput!): Boolean!
+    removeUser(user: UserInput!): Boolean!
 }
 
 type Subscription {
@@ -149,4 +153,10 @@ type Deal {
     sellAt: String
 
     currency: String!
+}
+
+input UserInput {
+    email: ID!
+    name: String
+    avatar: String
 }

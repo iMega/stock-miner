@@ -191,6 +191,48 @@ func (r *mutationResolver) GlobalMiningStart(ctx context.Context) (bool, error) 
 	return r.MainerController.Start(), nil
 }
 
+func (r *mutationResolver) CreateUser(ctx context.Context, user model.UserInput) (bool, error) {
+	u, err := r.UserStorage.GetUser(ctx)
+	if err != nil {
+		return false, fmt.Errorf("faileg getting user, %w", err)
+	}
+
+	if u.Role != "root" {
+		return false, nil
+	}
+
+	err = r.UserStorage.CreateUser(
+		ctx,
+		domain.User{
+			Email: user.Email,
+			Role:  "user",
+		},
+	)
+	if err != nil {
+		return false, fmt.Errorf("failed to create user, %w", err)
+	}
+
+	return true, nil
+}
+
+func (r *mutationResolver) RemoveUser(ctx context.Context, user model.UserInput) (bool, error) {
+	u, err := r.UserStorage.GetUser(ctx)
+	if err != nil {
+		return false, fmt.Errorf("faileg getting user, %w", err)
+	}
+
+	if u.Role != "root" {
+		return false, nil
+	}
+
+	err = r.UserStorage.RemoveUser(ctx, domain.User{Email: user.Email})
+	if err != nil {
+		return false, fmt.Errorf("failed to remove user, %w", err)
+	}
+
+	return true, nil
+}
+
 func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
 	user, err := r.UserStorage.GetUser(ctx)
 	if err != nil {
@@ -383,6 +425,34 @@ func (r *queryResolver) Dealings(ctx context.Context) ([]*model.Deal, error) {
 			Duration:     &deal.Duration,
 			SellAt:       &sellAt,
 			Currency:     "USD",
+		}
+	}
+
+	return result, nil
+}
+
+func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
+	user, err := r.UserStorage.GetUser(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("faileg getting user, %w", err)
+	}
+
+	if user.Role != "root" {
+		return nil, nil
+	}
+
+	users, err := r.UserStorage.Users(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting users, %w", err)
+	}
+
+	result := make([]*model.User, len(users))
+	for i, v := range users {
+		user := v
+		result[i] = &model.User{
+			Email:  user.Email,
+			Name:   &user.Name,
+			Avatar: &user.Avatar,
 		}
 	}
 
