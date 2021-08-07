@@ -1,3 +1,7 @@
+## [0.0.19]
+
+-   Works only on weekdays
+
 ## [0.0.18]
 
 -   revert, remove defence handler for static files

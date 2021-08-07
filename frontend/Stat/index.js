@@ -13,6 +13,7 @@ import { useQuery, useMutation, gql } from "@apollo/client";
 
 import StockItemLink from "../StockItemLink";
 import Message from "../Message";
+import useToggle from "../UseToggle";
 
 const MemStatsND = gql`
     subscription MemStats {
@@ -89,7 +90,7 @@ const PageStat = () => {
     const [stopMining] = useMutation(MiningStopND);
     const [startMining] = useMutation(MiningStartND);
 
-    const [statusGlobalMining, setStatusGlobalMining] = React.useState(false);
+    const [isGlobalMining, toggleGlobalMining] = useToggle();
     const [stopGlobalMining] = useMutation(GlobalMiningStopND);
     const [startGlobalMining] = useMutation(GlobalMiningStartND);
 
@@ -128,7 +129,7 @@ const PageStat = () => {
 
     const switchGlobalMining = async () => {
         try {
-            const { data } = statusGlobalMining
+            const { data } = isGlobalMining
                 ? await stopGlobalMining()
                 : await startGlobalMining();
             if (
@@ -136,7 +137,7 @@ const PageStat = () => {
                 data.globalMiningStart === true
             ) {
                 Message.Success();
-                setStatusGlobalMining((v) => !v);
+                toggleGlobalMining();
                 return;
             }
             Message.Failure();
@@ -155,15 +156,15 @@ const PageStat = () => {
         </Button>,
     ];
 
-    if (ds.user.role === "root") {
+    if (ds?.user.role === "root") {
         buttonsBar.push(
             <Button key="2" danger onClick={switchGlobalMining}>
-                Switch Global {statusGlobalMining ? "OFF" : "ON"}
+                Switch Global {isGlobalMining ? "OFF" : "ON"}
             </Button>
         );
     }
 
-    const [tagColor, tagTitle] = status(ds.settings.miningStatus);
+    const [tagColor, tagTitle] = status(ds?.settings.miningStatus);
 
     return (
         <React.Fragment>
@@ -194,7 +195,7 @@ const PageStat = () => {
             </PageHeader>
             <Row>
                 <Col span={22} offset={1} md={16} lg={20}>
-                    <Table columns={columns} dataSource={ds.slots} />
+                    <Table columns={columns} dataSource={ds?.slots} />
                 </Col>
             </Row>
         </React.Fragment>
