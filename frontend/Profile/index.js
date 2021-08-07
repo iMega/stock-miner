@@ -76,6 +76,11 @@ const Profile = () => {
                 data.settings.marketCredentials !== null &&
                 data.settings.marketCredentials.length > 0
             ) {
+                console.log(
+                    "+++++++++++",
+                    data,
+                    data.settings.marketCredentials.length > 0
+                );
                 setCreds({
                     provider: data.settings.marketCredentials[0].name,
                     url: data.settings.marketCredentials[0].apiUrl,

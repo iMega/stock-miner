@@ -1,3 +1,7 @@
+## [0.0.21]
+
+-   marketCredentials
+
 ## [0.0.20]
 
 ### Fixed
