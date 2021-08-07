@@ -12,6 +12,7 @@ import {
 import { useQuery, useMutation, gql } from "@apollo/client";
 
 import StockItemLink from "../StockItemLink";
+import Message from "../Message";
 
 const MemStatsND = gql`
     subscription MemStats {
@@ -35,8 +36,26 @@ const GlobalMiningStartND = gql`
     }
 `;
 
-const SlotsND = gql`
+const MiningStopND = gql`
+    mutation MiningStop {
+        disableStockItemsApproved
+    }
+`;
+
+const MiningStartND = gql`
+    mutation MiningStart {
+        enableStockItemsApproved
+    }
+`;
+
+const StateND = gql`
     query Slots {
+        user {
+            role
+        }
+        settings {
+            miningStatus
+        }
         slots {
             id
             ticker
@@ -67,23 +86,84 @@ const PageStat = () => {
     // });
 
     const [statusMining, setStatusMining] = React.useState(false);
-    const [stopMining, a] = useMutation(GlobalMiningStopND);
-    const [startMining, b] = useMutation(GlobalMiningStartND);
+    const [stopMining] = useMutation(MiningStopND);
+    const [startMining] = useMutation(MiningStartND);
 
-    let ds = [];
-    const { loading, data } = useQuery(SlotsND);
+    const [statusGlobalMining, setStatusGlobalMining] = React.useState(false);
+    const [stopGlobalMining] = useMutation(GlobalMiningStopND);
+    const [startGlobalMining] = useMutation(GlobalMiningStartND);
+
+    let ds = {
+        user: {
+            role: "",
+        },
+        settings: {
+            miningStatus: false,
+        },
+        slots: [],
+    };
+    const { loading, data } = useQuery(StateND);
     if (loading === false) {
-        ds = data?.slots;
+        ds = data;
     }
 
-    const switchMining = () => {
-        if (statusMining) {
-            stopMining();
-        } else {
-            startMining();
+    const switchMining = async () => {
+        try {
+            const { data } = statusMining
+                ? await stopMining()
+                : await startMining();
+            if (
+                data.enableStockItemsApproved === true ||
+                data.disableStockItemsApproved === true
+            ) {
+                Message.Success();
+                setStatusMining((v) => !v);
+                return;
+            }
+            Message.Failure();
+        } catch (e) {
+            Message.Failure();
         }
-        setStatusMining(!statusMining);
     };
+
+    const switchGlobalMining = async () => {
+        try {
+            const { data } = statusGlobalMining
+                ? await stopGlobalMining()
+                : await startGlobalMining();
+            if (
+                data.globalMiningStop === true ||
+                data.globalMiningStart === true
+            ) {
+                Message.Success();
+                setStatusGlobalMining((v) => !v);
+                return;
+            }
+            Message.Failure();
+        } catch (e) {
+            Message.Failure();
+        }
+    };
+
+    const buttonsBar = [
+        <Button
+            key="1"
+            type={statusMining ? "danger" : "primary"}
+            onClick={switchMining}
+        >
+            Switch {statusMining ? "OFF" : "ON"}
+        </Button>,
+    ];
+
+    if (ds.user.role === "root") {
+        buttonsBar.push(
+            <Button key="2" danger onClick={switchGlobalMining}>
+                Switch Global {statusGlobalMining ? "OFF" : "ON"}
+            </Button>
+        );
+    }
+
+    const [tagColor, tagTitle] = status(ds.settings.miningStatus);
 
     return (
         <React.Fragment>
@@ -92,16 +172,8 @@ const PageStat = () => {
                 ghost={false}
                 title="Statistic"
                 subTitle="Status:"
-                tags={<Tag color="green">Running</Tag>}
-                extra={[
-                    <Button
-                        key="1"
-                        type={statusMining ? "danger" : "primary"}
-                        onClick={switchMining}
-                    >
-                        Switch {statusMining ? "OFF" : "ON"}
-                    </Button>,
-                ]}
+                tags={<Tag color={tagColor}>{tagTitle}</Tag>}
+                extra={buttonsBar}
             >
                 <Row>
                     <Col xs={24} sm={12} lg={12}>
@@ -122,12 +194,14 @@ const PageStat = () => {
             </PageHeader>
             <Row>
                 <Col span={22} offset={1} md={16} lg={20}>
-                    <Table columns={columns} dataSource={ds} />
+                    <Table columns={columns} dataSource={ds.slots} />
                 </Col>
             </Row>
         </React.Fragment>
     );
 };
+
+const status = (v) => (v === true ? ["green", "Runnung"] : ["red", "Stopped"]);
 
 const Locale = "ru-RU";
 

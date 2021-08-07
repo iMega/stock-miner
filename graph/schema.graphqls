@@ -38,6 +38,7 @@ type User {
     email: ID!
     name: String
     avatar: String
+    role: String
 }
 
 type StockItem {

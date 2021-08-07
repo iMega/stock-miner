@@ -184,17 +184,35 @@ func (r *mutationResolver) RulePrice(ctx context.Context, global model.RulePrice
 }
 
 func (r *mutationResolver) GlobalMiningStop(ctx context.Context) (bool, error) {
+	u, err := r.UserStorage.GetUser(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed getting user, %w", err)
+	}
+
+	if u.Role != "root" {
+		return false, nil
+	}
+
 	return r.MainerController.Stop(), nil
 }
 
 func (r *mutationResolver) GlobalMiningStart(ctx context.Context) (bool, error) {
+	u, err := r.UserStorage.GetUser(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed getting user, %w", err)
+	}
+
+	if u.Role != "root" {
+		return false, nil
+	}
+
 	return r.MainerController.Start(), nil
 }
 
 func (r *mutationResolver) CreateUser(ctx context.Context, user model.UserInput) (bool, error) {
 	u, err := r.UserStorage.GetUser(ctx)
 	if err != nil {
-		return false, fmt.Errorf("faileg getting user, %w", err)
+		return false, fmt.Errorf("failed getting user, %w", err)
 	}
 
 	if u.Role != "root" {
@@ -218,7 +236,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, user model.UserInput)
 func (r *mutationResolver) RemoveUser(ctx context.Context, user model.UserInput) (bool, error) {
 	u, err := r.UserStorage.GetUser(ctx)
 	if err != nil {
-		return false, fmt.Errorf("faileg getting user, %w", err)
+		return false, fmt.Errorf("failed getting user, %w", err)
 	}
 
 	if u.Role != "root" {
@@ -243,6 +261,7 @@ func (r *queryResolver) User(ctx context.Context) (*model.User, error) {
 		Email:  user.Email,
 		Name:   &user.Name,
 		Avatar: &user.Avatar,
+		Role:   &user.Role,
 	}, nil
 }
 
@@ -434,7 +453,7 @@ func (r *queryResolver) Dealings(ctx context.Context) ([]*model.Deal, error) {
 func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
 	user, err := r.UserStorage.GetUser(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("faileg getting user, %w", err)
+		return nil, fmt.Errorf("failed getting user, %w", err)
 	}
 
 	if user.Role != "root" {
