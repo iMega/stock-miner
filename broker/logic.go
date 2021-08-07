@@ -46,6 +46,11 @@ func (b *Broker) run() {
 	delay := cron.DelayIfStillRunning(&logger{log: b.logger})
 
 	_, err := b.cron.AddJob("@every 2s", delay(cron.FuncJob(func() {
+		wd := time.Now().Weekday()
+		if wd == time.Sunday || wd == time.Saturday {
+			return
+		}
+
 		if w1.WaitingQueueSize()+w2.WaitingQueueSize() > maxQueues {
 			b.logger.Debugf("WaitingQueueSize = %d", w1.WaitingQueueSize()+w2.WaitingQueueSize())
 		}
