@@ -1,3 +1,7 @@
+## [0.0.25]
+
+-   fixed start/stop status button
+
 ## [0.0.24]
 
 -   fixed start/stop status button
