@@ -106,7 +106,7 @@ const PageStat = () => {
     const { loading, data } = useQuery(StateND);
     if (loading === false) {
         ds = data;
-        setStatusMining(ds.settings.miningStatus);
+        setStatusMining(ds?.settings.miningStatus);
     }
 
     const switchMining = async () => {
