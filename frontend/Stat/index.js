@@ -76,6 +76,7 @@ const StateND = gql`
             currency
             currentPrice
         }
+        globalMiningStatus
     }
 `;
 
@@ -102,12 +103,15 @@ const PageStat = () => {
             miningStatus: false,
         },
         slots: [],
+        globalMiningStatus: false,
     };
 
     const { loading, data } = useQuery(StateND);
     if (loading === false && data) {
+        console.log("==============", data);
         ds = data;
-        setStatusMining(ds.settings.miningStatus);
+        // setStatusMining(ds.settings.miningStatus);
+        ds.globalMiningStatus === true && toggleGlobalMining();
     }
 
     const switchMining = async () => {

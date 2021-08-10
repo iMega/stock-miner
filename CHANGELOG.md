@@ -1,3 +1,7 @@
+## [0.0.26]
+
+-   test render problem
+
 ## [0.0.25]
 
 -   fixed start/stop status button
