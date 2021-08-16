@@ -54,6 +54,8 @@ const Add = () => {
             amountLimit: 0,
             transactionLimit: 0,
             currency: i.currency,
+            startTime: 11,
+            endTime: 20,
         }));
 
         try {
