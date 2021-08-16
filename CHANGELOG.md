@@ -1,3 +1,8 @@
+## [0.0.31]
+
+-   add hash to filename js-client
+-   static with relative link
+
 ## [0.0.30]
 
 -   add workhours to js-client

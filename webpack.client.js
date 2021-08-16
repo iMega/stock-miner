@@ -12,6 +12,8 @@ const multipleManifest = (manifestNames) =>
             })
     );
 
+const version = process.env.VERSION.split("/")[2];
+
 module.exports = {
     entry: {
         client: "./frontend/index.js",
@@ -19,7 +21,7 @@ module.exports = {
     target: "web",
     mode: "production",
     output: {
-        filename: "[name].js",
+        filename: `[name]-${version}.js`,
         path: __dirname + "/build",
         publicPath: "/",
     },
@@ -66,7 +68,7 @@ module.exports = {
                 process.env.WS_HOST || "ws://localhost/query"
             ),
         }),
-        new webpack.BannerPlugin(`ver.: ${process.env.VERSION.split("/")[2]}`),
+        new webpack.BannerPlugin(`ver.: ${version}`),
     ],
     optimization: {
         minimize: true,

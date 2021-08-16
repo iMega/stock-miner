@@ -212,7 +212,7 @@ const PageStat = () => {
     );
 };
 
-const status = (v) => (v === true ? ["green", "Runnung"] : ["red", "Stopped"]);
+const status = (v) => (v === true ? ["green", "Running"] : ["red", "Stopped"]);
 
 const Locale = "ru-RU";
 

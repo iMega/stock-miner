@@ -14,6 +14,7 @@ import SignInPage from "./Signin.page";
 const key = "custom";
 const cache = createCache({ key });
 const { extractCritical } = createEmotionServer(cache);
+const version = process.env.VERSION.split("/")[2];
 
 const r = renderToStringWithData(
     <CacheProvider value={cache}>
@@ -34,16 +35,14 @@ const r = renderToStringWithData(
                     data-emotion-css={ids.join(" ")}
                     dangerouslySetInnerHTML={{ __html: css }}
                 />
-                <title>{`Stock miner - ${
-                    process.env.VERSION.split("/")[2]
-                }`}</title>
-                <link rel="stylesheet" href="main.css" />
+                <title>{`Stock miner - ${version}`}</title>
+                <link rel="stylesheet" href="/main.css" />
             </head>
             <body>
                 <div id="root" dangerouslySetInnerHTML={{ __html: html }} />
                 <script src="https://cdn.jsdelivr.net/npm/react@16.14.0/umd/react.production.min.js" />
                 <script src="https://cdn.jsdelivr.net/npm/react-dom@16.14.0/umd/react-dom.production.min.js" />
-                <script src={`client.js`} />
+                <script src={`/client-${version}.js`} />
             </body>
         </html>
     );
