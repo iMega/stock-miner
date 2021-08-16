@@ -1,3 +1,7 @@
+## [0.0.30]
+
+-   add workhours to js-client
+
 ## [0.0.29]
 
 -   add workhours to js-client
