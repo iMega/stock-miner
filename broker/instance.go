@@ -35,6 +35,15 @@ func New(opts ...Option) *Broker {
 
 	b.run()
 
+	s, err := b.MainSettings()
+	if err != nil {
+		b.logger.Errorf("failed getting main settings, %s", err)
+	}
+
+	if s.MiningStatus {
+		b.Start()
+	}
+
 	return b
 }
 

@@ -1,3 +1,13 @@
+## [0.0.27]
+
+### Fixed
+
+-   Too many re-renders
+
+### Added
+
+-   Main settings: global mining
+
 ## [0.0.26]
 
 -   test render problem

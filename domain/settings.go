@@ -17,6 +17,8 @@ type Settings struct {
 	GrossMargin float64 `json:"gross_margin,omitempty"`
 
 	MiningStatus bool `json:"miningStatus"`
+
+	MainSettings MainSettings
 }
 
 type SlotSettings struct {
@@ -27,4 +29,8 @@ type SlotSettings struct {
 type MarketCredentials struct {
 	Token  string `json:"token,omitempty"`
 	APIURL string `json:"api_url,omitempty"`
+}
+
+type MainSettings struct {
+	MiningStatus bool
 }

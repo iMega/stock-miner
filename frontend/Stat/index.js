@@ -87,11 +87,9 @@ const PageStat = () => {
     //     onSubscriptionData: (data) => console.log("new data", data),
     // });
 
-    const [statusMining, setStatusMining] = React.useState(false);
     const [stopMining] = useMutation(MiningStopND);
     const [startMining] = useMutation(MiningStartND);
 
-    const [isGlobalMining, toggleGlobalMining] = useToggle();
     const [stopGlobalMining] = useMutation(GlobalMiningStopND);
     const [startGlobalMining] = useMutation(GlobalMiningStartND);
 
@@ -106,25 +104,23 @@ const PageStat = () => {
         globalMiningStatus: false,
     };
 
-    const { loading, data } = useQuery(StateND);
+    const { loading, data, refetch } = useQuery(StateND);
     if (loading === false && data) {
-        console.log("==============", data);
         ds = data;
-        // setStatusMining(ds.settings.miningStatus);
-        ds.globalMiningStatus === true && toggleGlobalMining();
     }
 
     const switchMining = async () => {
         try {
-            const { data } = statusMining
+            const { data } = ds.settings.miningStatus
                 ? await stopMining()
                 : await startMining();
             if (
                 data.enableStockItemsApproved === true ||
                 data.disableStockItemsApproved === true
             ) {
+                refetch();
                 Message.Success();
-                setStatusMining((v) => !v);
+
                 return;
             }
             Message.Failure();
@@ -135,15 +131,16 @@ const PageStat = () => {
 
     const switchGlobalMining = async () => {
         try {
-            const { data } = isGlobalMining
+            const { data } = ds.globalMiningStatus
                 ? await stopGlobalMining()
                 : await startGlobalMining();
             if (
                 data.globalMiningStop === true ||
                 data.globalMiningStart === true
             ) {
+                refetch();
                 Message.Success();
-                toggleGlobalMining();
+
                 return;
             }
             Message.Failure();
@@ -155,17 +152,24 @@ const PageStat = () => {
     const buttonsBar = [
         <Button
             key="1"
-            type={statusMining ? "danger" : "primary"}
+            type="primary"
+            danger={ds.settings.miningStatus}
             onClick={switchMining}
+            style={{ width: "108px" }}
         >
-            Switch {statusMining ? "OFF" : "ON"}
+            Switch {ds.settings.miningStatus ? "OFF" : "ON"}
         </Button>,
     ];
 
     if (ds?.user.role === "root") {
         buttonsBar.push(
-            <Button key="2" danger onClick={switchGlobalMining}>
-                Switch Global {isGlobalMining ? "OFF" : "ON"}
+            <Button
+                key="2"
+                danger
+                onClick={switchGlobalMining}
+                style={{ width: "152px" }}
+            >
+                Switch Global {ds.globalMiningStatus ? "OFF" : "ON"}
             </Button>
         );
     }
