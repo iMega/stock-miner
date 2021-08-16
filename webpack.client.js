@@ -66,6 +66,7 @@ module.exports = {
                 process.env.WS_HOST || "ws://localhost/query"
             ),
         }),
+        new webpack.BannerPlugin(`ver.: ${process.env.VERSION.split("/")[2]}`),
     ],
     optimization: {
         minimize: true,

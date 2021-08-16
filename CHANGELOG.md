@@ -1,3 +1,7 @@
+## [0.0.28]
+
+-   add banner with version to js client
+
 ## [0.0.27]
 
 ### Fixed
