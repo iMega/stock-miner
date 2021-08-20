@@ -40,7 +40,7 @@ func (m *Market) OrderBook(ctx context.Context, i domain.StockItem) (*domain.Ord
 	}
 
 	if data.Payload.TradeStatus != sdk.NormalTrading {
-		return nil, errNotNormalTrading
+		return nil, fmt.Errorf("%w, figi=%s", errNotNormalTrading, i.FIGI)
 	}
 
 	bids := make([]domain.PriceQty, len(data.Payload.Bids))

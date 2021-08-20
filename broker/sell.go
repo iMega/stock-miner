@@ -80,7 +80,8 @@ func filterSellOperationByOrderID(trs []domain.Transaction, orderID string) (dom
 		}
 	}
 
-	return domain.Transaction{}, errOperationNotExist
+	return domain.Transaction{},
+		fmt.Errorf("%w, orderID=%s", errOperationNotExist, orderID)
 }
 
 func (b *Broker) confirmSellJob(msg domain.Message) error {

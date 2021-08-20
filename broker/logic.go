@@ -212,7 +212,11 @@ func (b *Broker) solver(in solverInput) error {
 
 	h, l := frame.RangeHL()
 	if h == 0 || l == 0 {
-		return errRangeIsZero
+		return fmt.Errorf(
+			"%w, figi=%s",
+			errRangeIsZero,
+			in.Message.Transaction.Slot.StockItem.FIGI,
+		)
 	}
 
 	if !frame.IsFull() {
@@ -369,7 +373,7 @@ func (b *Broker) confirmSellWorker(confirmSellCh, operationCh chan domain.Messag
 
 			wp.Submit(func() {
 				if err := b.confirmSellJob(msg); err != nil {
-					b.logger.Errorf("failed to confirm sell, %s", err)
+					b.logger.Errorf("failed to confirm sell job, %s", err)
 					msg.RetryCount++
 					operationCh <- msg
 				}
@@ -511,7 +515,8 @@ func filterOperationByOrderID(trs []domain.Transaction, orderID string) (domain.
 		}
 	}
 
-	return domain.Transaction{}, errOperationNotExist
+	return domain.Transaction{},
+		fmt.Errorf("%w, orderID=%s", errOperationNotExist, orderID)
 }
 
 func (b *Broker) contextWithCreds(ctxIn context.Context, email string) (context.Context, error) {

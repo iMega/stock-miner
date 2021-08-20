@@ -13,7 +13,7 @@ import (
 	"github.com/imega/stock-miner/httpwareclient"
 )
 
-var errGettingRange = errors.New("failed getting stock item range")
+var errGettingRange = errors.New("failed getting stock item range from YF")
 
 func (p *pricer) Range(
 	ctx context.Context,
@@ -34,17 +34,17 @@ func (p *pricer) Range(
 	}
 
 	if data.Chart.Error != nil {
-		return result, errGettingRange
+		return result, fmt.Errorf("%w, ticker=%s", errGettingRange, s.Ticker)
 	}
 
 	if len(data.Chart.Result) == 0 {
-		return result, errGettingRange
+		return result, fmt.Errorf("%w, ticker=%s", errGettingRange, s.Ticker)
 	}
 
 	response := data.Chart.Result[0]
 
 	if len(response.Indicators.Quote) == 0 {
-		return result, errGettingRange
+		return result, fmt.Errorf("%w, ticker=%s", errGettingRange, s.Ticker)
 	}
 
 	quote := response.Indicators.Quote[0]
