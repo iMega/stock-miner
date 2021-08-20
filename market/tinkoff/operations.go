@@ -78,6 +78,10 @@ func (m *Market) Operations(
 			continue
 		}
 
+		if o.Payment == 0 {
+			continue
+		}
+
 		t := domain.Transaction{
 			Slot: domain.Slot{
 				StockItem: domain.StockItem{

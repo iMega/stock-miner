@@ -40,7 +40,7 @@ func (b *Broker) confirmBuyJob(tr domain.Transaction) error {
 		ctx,
 		domain.OperationInput{
 			From:          tr.BuyAt,
-			To:            tr.BuyAt.Add(time.Minute),
+			To:            tr.BuyAt.Add(5 * time.Minute),
 			OperationType: string(domain.BUY),
 			FIGI:          tr.Slot.FIGI,
 		},
