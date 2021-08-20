@@ -19,6 +19,7 @@ import (
 	"github.com/imega/daemon/configuring/env"
 	httpserver "github.com/imega/daemon/http-server"
 	"github.com/imega/daemon/logging"
+	logenv "github.com/imega/daemon/logging/env"
 	"github.com/imega/stock-miner/broker"
 	"github.com/imega/stock-miner/graph"
 	"github.com/imega/stock-miner/graph/generated"
@@ -49,10 +50,7 @@ const (
 var isDevMode = "false"
 
 func main() {
-	logger := logging.New(logging.Config{
-		Channel: "stock-miner",
-		Level:   "debug",
-	})
+	logger := logging.New(logenv.ReadConfig())
 
 	httpwareclient.WithLogger(logger.(*logrus.Entry))
 

@@ -1,3 +1,14 @@
+## [0.0.32]
+
+### Fixed
+
+-   #11 added a check for zero value of the payment field
+
+### Added
+
+-   detailed data to logs
+-   read config for logger
+
 ## [0.0.31]
 
 -   add hash to filename js-client
