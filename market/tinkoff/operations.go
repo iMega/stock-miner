@@ -103,7 +103,7 @@ func (m *Market) Operations(
 		if o.OperationType == sdk.SELL {
 			t.SellOrderID = o.ID
 			t.SalePrice = maxTradePrices(o.Trades)
-			t.AmountIncome = money.Sum(
+			t.AmountIncome = money.Sub(
 				math.Abs(o.Payment),
 				math.Abs(o.Commission.Value),
 			)
