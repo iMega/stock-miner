@@ -13,6 +13,9 @@ services:
       - ROOT_EMAIL=info@example.com
       - FIXTURE_PATH=tests/fixtures
       - YAHOO_FINANCE_URL=http://acceptance
+      - LOG_LEVEL=debug
+      - LOG_CHANNEL=stock-miner
+      - LOG_BUILD_ID=dev
     ports:
       - 8080:80
 

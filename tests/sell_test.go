@@ -154,7 +154,7 @@ var _ = Describe("Automatically buy and sell", func() {
 
 				actual, err = time.Parse("2006-01-02T15:04:05-07:00", v.Get("to"))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(actual).Should(BeTemporally("~", time.Now(), 2*time.Minute))
+				Expect(actual).Should(BeTemporally("~", time.Now(), 5*time.Minute))
 
 				data = map[string]interface{}{
 					"trackingId": "4f48d98e8040c23a",
@@ -283,7 +283,7 @@ var _ = Describe("Automatically buy and sell", func() {
 
 				actual, err := time.Parse("2006-01-02T15:04:05-07:00", v.Get("from"))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(actual).Should(BeTemporally("~", time.Now(), 2*time.Second))
+				Expect(actual).Should(BeTemporally("~", time.Now(), time.Minute))
 
 				actual, err = time.Parse("2006-01-02T15:04:05-07:00", v.Get("to"))
 				Expect(err).NotTo(HaveOccurred())
@@ -405,9 +405,9 @@ var _ = Describe("Automatically buy and sell", func() {
 			Profit:       0.77,
 			Qty:          1,
 			AmountSpent:  95.5,
-			AmountIncome: 97,
-			TotalProfit:  1.5,
+			AmountIncome: 96,
 			SalePrice:    96.5,
+			TotalProfit:  0.5,
 		}
 
 		reqDealings := Dealings{}

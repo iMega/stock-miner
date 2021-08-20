@@ -165,7 +165,7 @@ func (b *Broker) solveWorker(in solveWorkerInput) *workerpool.WorkerPool {
 				if err := b.solver(input); err != nil {
 					b.logger.Errorf("solve worker reports, %s", err)
 
-					if err == errRangeIsZero {
+					if errors.Is(err, errRangeIsZero) {
 						ctx := context.Background()
 						r, rErr := b.Pricer.Range(ctx, t.StockItem)
 						if rErr != nil {

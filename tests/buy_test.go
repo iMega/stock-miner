@@ -239,11 +239,11 @@ var _ = Describe("Automatically buy", func() {
 
 				actual, err := time.Parse("2006-01-02T15:04:05-07:00", v.Get("from"))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(actual).Should(BeTemporally("~", time.Now(), 2*time.Second))
+				Expect(actual).Should(BeTemporally("~", time.Now(), time.Minute))
 
 				actual, err = time.Parse("2006-01-02T15:04:05-07:00", v.Get("to"))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(actual).Should(BeTemporally("~", time.Now(), 2*time.Minute))
+				Expect(actual).Should(BeTemporally("~", time.Now(), 5*time.Minute))
 
 				data = map[string]interface{}{
 					"trackingId": "4f48d98e8040c23a",
@@ -274,18 +274,6 @@ var _ = Describe("Automatically buy", func() {
 										"quantity": 1,
 										"price":    30.09,
 									},
-									// map[string]interface{}{
-									// 	"tradeId":  "3535068940",
-									// 	"date":     "2021-03-01T23:39:29.507+03:00",
-									// 	"quantity": 1,
-									// 	"price":    30.09,
-									// },
-									// map[string]interface{}{
-									// 	"tradeId":  "3535068950",
-									// 	"date":     "2021-03-01T23:39:29.507+03:00",
-									// 	"quantity": 2,
-									// 	"price":    30.09,
-									// },
 								},
 							},
 						},
