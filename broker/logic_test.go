@@ -2,6 +2,7 @@ package broker
 
 import (
 	"testing"
+	"time"
 
 	"github.com/imega/stock-miner/domain"
 	"github.com/stretchr/testify/assert"
@@ -227,6 +228,45 @@ func Test_priceInRange(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := priceInRange(tt.args.frame(), tt.args.p); got != tt.want {
 				t.Errorf("priceInRange() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_inTimeSpan(t *testing.T) {
+	type args struct {
+		start string
+		end   string
+		check string
+	}
+	tests := []struct {
+		args args
+		want bool
+	}{
+		{args: args{"00:00", "00:05", "23:59"}, want: false},
+		{args: args{"00:00", "00:05", "00:00"}, want: true},
+		{args: args{"00:00", "00:05", "00:01"}, want: true},
+		{args: args{"00:00", "00:05", "00:05"}, want: true},
+		{args: args{"00:00", "00:05", "00:06"}, want: false},
+		//
+		{args: args{"00:00", "00:00", "23:59"}, want: false},
+		{args: args{"00:00", "00:00", "00:00"}, want: true},
+		{args: args{"00:00", "00:00", "00:01"}, want: false},
+		//
+		{args: args{"00:05", "00:00", "00:04"}, want: false},
+		{args: args{"00:05", "00:00", "23:59"}, want: true},
+		{args: args{"00:05", "00:00", "00:00"}, want: true},
+		{args: args{"00:05", "00:00", "00:01"}, want: false},
+		{args: args{"00:05", "00:00", "00:05"}, want: true},
+	}
+	newLayout := "15:04"
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			check, _ := time.Parse(newLayout, tt.args.check)
+			start, _ := time.Parse(newLayout, tt.args.start)
+			end, _ := time.Parse(newLayout, tt.args.end)
+			if got := inTimeSpan(start, end, check); got != tt.want {
+				t.Errorf("inTimeSpan() = %v, want %v", got, tt.want)
 			}
 		})
 	}

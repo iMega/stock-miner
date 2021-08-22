@@ -20,6 +20,8 @@ type Broker struct {
 	cron          *cron.Cron
 	isShutdown    bool
 	cronIsRunning bool
+
+	isDevMode bool
 }
 
 // New creates a new instance of Broker.
@@ -94,5 +96,13 @@ func WithStack(d domain.Stack) Option {
 func WithSMAStack(d domain.SMAStack) Option {
 	return func(b *Broker) {
 		b.SMAStack = d
+	}
+}
+
+func WithSetDevMode(v string) Option {
+	return func(b *Broker) {
+		if v == "true" {
+			b.isDevMode = true
+		}
 	}
 }

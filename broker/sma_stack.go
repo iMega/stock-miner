@@ -2,6 +2,7 @@ package broker
 
 import (
 	"errors"
+	"sort"
 	"sync"
 
 	"github.com/imega/stock-miner/domain"
@@ -14,7 +15,7 @@ type smaStack struct {
 }
 
 const (
-	capacity   = 5
+	capacity   = 5 // only odd
 	lastItem   = 4
 	secondItem = 2
 )
@@ -67,6 +68,28 @@ func (s *smaStack) Get(key string) (domain.SMAFrame, error) {
 	return nil, errKeyNotExist
 }
 
+func (s *smaStack) Avg(key string) (float64, error) {
+	s.stackMutex.RLock()
+	defer s.stackMutex.RUnlock()
+
+	if f, ok := s.Stack[key]; ok {
+		return f.Avg[1], nil
+	}
+
+	return 0, errKeyNotExist
+}
+
+func (s *smaStack) Reset() {
+	s.stackMutex.Lock()
+	defer s.stackMutex.Unlock()
+
+	for _, v := range s.Stack {
+		for i := 0; i < capacity; i++ {
+			v.Add(0)
+		}
+	}
+}
+
 type smaFrame struct {
 	Avg       [2]float64
 	Lastt     float64
@@ -115,7 +138,10 @@ func (s *smaFrame) CalcAvg() {
 }
 
 func (s *smaFrame) IsTrendUp() bool {
-	return s.Avg[0] <= s.Avg[1]
+	m := s.Last() - s.Median()
+	a := s.Last() - s.Avg[1]
+
+	return s.Avg[0] <= s.Avg[1] || m >= 0 || a >= 0
 }
 
 func (s *smaFrame) Prev() float64 {
@@ -148,4 +174,20 @@ func (s *smaFrame) RangeHL() (float64, float64) {
 func (s *smaFrame) SetRangeHL(h, l float64) {
 	s.RangeHigh = h
 	s.RangeLow = l
+}
+
+func (s *smaFrame) Median() float64 {
+	tmp := [capacity]float64{}
+	copy(tmp[:], s.Fifo[:])
+	sort.Float64s(tmp[:])
+
+	return tmp[(capacity-1)/2]
+}
+
+func (s *smaFrame) Distance() float64 {
+	tmp := [capacity]float64{}
+	copy(tmp[:], s.Fifo[:])
+	sort.Float64s(tmp[:])
+
+	return tmp[(capacity-1)] - tmp[0]
 }

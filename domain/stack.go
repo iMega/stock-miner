@@ -13,6 +13,7 @@ type SMAStack interface {
 	Add(stack string, v float64) bool
 	IsTrendUp(stack string) (bool, error)
 	Get(stack string) (SMAFrame, error)
+	Reset()
 }
 
 type SMAFrame interface {
@@ -25,4 +26,6 @@ type SMAFrame interface {
 	Last() float64
 	RangeHL() (float64, float64)
 	SetRangeHL(h, l float64)
+	Median() float64
+	Distance() float64
 }

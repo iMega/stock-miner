@@ -45,10 +45,18 @@ func (b *Broker) run() {
 
 	delay := cron.DelayIfStillRunning(&logger{log: b.logger})
 
+	timeLayout := "15:04"
+	start, _ := time.Parse(timeLayout, "00:00")
+	end, _ := time.Parse(timeLayout, "00:05")
+
 	_, err := b.cron.AddJob("@every 2s", delay(cron.FuncJob(func() {
 		wd := time.Now().Weekday()
-		if wd == time.Sunday || wd == time.Saturday {
+		if !b.isDevMode && (wd == time.Sunday || wd == time.Saturday) {
 			return
+		}
+
+		if inTimeSpan(start, end, time.Now()) {
+			b.SMAStack.Reset()
 		}
 
 		if w1.WaitingQueueSize()+w2.WaitingQueueSize() > maxQueues {
@@ -549,4 +557,16 @@ func minBuyingPrice(slots []domain.Slot) float64 {
 	sort.Float64s(byuing)
 
 	return byuing[0]
+}
+
+func inTimeSpan(start, end, check time.Time) bool {
+	if start.Before(end) {
+		return !check.Before(start) && !check.After(end)
+	}
+
+	if start.Equal(end) {
+		return check.Equal(start)
+	}
+
+	return !start.After(check) || !end.Before(check)
 }

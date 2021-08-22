@@ -140,6 +140,7 @@ func main() {
 		broker.WithSettingsStorage(s),
 		broker.WithStack(s),
 		broker.WithSMAStack(smastack),
+		broker.WithSetDevMode(isDevMode),
 	)
 
 	// handler.WebsocketUpgrader(websocket.Upgrader{
