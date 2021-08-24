@@ -12,8 +12,8 @@ import (
 	"github.com/imega/stock-miner/domain"
 	"github.com/imega/stock-miner/graph/generated"
 	"github.com/imega/stock-miner/graph/model"
+	"github.com/imega/stock-miner/money"
 	"github.com/imega/stock-miner/stats"
-	"github.com/shopspring/decimal"
 )
 
 func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error) {
@@ -367,6 +367,11 @@ func (r *queryResolver) Settings(ctx context.Context) (*model.Settings, error) {
 }
 
 func (r *queryResolver) Slots(ctx context.Context) ([]*model.Slot, error) {
+	s, err := r.SettingsStorage.Settings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting settings, %w", err)
+	}
+
 	slots, err := r.StockStorage.Slot(ctx, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed getting slot, %w", err)
@@ -390,7 +395,8 @@ func (r *queryResolver) Slots(ctx context.Context) ([]*model.Slot, error) {
 			currency = slot.StockItem.Currency
 		}
 
-		profit, _ := decimal.NewFromFloat(slot.TargetAmount).Sub(decimal.NewFromFloat(slot.AmountSpent)).Float64()
+		p := money.Procent(slot.TargetAmount, s.MarketCommission)
+		profit := money.Sub(slot.TargetAmount, money.Sum(slot.AmountSpent, p))
 
 		result[i] = &model.Slot{
 			ID:           slot.ID,

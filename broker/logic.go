@@ -249,7 +249,7 @@ func (b *Broker) solver(in solverInput) error {
 		return fmt.Errorf("failed getting slot, %w", err)
 	}
 
-	sellSlots := getItemsForSale(slots, frame.Last())
+	sellSlots := getItemsForSale(slots, frame.Last(), frame.Prev())
 	for _, slot := range sellSlots {
 		in.SellCh <- slot
 	}
@@ -258,7 +258,7 @@ func (b *Broker) solver(in solverInput) error {
 		return nil
 	}
 
-	minPrice := minBuyingPrice(slots)
+	minPrice := minBuyingPrice(slots, 0)
 	if minPrice == 0 {
 		return nil
 	}
@@ -413,16 +413,18 @@ func (b *Broker) getPrice(msg domain.Message) (domain.Message, error) {
 	return result, nil
 }
 
-func getItemsForSale(slots []domain.Slot, price float64) []domain.Slot {
+func getItemsForSale(slots []domain.Slot, price, prevPrice float64) []domain.Slot {
 	result := []domain.Slot{}
 	p := decimal.NewFromFloat(price)
+	pp := decimal.NewFromFloat(prevPrice)
 
 	for _, slot := range slots {
 		if slot.BuyingPrice == 0 {
 			continue
 		}
 
-		if decimal.NewFromFloat(slot.TargetPrice).LessThanOrEqual(p) {
+		target := decimal.NewFromFloat(slot.TargetPrice)
+		if target.LessThanOrEqual(p) && target.LessThanOrEqual(pp) {
 			result = append(result, slot)
 		}
 	}
@@ -544,9 +546,13 @@ func (b *Broker) contextWithCreds(ctxIn context.Context, email string) (context.
 	return ctx, nil
 }
 
-func minBuyingPrice(slots []domain.Slot) float64 {
+func minBuyingPrice(slots []domain.Slot, buyingPrice float64) float64 {
 	if len(slots) == 0 {
 		return -1
+	}
+
+	if buyingPrice > 0 {
+		slots = append(slots, domain.Slot{BuyingPrice: buyingPrice})
 	}
 
 	byuing := make([]float64, len(slots))

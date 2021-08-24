@@ -10,8 +10,9 @@ import (
 
 func Test_getItemsForSale(t *testing.T) {
 	type args struct {
-		slots []domain.Slot
-		price float64
+		slots     []domain.Slot
+		price     float64
+		prevPrice float64
 	}
 	tests := []struct {
 		name string
@@ -28,7 +29,8 @@ func Test_getItemsForSale(t *testing.T) {
 						BuyingPrice: 1,
 					},
 				},
-				price: 100.01,
+				price:     100.01,
+				prevPrice: 100.01,
 			},
 			want: []domain.Slot{
 				{
@@ -58,7 +60,8 @@ func Test_getItemsForSale(t *testing.T) {
 						BuyingPrice: 1,
 					},
 				},
-				price: 100.01,
+				price:     100.01,
+				prevPrice: 100.01,
 			},
 			want: []domain.Slot{
 				{
@@ -88,14 +91,51 @@ func Test_getItemsForSale(t *testing.T) {
 						BuyingPrice: 1,
 					},
 				},
-				price: 99,
+				price:     99,
+				prevPrice: 99,
 			},
 			want: []domain.Slot{},
+		},
+		{
+			name: "returns two slots",
+			args: args{
+				slots: []domain.Slot{
+					{
+						ID:          "0",
+						TargetPrice: 100,
+						BuyingPrice: 1,
+					},
+					{
+						ID:          "1",
+						TargetPrice: 100.01,
+						BuyingPrice: 1,
+					},
+					{
+						ID:          "2",
+						TargetPrice: 100.02,
+						BuyingPrice: 1,
+					},
+				},
+				price:     100.02,
+				prevPrice: 100.01,
+			},
+			want: []domain.Slot{
+				{
+					ID:          "0",
+					TargetPrice: 100,
+					BuyingPrice: 1,
+				},
+				{
+					ID:          "1",
+					TargetPrice: 100.01,
+					BuyingPrice: 1,
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := getItemsForSale(tt.args.slots, tt.args.price)
+			got := getItemsForSale(tt.args.slots, tt.args.price, tt.args.prevPrice)
 			assert.Equal(t, got, tt.want)
 		})
 	}
@@ -103,7 +143,8 @@ func Test_getItemsForSale(t *testing.T) {
 
 func Test_minBuyingPrice(t *testing.T) {
 	type args struct {
-		slots []domain.Slot
+		slots       []domain.Slot
+		buyingPrice float64
 	}
 	tests := []struct {
 		name string
@@ -120,6 +161,18 @@ func Test_minBuyingPrice(t *testing.T) {
 				},
 			},
 			want: 1,
+		},
+		{
+			name: "optimistic with buyingPrice",
+			args: args{
+				slots: []domain.Slot{
+					{BuyingPrice: 3},
+					{BuyingPrice: 2},
+					{BuyingPrice: 1},
+				},
+				buyingPrice: 0.5,
+			},
+			want: 0.5,
 		},
 		{
 			name: "empty slots",
@@ -141,7 +194,7 @@ func Test_minBuyingPrice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := minBuyingPrice(tt.args.slots); got != tt.want {
+			if got := minBuyingPrice(tt.args.slots, tt.args.buyingPrice); got != tt.want {
 				t.Errorf("minBuyingPrice() = %v, want %v", got, tt.want)
 			}
 		})

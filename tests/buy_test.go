@@ -339,7 +339,7 @@ var _ = Describe("Automatically buy", func() {
 					Qty:          1,
 					AmountSpent:  120.72,
 					TargetAmount: 30.33,
-					TotalProfit:  -90.39,
+					TotalProfit:  -90.48,
 				},
 			},
 		}
