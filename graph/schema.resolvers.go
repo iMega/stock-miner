@@ -17,11 +17,6 @@ import (
 )
 
 func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*model.StockItemInput) (bool, error) {
-	settings, err := r.SettingsStorage.Settings(ctx)
-	if err != nil {
-		return false, fmt.Errorf("failed getting settings, %w", err)
-	}
-
 	for _, item := range items {
 		in := domain.StockItem{
 			Ticker:           item.Ticker,
@@ -31,7 +26,8 @@ func (r *mutationResolver) AddStockItemApproved(ctx context.Context, items []*mo
 			Currency:         item.Currency,
 			StartTime:        uint8(item.StartTime),
 			EndTime:          uint8(item.EndTime),
-			IsActive:         settings.MiningStatus,
+			MaxPrice:         item.MaxPrice,
+			IsActive:         item.Active,
 		}
 		if err := r.StockStorage.AddStockItemApproved(ctx, in); err != nil {
 			return false,
@@ -281,6 +277,8 @@ func (r *queryResolver) StockItemApproved(ctx context.Context) ([]*model.StockIt
 			Currency:         &item.Currency,
 			StartTime:        int(item.StartTime),
 			EndTime:          int(item.EndTime),
+			Active:           item.IsActive,
+			MaxPrice:         item.MaxPrice,
 		}
 	}
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery, useMutation, gql } from "@apollo/client";
-import { PageHeader, Row, Col, Table, InputNumber, Space } from "antd";
+import { PageHeader, Row, Col, Table, InputNumber, Space, Switch } from "antd";
 
 import Link from "../StockItemLink";
 import Message from "../Message";
@@ -28,6 +28,8 @@ const List = () => {
             currency: i.currency,
             startTime: i.startTime,
             endTime: i.endTime,
+            active: i.active,
+            maxPrice: i.maxPrice,
         }));
 
         try {
@@ -53,7 +55,7 @@ const List = () => {
                 <Col xs={24} lg={12}>
                     <Table
                         loading={loading}
-                        columns={columns(settingsStockItemHandler)}
+                        columns={columns(settingsStockItemHandler, loading)}
                         dataSource={ds}
                         rowKey="figi"
                     />
@@ -63,7 +65,7 @@ const List = () => {
     );
 };
 
-const columns = (settingsStockItemHandler) => [
+const columns = (settingsStockItemHandler, loading) => [
     {
         title: "Ticker",
         dataIndex: "ticker",
@@ -98,6 +100,35 @@ const columns = (settingsStockItemHandler) => [
             </Space>
         ),
     },
+    {
+        title: "Max purchase price",
+        dataIndex: "maxPrice",
+        key: "maxPrice",
+        render: (_, r) => (
+            <PriceInput
+                val={r.maxPrice}
+                onChange={(v) => {
+                    r.maxPrice = v;
+                    settingsStockItemHandler([r]);
+                }}
+            />
+        ),
+    },
+    {
+        title: "Active",
+        dataIndex: "active",
+        key: "active",
+        render: (_, r) => (
+            <Switch
+                loading={loading}
+                onChange={(v) => {
+                    r.active = v;
+                    settingsStockItemHandler([r]);
+                }}
+                checked={r.active}
+            />
+        ),
+    },
 ];
 
 const HourInput = ({ val, onChange }) => (
@@ -106,6 +137,15 @@ const HourInput = ({ val, onChange }) => (
         max={23}
         defaultValue={val}
         style={{ width: "4em" }}
+        onChange={onChange}
+    />
+);
+
+const PriceInput = ({ val, onChange }) => (
+    <InputNumber
+        min={0}
+        defaultValue={val}
+        style={{ width: "8em" }}
         onChange={onChange}
     />
 );
@@ -120,6 +160,8 @@ const StockItemApprovedND = gql`
             currency
             startTime
             endTime
+            active
+            maxPrice
         }
     }
 `;

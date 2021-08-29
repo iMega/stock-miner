@@ -56,6 +56,8 @@ const Add = () => {
             currency: i.currency,
             startTime: 11,
             endTime: 20,
+            maxPrice: 0,
+            active: false,
         }));
 
         try {

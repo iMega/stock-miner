@@ -115,7 +115,7 @@ func (s *Store) AppendHandlers(mux *http.ServeMux) {
 		})
 
 		callback = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			r := req.WithContext(google.WithFakeUser(req.Context()))
+			r := req.WithContext(google.WithFakeUser(req.Context(), s.RootEmail))
 			s.issueSession().ServeHTTP(w, r)
 		})
 	}
@@ -128,11 +128,19 @@ func (s *Store) AppendHandlers(mux *http.ServeMux) {
 func (s *Store) DefenceHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		session, err := s.db.Get(r, sessionName)
-		if err != nil {
+		if err != nil && !s.isDevMode {
 			r.URL.Path = "/signin.htm"
 			next.ServeHTTP(w, r)
 
 			return
+		}
+
+		if s.isDevMode {
+			session = &sessions.Session{
+				Values: map[string]interface{}{
+					"email": s.RootEmail,
+				},
+			}
 		}
 
 		if strings.HasSuffix(r.URL.Path, "/") {
@@ -140,6 +148,10 @@ func (s *Store) DefenceHandler(next http.Handler) http.Handler {
 		}
 
 		email, _ := session.Values["email"].(string)
+		if s.isDevMode {
+			email = s.RootEmail
+		}
+
 		ctx := contexkey.WithEmail(r.Context(), email)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

@@ -13,6 +13,7 @@ type StockItem struct {
 	StartTime         uint8
 	EndTime           uint8
 	IsActive          bool
+	MaxPrice          float64
 }
 
 type StockItemRange struct {

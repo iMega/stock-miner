@@ -93,6 +93,8 @@ type StockItem struct {
 	TransactionLimit  int      `json:"transactionLimit"`
 	StartTime         int      `json:"startTime"`
 	EndTime           int      `json:"endTime"`
+	Active            bool     `json:"active"`
+	MaxPrice          float64  `json:"maxPrice"`
 }
 
 type StockItemInput struct {
@@ -103,6 +105,8 @@ type StockItemInput struct {
 	Currency         string  `json:"currency"`
 	StartTime        int     `json:"startTime"`
 	EndTime          int     `json:"endTime"`
+	Active           bool    `json:"active"`
+	MaxPrice         float64 `json:"maxPrice"`
 }
 
 type User struct {

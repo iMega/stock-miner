@@ -56,6 +56,9 @@ type StockItem {
 
     startTime: Int!
     endTime: Int!
+
+    active: Boolean!
+    maxPrice: Float!
 }
 
 input StockItemInput {
@@ -66,6 +69,8 @@ input StockItemInput {
     currency: String!
     startTime: Int!
     endTime: Int!
+    active: Boolean!
+    maxPrice: Float!
 }
 
 type MemStats {

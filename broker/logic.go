@@ -258,7 +258,13 @@ func (b *Broker) solver(in solverInput) error {
 		return nil
 	}
 
-	minPrice := minBuyingPrice(slots, 0)
+	maxPurchasePrice := 0.0
+
+	if in.Message.Transaction.Slot.StockItem.MaxPrice > 0 {
+		maxPurchasePrice = in.Message.Transaction.Slot.StockItem.MaxPrice
+	}
+
+	minPrice := minBuyingPrice(slots, maxPurchasePrice)
 	if minPrice == 0 {
 		return nil
 	}

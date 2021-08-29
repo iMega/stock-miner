@@ -25,7 +25,8 @@ func (s *Storage) StockItemApproved(
             transaction_limit,
             startTime,
             endTime,
-            active
+            active,
+            max_price
         from stock_item_approved
         where email = ?`
 
@@ -49,6 +50,7 @@ func (s *Storage) StockItemApproved(
 			&item.StartTime,
 			&item.EndTime,
 			&item.IsActive,
+			&item.MaxPrice,
 		)
 		if err != nil {
 			return nil,
@@ -76,7 +78,8 @@ func (s *Storage) StockItemApprovedAll(
                     transaction_limit,
                     currency,
                     startTime,
-                    endTime
+                    endTime,
+                    max_price
                 from stock_item_approved
                 where active=1`
 
@@ -95,22 +98,20 @@ func (s *Storage) StockItemApprovedAll(
 
 	for rows.Next() {
 		var (
-			email, ticker, figi string
-			currency            string
-			amountLimit         float64
-			transactionLimit    int
-			startTime, endTime  int
+			email string
+			item  domain.StockItem
 		)
 
 		err := rows.Scan(
 			&email,
-			&ticker,
-			&figi,
-			&amountLimit,
-			&transactionLimit,
-			&currency,
-			&startTime,
-			&endTime,
+			&item.Ticker,
+			&item.FIGI,
+			&item.AmountLimit,
+			&item.TransactionLimit,
+			&item.Currency,
+			&item.StartTime,
+			&item.EndTime,
+			&item.MaxPrice,
 		)
 		if err != nil {
 			out <- domain.Message{
@@ -123,21 +124,15 @@ func (s *Storage) StockItemApprovedAll(
 			return
 		}
 
-		if !isValidPeriod(startTime, endTime) {
+		if !isValidPeriod(int(item.StartTime), int(item.EndTime)) {
 			continue
 		}
 
 		out <- domain.Message{
 			Transaction: domain.Transaction{
 				Slot: domain.Slot{
-					Email: email,
-					StockItem: domain.StockItem{
-						Ticker:           ticker,
-						FIGI:             figi,
-						AmountLimit:      amountLimit,
-						TransactionLimit: transactionLimit,
-						Currency:         currency,
-					},
+					Email:     email,
+					StockItem: item,
 				},
 			},
 		}
@@ -176,9 +171,10 @@ func (s *Storage) AddStockItemApproved(
             currency,
             startTime,
             endTime,
-            active
+            active,
+            max_price
         )
-        values (?,?,?,?,?,?,?,?,?)`
+        values (?,?,?,?,?,?,?,?,?,?)`
 
 	_, err := s.db.ExecContext(
 		ctx,
@@ -192,6 +188,7 @@ func (s *Storage) AddStockItemApproved(
 		item.StartTime,
 		item.EndTime,
 		item.IsActive,
+		item.MaxPrice,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to add approved stock item, %w", err)
@@ -214,7 +211,8 @@ func (s *Storage) UpdateStockItemApproved(
             transaction_limit=?,
             startTime=?,
             endTime=?,
-            active=?
+            active=?,
+            max_price=?
         where email=? and ticker=?`
 
 	_, err := s.db.ExecContext(
@@ -225,6 +223,7 @@ func (s *Storage) UpdateStockItemApproved(
 		item.StartTime,
 		item.EndTime,
 		item.IsActive,
+		item.MaxPrice,
 		email,
 		item.Ticker,
 	)
@@ -283,6 +282,7 @@ func stockItemApprovedCreateTable(ctx context.Context, tx *sql.Tx) error {
         startTime INTEGER NOT NULL DEFAULT 11,
         endTime INTEGER NOT NULL DEFAULT 20,
         active INTEGER NOT NULL DEFAULT 1,
+        max_price INTEGER NOT NULL DEFAULT 0,
         CONSTRAINT pair PRIMARY KEY (email, ticker)
     )`
 
@@ -318,6 +318,15 @@ func stockItemApprovedTableMigrate(
 
 	if !hasColumn(ti, col{Name: "active"}) {
 		if err := stockItemApprovedTableFieldActive(ctx, tx); err != nil {
+			return fmt.Errorf(
+				"failed to migrate table stock_item_approved, %w",
+				err,
+			)
+		}
+	}
+
+	if !hasColumn(ti, col{Name: "max_price"}) {
+		if err := stockItemApprovedTableFieldMaxPrice(ctx, tx); err != nil {
 			return fmt.Errorf(
 				"failed to migrate table stock_item_approved, %w",
 				err,
@@ -368,6 +377,19 @@ func stockItemApprovedTableFieldActive(ctx context.Context, tx *sql.Tx) error {
 	if _, err := tx.ExecContext(ctx, q); err != nil {
 		return fmt.Errorf(
 			"failed to execute stockItemApprovedTableFieldActive, %w",
+			err,
+		)
+	}
+
+	return nil
+}
+
+func stockItemApprovedTableFieldMaxPrice(ctx context.Context, tx *sql.Tx) error {
+	q := `ALTER TABLE stock_item_approved ADD max_price INTEGER NOT NULL DEFAULT 0`
+
+	if _, err := tx.ExecContext(ctx, q); err != nil {
+		return fmt.Errorf(
+			"failed to execute stockItemApprovedTableFieldMaxPrice, %w",
 			err,
 		)
 	}
