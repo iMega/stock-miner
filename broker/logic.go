@@ -10,38 +10,32 @@ import (
 	"github.com/gammazero/workerpool"
 	"github.com/imega/stock-miner/contexkey"
 	"github.com/imega/stock-miner/domain"
-	"github.com/imega/stock-miner/uuid"
+	"github.com/imega/stock-miner/worker"
 	"github.com/robfig/cron/v3"
 	"github.com/shopspring/decimal"
 )
 
-const maxQueues = 20
+const (
+	maxQueues  = 20
+	five       = 5
+	hundred    = 100
+	delayTask  = 4 * time.Second
+	retryCount = 60
+)
+
+var (
+	errMaxAttempts        = errors.New("the maximum number of attempts to receive the operation has been reached")
+	errUnknownTransaction = errors.New("unknown transaction type")
+	errFrameNotFull       = errors.New("frame is not full")
+	errRangeIsZero        = errors.New("range is zero")
+	errOperationNotExist  = errors.New("operation does not exist")
+)
 
 func (b *Broker) run() {
-	pricerCh := make(chan domain.Message)
-
-	outCh := make(chan domain.PriceReceiptMessage)
-	psCh := make(chan domain.PriceReceiptMessage)
-	sellCh := make(chan domain.Slot)
-
-	operationCh := make(chan domain.Message)
-
-	confirmBuyCh := make(chan domain.Message)
-	b.confirmBuyWorker(confirmBuyCh, operationCh)
-
-	confirmSellCh := make(chan domain.Message)
-	b.confirmSellWorker(confirmSellCh, operationCh)
-
-	b.queueOperation(operationCh, confirmBuyCh, confirmSellCh)
-
-	w1 := b.pricerWorker(pricerCh, outCh, psCh)
-	w2 := b.makePriceStorageChannel(psCh)
-	b.solveWorker(solveWorkerInput{
-		MessageCh:    outCh,
-		SellCh:       sellCh,
-		ConfirmBuyCh: confirmBuyCh,
-	})
-	b.sellWorker(sellCh, confirmSellCh)
+	b.confirmBuyWorker(b.Traffic.ConfirmBuyCh, b.Traffic.OperationCh)
+	b.confirmSellWorker(b.Traffic.ConfirmSellCh, b.Traffic.OperationCh)
+	b.queueOperation(b.Traffic.OperationCh, b.Traffic.ConfirmBuyCh, b.Traffic.ConfirmSellCh)
+	b.sellWorker(b.Traffic.SellCh, b.Traffic.ConfirmSellCh)
 
 	delay := cron.DelayIfStillRunning(&logger{log: b.logger})
 
@@ -59,249 +53,104 @@ func (b *Broker) run() {
 			b.SMAStack.Reset()
 		}
 
-		if w1.WaitingQueueSize()+w2.WaitingQueueSize() > maxQueues {
-			b.logger.Debugf("WaitingQueueSize = %d", w1.WaitingQueueSize()+w2.WaitingQueueSize())
-		}
-
-		b.StockStorage.StockItemApprovedAll(context.Background(), pricerCh)
+		b.StockStorage.StockItemApprovedAll(context.Background(), b.Traffic.ApprovedCh)
 	})))
 	if err != nil {
-		b.logger.Errorf("failed to add jiob to cron, %w", err)
+		b.logger.Errorf("failed to add job to cron, %w", err)
 	}
 }
 
-const (
-	five    = 5
-	hundred = 100
-)
+func (this *Broker) stockItemApprovedWorker(w worker.Worker) {
+	for m := range this.Traffic.ApprovedCh {
+		msg := m
 
-func (b *Broker) pricerWorker(
-	in chan domain.Message,
-	out, out2 chan domain.PriceReceiptMessage,
-) *workerpool.WorkerPool {
-	wp := workerpool.New(five)
+		w.Submit(func() {
+			if msg.Error != nil {
+				this.logger.Errorf(
+					"pricer worker reports about the message has error, %w",
+					msg.Error,
+				)
 
-	go func() {
-		for m := range in {
-			msg := m
+				return
+			}
 
-			wp.Submit(func() {
-				if msg.Error != nil {
-					b.logger.Errorf(
-						"pricer worker reports about the message has error, %w",
-						msg.Error,
-					)
+			res, err := this.getPrice(msg)
+			if err != nil {
+				this.logger.Errorf("failed getting price, %s", err)
 
-					return
-				}
+				return
+			}
 
-				res, err := b.getPrice(msg)
-				if err != nil {
-					b.logger.Errorf("failed getting price, %s", err)
+			if !this.SMAStack.Add(res.Transaction.Slot.Ticker, res.Price) {
+				return
+			}
 
-					return
-				}
+			r := domain.PriceReceiptMessage{
+				Email:     res.Transaction.Slot.Email,
+				Price:     res.Price,
+				StockItem: res.Transaction.Slot.StockItem,
+			}
 
-				if !b.SMAStack.Add(res.Transaction.Slot.Ticker, res.Price) {
-					return
-				}
-
-				r := domain.PriceReceiptMessage{
-					Email:     res.Transaction.Slot.Email,
-					Price:     res.Price,
-					StockItem: res.Transaction.Slot.StockItem,
-				}
-
-				out <- r
-				out2 <- r
-			})
-		}
-	}()
-
-	return wp
+			this.Traffic.PriceReceiptCh <- r
+			this.Traffic.PriceReceiptStoreCh <- r
+		})
+	}
 }
 
-func (b *Broker) makePriceStorageChannel(in chan domain.PriceReceiptMessage) *workerpool.WorkerPool {
-	wp := workerpool.New(1)
+func (b *Broker) makePriceStorageWorker(w worker.Worker) {
+	for task := range b.Traffic.PriceReceiptStoreCh {
+		t := task
 
-	go func() {
-		for task := range in {
-			t := task
-
-			wp.Submit(func() {
-				err := b.StockStorage.AddMarketPrice(context.Background(), t)
-				if err != nil {
-					b.logger.Errorf("failed to add market price, %s", err)
-				}
-			})
-		}
-	}()
-
-	return wp
+		w.Submit(func() {
+			err := b.StockStorage.AddMarketPrice(context.Background(), t)
+			if err != nil {
+				b.logger.Errorf("failed to add market price, %s", err)
+			}
+		})
+	}
 }
 
-type solveWorkerInput struct {
-	MessageCh    chan domain.PriceReceiptMessage
-	SellCh       chan domain.Slot
-	ConfirmBuyCh chan domain.Message
-	RequestRange chan domain.Slot
-}
+func (b *Broker) priceReceiptWorker(w worker.Worker) {
+	for t := range b.Traffic.PriceReceiptCh {
+		task := t
 
-func (b *Broker) solveWorker(in solveWorkerInput) *workerpool.WorkerPool {
-	wp := workerpool.New(five)
-
-	go func() {
-		for task := range in.MessageCh {
-			t := task
-
-			wp.Submit(func() {
-				msg := domain.Message{
-					Price: t.Price,
-					Transaction: domain.Transaction{
-						Slot: domain.Slot{
-							Email:     t.Email,
-							StockItem: t.StockItem,
-						},
+		w.Submit(func() {
+			msg := domain.Message{
+				Price: task.Price,
+				Transaction: domain.Transaction{
+					Slot: domain.Slot{
+						Email:     task.Email,
+						StockItem: task.StockItem,
 					},
-				}
+				},
+			}
 
-				input := solverInput{
-					Message:      msg,
-					SellCh:       in.SellCh,
-					ConfirmBuyCh: in.ConfirmBuyCh,
-				}
-				if err := b.solver(input); err != nil {
-					b.logger.Errorf("solve worker reports, %s", err)
+			if err := b.branchBuyOrSell(msg); err != nil {
+				b.logger.Errorf("solve worker reports, %s", err)
 
-					if errors.Is(err, errRangeIsZero) {
-						ctx := context.Background()
-						r, rErr := b.Pricer.Range(ctx, t.StockItem)
-						if rErr != nil {
-							b.logger.Errorf(
-								"failed getting stock item range, %s",
-								rErr,
-							)
-						}
-
-						frame, err := b.SMAStack.Get(t.StockItem.Ticker)
-						if err != nil {
-							b.logger.Errorf(
-								"failed getting frame from stack, %s",
-								err,
-							)
-						}
-
-						frame.SetRangeHL(r.High, r.Low)
+				if errors.Is(err, errRangeIsZero) {
+					ctx := context.Background()
+					r, rErr := b.Pricer.Range(ctx, task.StockItem)
+					if rErr != nil {
+						b.logger.Errorf(
+							"failed getting stock item range, %s",
+							rErr,
+						)
 					}
+
+					frame, err := b.SMAStack.Get(task.StockItem.Ticker)
+					if err != nil {
+						b.logger.Errorf(
+							"failed getting frame from stack, %s",
+							err,
+						)
+					}
+
+					frame.SetRangeHL(r.High, r.Low)
 				}
-			})
-		}
-	}()
-
-	return wp
-}
-
-var (
-	errFrameNotFull = errors.New("frame is not full")
-	errRangeIsZero  = errors.New("range is zero")
-)
-
-type solverInput struct {
-	Message      domain.Message
-	SellCh       chan domain.Slot
-	ConfirmBuyCh chan domain.Message
-}
-
-func (b *Broker) solver(in solverInput) error {
-	frame, err := b.SMAStack.Get(in.Message.Transaction.Slot.StockItem.Ticker)
-	if err != nil {
-		return fmt.Errorf("failed getting frame from stack, %w", err)
+			}
+		})
 	}
-
-	h, l := frame.RangeHL()
-	if h == 0 || l == 0 {
-		return fmt.Errorf(
-			"%w, figi=%s",
-			errRangeIsZero,
-			in.Message.Transaction.Slot.StockItem.FIGI,
-		)
-	}
-
-	if !frame.IsFull() {
-		return errFrameNotFull
-	}
-
-	ctx, err := b.contextWithCreds(
-		context.Background(),
-		in.Message.Transaction.Slot.Email,
-	)
-	if err != nil {
-		return fmt.Errorf("failed getting creds, %w", err)
-	}
-
-	settings, err := b.SettingsStorage.Settings(ctx)
-	if err != nil {
-		return fmt.Errorf("failed getting settings, %w", err)
-	}
-
-	slots, err := b.Stack.Slot(ctx, in.Message.Transaction.Slot.StockItem.FIGI)
-	if err != nil {
-		return fmt.Errorf("failed getting slot, %w", err)
-	}
-
-	sellSlots := getItemsForSale(slots, frame.Last(), frame.Prev())
-	for _, slot := range sellSlots {
-		in.SellCh <- slot
-	}
-
-	if settings.Slot.Volume <= len(slots) {
-		return nil
-	}
-
-	minPrice := minBuyingPrice(slots, 0)
-	if minPrice == 0 {
-		return nil
-	}
-
-	if minPrice-settings.Slot.ModificatorMinPrice >= in.Message.Price {
-		return nil
-	}
-
-	isTrendUp, err := b.SMAStack.IsTrendUp(in.Message.Transaction.Slot.StockItem.Ticker)
-	if err != nil {
-		return fmt.Errorf("failed getting trend, %w", err)
-	}
-
-	if isTrendUp {
-		return nil
-	}
-
-	if !priceInRange(frame, in.Message.Price) {
-		return nil
-	}
-
-	// buy
-	emptyTr := domain.Transaction{
-		Slot: domain.Slot{
-			ID:          uuid.NewID().String(),
-			Email:       in.Message.Transaction.Email,
-			StockItem:   in.Message.Transaction.Slot.StockItem,
-			SlotID:      len(slots) + 1,
-			StartPrice:  frame.Prev(),
-			ChangePrice: frame.Last(),
-			Qty:         1,
-		},
-		BuyAt: time.Now(),
-	}
-
-	tr, err := b.buy(ctx, emptyTr)
-	if err != nil {
-		return fmt.Errorf("failed to buy stock item, %w", err)
-	}
-
-	in.ConfirmBuyCh <- domain.Message{Transaction: tr}
-
-	return nil
 }
 
 func priceInRange(frame domain.SMAFrame, p float64) bool {
@@ -432,8 +281,6 @@ func getItemsForSale(slots []domain.Slot, price, prevPrice float64) []domain.Slo
 	return result
 }
 
-const delayTask = 4 * time.Second
-
 func (b *Broker) queueOperation(
 	in, confirmBuyCh, confirmSellCh chan domain.Message,
 ) *workerpool.WorkerPool {
@@ -466,13 +313,6 @@ func (b *Broker) queueOperation(
 
 	return wp
 }
-
-var (
-	errMaxAttempts        = errors.New("the maximum number of attempts to receive the operation has been reached")
-	errUnknownTransaction = errors.New("unknown transaction type")
-)
-
-const retryCount = 60
 
 func processOperation(msg domain.Message) (domain.Message, domain.OperationType, error) {
 	msg.RetryCount++
@@ -516,8 +356,6 @@ func (b *Broker) confirmBuyWorker(
 	return wp
 }
 
-var errOperationNotExist = errors.New("operation does not exist")
-
 func filterOperationByOrderID(trs []domain.Transaction, orderID string) (domain.Transaction, error) {
 	for _, t := range trs {
 		if t.BuyOrderID == orderID {
@@ -547,12 +385,12 @@ func (b *Broker) contextWithCreds(ctxIn context.Context, email string) (context.
 }
 
 func minBuyingPrice(slots []domain.Slot, buyingPrice float64) float64 {
-	if len(slots) == 0 {
-		return -1
-	}
-
 	if buyingPrice > 0 {
 		slots = append(slots, domain.Slot{BuyingPrice: buyingPrice})
+	}
+
+	if len(slots) == 0 {
+		return -1
 	}
 
 	byuing := make([]float64, len(slots))

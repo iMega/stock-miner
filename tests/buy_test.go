@@ -125,6 +125,7 @@ var _ = Describe("Automatically buy", func() {
 			GraphQLUrl,
 			string(reqMarketStockItems.MarketStockItems[0].Ticker),
 			string(reqMarketStockItems.MarketStockItems[0].Figi),
+			0,
 		)
 	})
 

@@ -5,6 +5,7 @@
   "scripts": {
     "build": "npm run build:ssr && npm run build:vendor && npm run build:client",
     "dev": "STORYBOOK_GRAPHQL_HOST=http://$DOCKER_MACHINE_NAME:8080/query start-storybook --debug-webpack -p 9001 -c .storybook",
+    "loc": "STORYBOOK_GRAPHQL_HOST=http://localhost/query start-storybook --debug-webpack -p 9001 -c .storybook",
     "build:ssr": "webpack --config webpack.ssr.js && node build/ssr.js && rm build/ssr.js",
     "build:client": "webpack --config webpack.client.js",
     "build:vendor": "echo vendor",

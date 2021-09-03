@@ -182,6 +182,14 @@ func Test_minBuyingPrice(t *testing.T) {
 			want: -1,
 		},
 		{
+			name: "empty slots with buyingPrice",
+			args: args{
+				slots:       []domain.Slot{},
+				buyingPrice: 0.5,
+			},
+			want: 0.5,
+		},
+		{
 			name: "slots with zero price",
 			args: args{
 				slots: []domain.Slot{

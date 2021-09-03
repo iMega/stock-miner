@@ -3,6 +3,7 @@ package broker
 import (
 	"github.com/imega/daemon"
 	"github.com/imega/stock-miner/domain"
+	"github.com/imega/stock-miner/worker"
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 )
@@ -16,6 +17,8 @@ type Broker struct {
 	SettingsStorage domain.SettingsStorage
 	Stack           domain.Stack
 
+	Traffic StockItemTraffic
+
 	logger        logrus.FieldLogger
 	cron          *cron.Cron
 	isShutdown    bool
@@ -26,9 +29,12 @@ type Broker struct {
 
 // New creates a new instance of Broker.
 func New(opts ...Option) *Broker {
+	traffic := NewStockItemTraffic()
+
 	b := &Broker{
 		cron:     cron.New(),
 		SMAStack: NewSMAStack(),
+		Traffic:  traffic,
 	}
 
 	for _, opt := range opts {
@@ -45,6 +51,10 @@ func New(opts ...Option) *Broker {
 	if s.MiningStatus {
 		b.Start()
 	}
+
+	worker.NewWorker(1, b.makePriceStorageWorker)
+	worker.NewWorker(five, b.stockItemApprovedWorker)
+	worker.NewWorker(five, b.priceReceiptWorker)
 
 	return b
 }

@@ -136,12 +136,14 @@ type ComplexityRoot struct {
 	}
 
 	StockItem struct {
+		Active            func(childComplexity int) int
 		AmountLimit       func(childComplexity int) int
 		Currency          func(childComplexity int) int
 		EndTime           func(childComplexity int) int
 		Figi              func(childComplexity int) int
 		Isin              func(childComplexity int) int
 		Lot               func(childComplexity int) int
+		MaxPrice          func(childComplexity int) int
 		MinPriceIncrement func(childComplexity int) int
 		Name              func(childComplexity int) int
 		StartTime         func(childComplexity int) int
@@ -707,6 +709,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SlotSettings.Volume(childComplexity), true
 
+	case "StockItem.active":
+		if e.complexity.StockItem.Active == nil {
+			break
+		}
+
+		return e.complexity.StockItem.Active(childComplexity), true
+
 	case "StockItem.amountLimit":
 		if e.complexity.StockItem.AmountLimit == nil {
 			break
@@ -748,6 +757,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.StockItem.Lot(childComplexity), true
+
+	case "StockItem.maxPrice":
+		if e.complexity.StockItem.MaxPrice == nil {
+			break
+		}
+
+		return e.complexity.StockItem.MaxPrice(childComplexity), true
 
 	case "StockItem.minPriceIncrement":
 		if e.complexity.StockItem.MinPriceIncrement == nil {
@@ -958,6 +974,9 @@ type StockItem {
 
     startTime: Int!
     endTime: Int!
+
+    active: Boolean!
+    maxPrice: Float!
 }
 
 input StockItemInput {
@@ -968,6 +987,8 @@ input StockItemInput {
     currency: String!
     startTime: Int!
     endTime: Int!
+    active: Boolean!
+    maxPrice: Float!
 }
 
 type MemStats {
@@ -3970,6 +3991,76 @@ func (ec *executionContext) _StockItem_endTime(ctx context.Context, field graphq
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _StockItem_active(ctx context.Context, field graphql.CollectedField, obj *model.StockItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StockItem",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Active, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StockItem_maxPrice(ctx context.Context, field graphql.CollectedField, obj *model.StockItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StockItem",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxPrice, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Subscription_memStats(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5387,6 +5478,22 @@ func (ec *executionContext) unmarshalInputStockItemInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
+		case "active":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("active"))
+			it.Active, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "maxPrice":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("maxPrice"))
+			it.MaxPrice, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -6003,6 +6110,16 @@ func (ec *executionContext) _StockItem(ctx context.Context, sel ast.SelectionSet
 			}
 		case "endTime":
 			out.Values[i] = ec._StockItem_endTime(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "active":
+			out.Values[i] = ec._StockItem_active(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "maxPrice":
+			out.Values[i] = ec._StockItem_maxPrice(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
