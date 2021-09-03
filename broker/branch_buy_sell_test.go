@@ -38,185 +38,185 @@ func TestBroker_branchBuyOrSell(t *testing.T) {
 		wantSell []domain.Slot
 		wantBuy  []domain.Message
 	}{
-		// {
-		// 	name: "if SMAframe does'nt exists then fail",
-		// 	fields: fields{
-		// 		SMAStack: getSMAStack(fakeSMAStack{IsGetStackFail: true}),
-		// 	},
-		// 	args:    args{},
-		// 	wantErr: true,
-		// },
-		// {
-		// 	name: "if range of SMAframe is zero then fail",
-		// 	fields: fields{
-		// 		SMAStack: getSMAStack(fakeSMAStack{SMAFrame: fakeSMAFrame{}}),
-		// 	},
-		// 	args:    args{},
-		// 	wantErr: true,
-		// },
-		// {
-		// 	name: "if SMAframe high range is zero then fail",
-		// 	fields: fields{
-		// 		SMAStack: getSMAStack(fakeSMAStack{
-		// 			SMAFrame: fakeSMAFrame{RangeLow: 1},
-		// 		}),
-		// 	},
-		// 	args:    args{},
-		// 	wantErr: true,
-		// },
-		// {
-		// 	name: "if SMAframe low range is zero then fail",
-		// 	fields: fields{
-		// 		SMAStack: getSMAStack(fakeSMAStack{
-		// 			SMAFrame: fakeSMAFrame{RangeHigh: 1},
-		// 		}),
-		// 	},
-		// 	args:    args{},
-		// 	wantErr: true,
-		// },
-		// {
-		// 	name: "if SMAframe is empty then fail",
-		// 	fields: fields{
-		// 		SMAStack: getSMAStack(fakeSMAStack{
-		// 			SMAFrame: fakeSMAFrame{
-		// 				RangeHigh: 1,
-		// 				RangeLow:  1,
-		// 				IsEmpty:   true,
-		// 			},
-		// 		}),
-		// 	},
-		// 	args:    args{},
-		// 	wantErr: true,
-		// },
-		// {
-		// 	name: "settings storage return fail",
-		// 	fields: fields{
-		// 		SMAStack: getSMAStack(fakeSMAStack{
-		// 			SMAFrame: fakeSMAFrame{
-		// 				RangeHigh: 1,
-		// 				RangeLow:  1,
-		// 				IsEmpty:   false,
-		// 			},
-		// 		}),
-		// 		SettingsStorage: &fakeSettingsStorage{
-		// 			IsFail: true,
-		// 		},
-		// 		logger: &fakeLogger{},
-		// 	},
-		// 	args: args{
-		// 		msg: domain.Message{
-		// 			Transaction: domain.Transaction{
-		// 				Slot: domain.Slot{
-		// 					Email: "info@example.com",
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// 	wantErr: true,
-		// },
-		// {
-		// 	name: "slot storage return fail",
-		// 	fields: fields{
-		// 		SMAStack: getSMAStack(fakeSMAStack{
-		// 			SMAFrame: fakeSMAFrame{
-		// 				RangeHigh: 1,
-		// 				RangeLow:  1,
-		// 				IsEmpty:   false,
-		// 			},
-		// 		}),
-		// 		SettingsStorage: &fakeSettingsStorage{
-		// 			FakeSettings: domain.Settings{
-		// 				//
-		// 			},
-		// 		},
-		// 		Stack: &fakeStack{
-		// 			GetSlotIsFail: true,
-		// 		},
-		// 		logger: &fakeLogger{},
-		// 	},
-		// 	args: args{
-		// 		msg: domain.Message{
-		// 			Transaction: domain.Transaction{
-		// 				Slot: domain.Slot{
-		// 					Email: "info@example.com",
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// 	wantErr: true,
-		// },
-		// {
-		// 	name: "slot is empty",
-		// 	fields: fields{
-		// 		SMAStack: getSMAStack(fakeSMAStack{
-		// 			SMAFrame: fakeSMAFrame{
-		// 				RangeHigh: 1,
-		// 				RangeLow:  1,
-		// 				IsEmpty:   false,
-		// 			},
-		// 		}),
-		// 		SettingsStorage: &fakeSettingsStorage{
-		// 			FakeSettings: domain.Settings{},
-		// 		},
-		// 		Stack:  &fakeStack{},
-		// 		logger: &fakeLogger{},
-		// 	},
-		// 	args: args{
-		// 		msg: domain.Message{
-		// 			Transaction: domain.Transaction{
-		// 				Slot: domain.Slot{
-		// 					Email: "info@example.com",
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// 	wantErr: false,
-		// },
-		// {
-		// 	name: "slot will be sold",
-		// 	fields: fields{
-		// 		SMAStack: getSMAStack(fakeSMAStack{
-		// 			SMAFrame: fakeSMAFrame{
-		// 				RangeHigh: 1,
-		// 				RangeLow:  1,
-		// 				IsEmpty:   false,
-		// 				LastValue: 10,
-		// 				PrevValue: 10,
-		// 			},
-		// 		}),
-		// 		SettingsStorage: &fakeSettingsStorage{
-		// 			FakeSettings: domain.Settings{
-		// 				//
-		// 			},
-		// 		},
-		// 		Stack: &fakeStack{
-		// 			Slots: []domain.Slot{
-		// 				{
-		// 					Email:       "info@example.com",
-		// 					BuyingPrice: 10,
-		// 				},
-		// 			},
-		// 		},
-		// 		logger:  &fakeLogger{},
-		// 		Traffic: NewStockItemTraffic(),
-		// 	},
-		// 	args: args{
-		// 		msg: domain.Message{
-		// 			Transaction: domain.Transaction{
-		// 				Slot: domain.Slot{
-		// 					Email: "info@example.com",
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// 	wantErr: false,
-		// 	wantSell: []domain.Slot{
-		// 		{
-		// 			Email:       "info@example.com",
-		// 			BuyingPrice: 10,
-		// 		},
-		// 	},
-		// },
+		{
+			name: "if SMAframe does'nt exists then fail",
+			fields: fields{
+				SMAStack: getSMAStack(fakeSMAStack{IsGetStackFail: true}),
+			},
+			args:    args{},
+			wantErr: true,
+		},
+		{
+			name: "if range of SMAframe is zero then fail",
+			fields: fields{
+				SMAStack: getSMAStack(fakeSMAStack{SMAFrame: fakeSMAFrame{}}),
+			},
+			args:    args{},
+			wantErr: true,
+		},
+		{
+			name: "if SMAframe high range is zero then fail",
+			fields: fields{
+				SMAStack: getSMAStack(fakeSMAStack{
+					SMAFrame: fakeSMAFrame{RangeLow: 1},
+				}),
+			},
+			args:    args{},
+			wantErr: true,
+		},
+		{
+			name: "if SMAframe low range is zero then fail",
+			fields: fields{
+				SMAStack: getSMAStack(fakeSMAStack{
+					SMAFrame: fakeSMAFrame{RangeHigh: 1},
+				}),
+			},
+			args:    args{},
+			wantErr: true,
+		},
+		{
+			name: "if SMAframe is empty then fail",
+			fields: fields{
+				SMAStack: getSMAStack(fakeSMAStack{
+					SMAFrame: fakeSMAFrame{
+						RangeHigh: 1,
+						RangeLow:  1,
+						IsEmpty:   true,
+					},
+				}),
+			},
+			args:    args{},
+			wantErr: true,
+		},
+		{
+			name: "settings storage return fail",
+			fields: fields{
+				SMAStack: getSMAStack(fakeSMAStack{
+					SMAFrame: fakeSMAFrame{
+						RangeHigh: 1,
+						RangeLow:  1,
+						IsEmpty:   false,
+					},
+				}),
+				SettingsStorage: &fakeSettingsStorage{
+					IsFail: true,
+				},
+				logger: &fakeLogger{},
+			},
+			args: args{
+				msg: domain.Message{
+					Transaction: domain.Transaction{
+						Slot: domain.Slot{
+							Email: "info@example.com",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "slot storage return fail",
+			fields: fields{
+				SMAStack: getSMAStack(fakeSMAStack{
+					SMAFrame: fakeSMAFrame{
+						RangeHigh: 1,
+						RangeLow:  1,
+						IsEmpty:   false,
+					},
+				}),
+				SettingsStorage: &fakeSettingsStorage{
+					FakeSettings: domain.Settings{
+						//
+					},
+				},
+				Stack: &fakeStack{
+					GetSlotIsFail: true,
+				},
+				logger: &fakeLogger{},
+			},
+			args: args{
+				msg: domain.Message{
+					Transaction: domain.Transaction{
+						Slot: domain.Slot{
+							Email: "info@example.com",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "slot is empty",
+			fields: fields{
+				SMAStack: getSMAStack(fakeSMAStack{
+					SMAFrame: fakeSMAFrame{
+						RangeHigh: 1,
+						RangeLow:  1,
+						IsEmpty:   false,
+					},
+				}),
+				SettingsStorage: &fakeSettingsStorage{
+					FakeSettings: domain.Settings{},
+				},
+				Stack:  &fakeStack{},
+				logger: &fakeLogger{},
+			},
+			args: args{
+				msg: domain.Message{
+					Transaction: domain.Transaction{
+						Slot: domain.Slot{
+							Email: "info@example.com",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "slot will be sold",
+			fields: fields{
+				SMAStack: getSMAStack(fakeSMAStack{
+					SMAFrame: fakeSMAFrame{
+						RangeHigh: 1,
+						RangeLow:  1,
+						IsEmpty:   false,
+						LastValue: 10,
+						PrevValue: 10,
+					},
+				}),
+				SettingsStorage: &fakeSettingsStorage{
+					FakeSettings: domain.Settings{
+						//
+					},
+				},
+				Stack: &fakeStack{
+					Slots: []domain.Slot{
+						{
+							Email:       "info@example.com",
+							BuyingPrice: 10,
+						},
+					},
+				},
+				logger:  &fakeLogger{},
+				Traffic: NewStockItemTraffic(),
+			},
+			args: args{
+				msg: domain.Message{
+					Transaction: domain.Transaction{
+						Slot: domain.Slot{
+							Email: "info@example.com",
+						},
+					},
+				},
+			},
+			wantErr: false,
+			wantSell: []domain.Slot{
+				{
+					Email:       "info@example.com",
+					BuyingPrice: 10,
+				},
+			},
+		},
 		{
 			name: "buy slot with max price option",
 			fields: fields{
