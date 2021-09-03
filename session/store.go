@@ -148,7 +148,9 @@ func (s *Store) DefenceHandler(next http.Handler) http.Handler {
 		}
 
 		email, _ := session.Values["email"].(string)
-
+		if s.isDevMode {
+			email = s.RootEmail
+		}
 		ctx := contexkey.WithEmail(r.Context(), email)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func AddStockItemApproved(graphQLUrl, ticker, figi string) {
+func AddStockItemApproved(graphQLUrl, ticker, figi string, maxPrice float64) {
 	type StockItemInput map[string]interface{}
 	var (
 		reqAddStockItemApproved struct {
@@ -26,6 +26,8 @@ func AddStockItemApproved(graphQLUrl, ticker, figi string) {
 				"currency":         "USD",
 				"startTime":        0,
 				"endTime":          24,
+				"maxPrice":         maxPrice,
+				"active":           true,
 			},
 		},
 	}
@@ -54,6 +56,8 @@ func RemoveStockItemApproved(graphQLUrl, ticker string) {
 				"currency":         "USD",
 				"startTime":        0,
 				"endTime":          0,
+				"maxPrice":         0,
+				"active":           true,
 			},
 		},
 	}
@@ -68,6 +72,8 @@ type StockItem struct {
 	Figi             graphql.String
 	AmountLimit      graphql.Float
 	TransactionLimit graphql.Float
+	MaxPrice         graphql.Float
+	Active           graphql.Boolean
 }
 
 func StockItemApproved(graphQLUrl string) []StockItem {

@@ -24,6 +24,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.7
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
+	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/cors v1.7.0
 	github.com/shopspring/decimal v1.2.0
