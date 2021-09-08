@@ -1,3 +1,9 @@
+## [0.0.35]
+
+### Fixed
+
+-   Fixed updating of stock items settings.
+
 ## [0.0.34]
 
 ### Added

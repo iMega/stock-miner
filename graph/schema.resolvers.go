@@ -66,6 +66,8 @@ func (r *mutationResolver) UpdateStockItemApproved(ctx context.Context, items []
 			Currency:         item.Currency,
 			StartTime:        uint8(item.StartTime),
 			EndTime:          uint8(item.EndTime),
+			MaxPrice:         item.MaxPrice,
+			IsActive:         item.Active,
 		}
 		if err := r.StockStorage.UpdateStockItemApproved(ctx, in); err != nil {
 			return false,
