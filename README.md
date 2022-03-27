@@ -46,7 +46,7 @@ tail -f /var/log/messages
 ```nginx
 server {
     listen 80;
-    server_name d.imega.ru;
+    server_name imega.ru;
 
     location /hooks/ {
         proxy_pass http://172.17.0.1:9000/hooks/;
@@ -58,7 +58,7 @@ server {
 
 Go to Repo - Settings - Hooks
 
--   Payload URL: https://d.imega.ru/hooks/stock-miner
+-   Payload URL: https://imega.ru/hooks/stock-miner
 -   Content type: application/json
 -   Secret: Generate very strong password
 -   Select event: Releases
